@@ -59,21 +59,20 @@ int main()
 	shader.setUniform("lightpos", glm::vec3(0.0f, 0.0f, 15.0f));
 
 	Resources resources;
-	resources.loadMeshes({ "Resources/car.obj", "Resources/skull.obj" });
+	resources.loadMeshes({ "Resources/skull.obj" });
 	resources.loadTextures({ "Resources/Textures/Rock.png" });
 
-	EntityID e = entities.addEntity<Components::Transform, Components::Model>();
-	Components::Model& m = entities.getComponent<Components::Model>(e);
-	m.mesh = &resources.mesh("Resources/car.obj");
-	m.texture = &resources.texture("Resources/Textures/Rock.png");
-	m.shader = &shader;
+	for (int i = 0; i < 5; i++)
+	{
+		EntityID e = entities.addEntity<Components::Transform, Components::Model>();
+		Components::Model& m = entities.getComponent<Components::Model>(e);
+		m.mesh = &resources.mesh("skull.obj");
+		m.texture = &resources.texture("Rock.png");
+		m.shader = &shader;
 
-	EntityID e2 = entities.addEntity<Components::Transform, Components::Model>();
-	Components::Model& m2 = entities.getComponent<Components::Model>(e2);
-	m2.mesh = &resources.mesh("Resources/skull.obj");
-	m2.texture = &resources.texture("Resources/Textures/Rock.png");
-	m2.shader = &shader;
-	entities.getComponent<Components::Transform>(e2).position.x -= 50;
+		entities.getComponent<Components::Transform>(e).position.x += i * 50;
+		entities.getComponent<Components::Transform>(e).rotation.z -= 90;
+	}
 
 	Transform view;
 
