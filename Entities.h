@@ -69,13 +69,13 @@ public:
 		table[ComponentType::ID] = std::make_shared<ComponentPool<ComponentType>>();
 	}
 
-	template <typename ComponentType, typename... Args> ComponentType& addComponent(const EntityID id, Args&&... args)
+	template <typename ComponentType> ComponentType& addComponent(const EntityID id)
 	{
 		static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'.");
 
 		has[id][ComponentType::ID] = 1;
 		ComponentMap<ComponentType>& pool = getPool<ComponentType>();
-		pool[id] = ComponentType(std::forward<Args>(args)...);
+		pool.insert({ id, ComponentType() });
 		return pool[id];
 	}
 
