@@ -8,26 +8,29 @@
 //	meshes->at(file).setVertices(loadOBJ(readTextFile(file)));
 //}
 
-void Resources::loadMeshes(const std::vector<std::string>& files)
+namespace ENG
 {
-	for (const std::string& mesh : files) // TODO: Run each iteration as a seperate task using std::async
+	void Resources::loadMeshes(const std::vector<std::string>& files)
 	{
-		//std::async(std::launch::async, loadMesh, &meshes, mesh);
-		std::string file = splitText(mesh, '/').back();
-		meshes.insert({ file, Mesh() });
-		meshes.at(file).setVertices(loadOBJ(readTextFile(mesh)));
+		for (const std::string& mesh : files) // TODO: Run each iteration as a seperate task using std::async
+		{
+			//std::async(std::launch::async, loadMesh, &meshes, mesh);
+			std::string file = splitText(mesh, '/').back();
+			meshes.insert({ file, Mesh() });
+			meshes.at(file).setVertices(loadOBJ(readTextFile(mesh)));
+		}
 	}
-}
 
-void Resources::loadTextures(const std::vector<std::string>& files)
-{
-	for (const std::string& texture : files)
+	void Resources::loadTextures(const std::vector<std::string>& files)
 	{
-		std::string file = splitText(texture, '/').back();
-		textures.insert({ file, Texture() });
-		textures.at(file).load(texture);
+		for (const std::string& texture : files)
+		{
+			std::string file = splitText(texture, '/').back();
+			textures.insert({ file, Texture() });
+			textures.at(file).load(texture);
+		}
 	}
-}
 
-Mesh& Resources::mesh(const std::string& file) { return meshes.at(file); }
-Texture& Resources::texture(const std::string& file) { return textures.at(file); }
+	Mesh& Resources::mesh(const std::string& file) { return meshes.at(file); }
+	Texture& Resources::texture(const std::string& file) { return textures.at(file); }
+}

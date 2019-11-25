@@ -7,6 +7,9 @@
 #include <vector>
 #include "Vertex.h"
 
-std::vector<std::string> splitText(const std::string& text, const char delimeter);
-std::string readTextFile(const std::string& filename);
-std::vector<Vertex> loadOBJ(const std::string& model);
+namespace ENG
+{
+	std::vector<std::string> splitText(const std::string& text, const char delimeter);
+	std::string readTextFile(const std::string& filename);
+	std::vector<Vertex> loadOBJ(const std::string& model);
+}

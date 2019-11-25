@@ -11,6 +11,8 @@
 constexpr auto WIDTH = 1920;
 constexpr auto HEIGHT = 1080;
 
+using namespace ENG;
+
 namespace Components
 {
 	struct Transform : ::Transform, ECSComponent<Transform> {};
@@ -22,14 +24,16 @@ namespace Components
 	};
 }
 
-void draw(Entities& entities)
+void draw(Entities& entities, double delta)
 {
-	ComponentMap<Components::Transform> ts = entities.getPool<Components::Transform>();
-	ComponentMap<Components::Model> ms = entities.getPool<Components::Model>();
+	ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
+	ComponentMap<Components::Model>& ms = entities.getPool<Components::Model>();
 
 	for (EntityID entity : entities.entitiesWith<Components::Transform, Components::Model>())
 	{
 		Components::Model& m = ms[entity];
+
+		ts[entity].rotation.y += 45.0f * static_cast<float>(delta);
 		m.shader->setUniform("transform", ts[entity].get());
 
 		m.shader->bind();
@@ -42,8 +46,10 @@ void draw(Entities& entities)
 int main()
 {
 	Entities entities;
-	entities.addComponentPool<Components::Transform>();
-	entities.addComponentPool<Components::Model>();
+	entities.addComponentPools<
+		Components::Transform,
+		Components::Model
+	>();
 
 	Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
 	window.lockMouse(true);
@@ -59,19 +65,19 @@ int main()
 	shader.setUniform("lightpos", glm::vec3(0.0f, 0.0f, 15.0f));
 
 	Resources resources;
-	resources.loadMeshes({ "Resources/skull.obj" });
+	resources.loadMeshes({ "Resources/Meshes/car.obj" });
 	resources.loadTextures({ "Resources/Textures/Rock.png" });
 
 	for (int i = 0; i < 5; i++)
 	{
 		EntityID e = entities.addEntity<Components::Transform, Components::Model>();
 		Components::Model& m = entities.getComponent<Components::Model>(e);
-		m.mesh = &resources.mesh("skull.obj");
+		m.mesh = &resources.mesh("car.obj");
 		m.texture = &resources.texture("Rock.png");
 		m.shader = &shader;
 
-		entities.getComponent<Components::Transform>(e).position.x += i * 50;
-		entities.getComponent<Components::Transform>(e).rotation.z -= 90;
+		entities.getComponent<Components::Transform>(e).position.x += i * 10;
+		entities.getComponent<Components::Transform>(e).scale = { 0.1f, 0.1f, 0.1f };
 	}
 
 	Transform view;
@@ -104,13 +110,13 @@ int main()
 		if (window.isKeyPressed(GLFW_KEY_S)) velocity = view.forward();
 		if (window.isKeyPressed(GLFW_KEY_D)) velocity = view.right();
 		if (window.isKeyPressed(GLFW_KEY_A)) velocity = -view.right();
-		view.position += velocity * speed * float(delta);
+		view.position += velocity * speed * static_cast<float>(delta);
 
 		shader.setUniform("view", glm::inverse(view.get()));
 		shader.setUniform("view_pos", view.position);
 
 		window.clear(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-		draw(entities);
+		draw(entities, delta);
 		window.display();
 
 		glfwPollEvents();
