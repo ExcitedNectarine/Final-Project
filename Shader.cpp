@@ -89,7 +89,7 @@ namespace ENG
 			std::vector<GLchar> log(max);
 			glGetShaderInfoLog(shader_id, max, &max, &log[0]);
 
-			std::cout << &log[0] << std::endl;
+			OUTPUT_ERROR(&log[0]);
 		}
 	}
 
@@ -105,7 +105,7 @@ namespace ENG
 			std::vector<GLchar> log(max);
 			glGetProgramInfoLog(id, max, &max, &log[0]);
 
-			std::cout << &log[0] << std::endl;
+			OUTPUT_ERROR(&log[0]);
 		}
 	}
 }

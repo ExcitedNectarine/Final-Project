@@ -15,7 +15,6 @@ namespace ENG
 		Texture& operator=(const Texture&) = delete;
 		Texture(Texture&& other) = default;
 		Texture& operator=(Texture &&) = default;
-
 		void load(const std::string& filename);
 		void bind();
 		void unbind();

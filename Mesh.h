@@ -19,7 +19,6 @@ namespace ENG
 		Mesh& operator=(const Mesh&) = delete;
 		Mesh(Mesh&& other) = default;
 		Mesh& operator=(Mesh &&) = default;
-
 		void setVertices(const std::vector<Vertex>& new_vertices);
 		std::size_t vertexCount();
 		void bind();

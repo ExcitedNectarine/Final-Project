@@ -134,6 +134,7 @@
   <ItemGroup>
     <ClInclude Include="Entities.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Output.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />

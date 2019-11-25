@@ -22,6 +22,14 @@ namespace Components
 		Texture* texture;
 		Shader* shader;
 	};
+	
+	struct Controllable : ECSComponent<Controllable>
+	{
+		Controllable() : velocity(0.0f, 0.0f, 0.0f), mouse_pos(0.0f, 0.0f), last_mouse_pos(0.0f, 0.0f), relative_mouse_pos(0.0f, 0.0f) {}
+		glm::vec3 velocity;
+		glm::dvec2 mouse_pos, last_mouse_pos, relative_mouse_pos;
+		float speed = 15.0f;
+	};
 }
 
 void draw(Entities& entities, double delta)
@@ -43,12 +51,43 @@ void draw(Entities& entities, double delta)
 	}
 }
 
+void move(Entities& entities, Window& window, Shader& shader, double delta)
+{
+	ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
+	ComponentMap<Components::Controllable>& cs = entities.getPool<Components::Controllable>();
+
+	for (EntityID entity : entities.entitiesWith<Components::Transform, Components::Controllable>())
+	{
+		Components::Transform& t = ts[entity];
+		Components::Controllable& c = cs[entity];
+
+		c.mouse_pos = window.getMousePos();
+		c.relative_mouse_pos = c.last_mouse_pos - c.mouse_pos;
+		c.last_mouse_pos = c.mouse_pos;
+		t.rotation.x += static_cast<float>(c.relative_mouse_pos.y * 0.25f);
+		t.rotation.y += static_cast<float>(c.relative_mouse_pos.x * 0.25f);
+		if (t.rotation.x >= 89) t.rotation.x = 89;
+		if (t.rotation.x <= -89) t.rotation.x = -89;
+
+		c.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+		if (window.isKeyPressed(GLFW_KEY_W)) c.velocity = -t.forward();
+		if (window.isKeyPressed(GLFW_KEY_S)) c.velocity = t.forward();
+		if (window.isKeyPressed(GLFW_KEY_D)) c.velocity = t.right();
+		if (window.isKeyPressed(GLFW_KEY_A)) c.velocity = -t.right();
+		t.position += c.velocity * c.speed * static_cast<float>(delta);
+
+		shader.setUniform("view", glm::inverse(t.get()));
+		shader.setUniform("view_pos", t.position);
+	}
+}
+
 int main()
 {
 	Entities entities;
 	entities.addComponentPools<
 		Components::Transform,
-		Components::Model
+		Components::Model,
+		Components::Controllable
 	>();
 
 	Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
@@ -68,23 +107,24 @@ int main()
 	resources.loadMeshes({ "Resources/Meshes/car.obj" });
 	resources.loadTextures({ "Resources/Textures/Rock.png" });
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 25; i++)
 	{
-		EntityID e = entities.addEntity<Components::Transform, Components::Model>();
-		Components::Model& m = entities.getComponent<Components::Model>(e);
-		m.mesh = &resources.mesh("car.obj");
-		m.texture = &resources.texture("Rock.png");
-		m.shader = &shader;
+		for (int j = 0; j < 5; j++)
+		{
+			EntityID e = entities.addEntity<Components::Transform, Components::Model>();
+			Components::Model& m = entities.getComponent<Components::Model>(e);
+			m.mesh = &resources.mesh("car.obj");
+			m.texture = &resources.texture("Rock.png");
+			m.shader = &shader;
 
-		entities.getComponent<Components::Transform>(e).position.x += i * 10;
-		entities.getComponent<Components::Transform>(e).scale = { 0.1f, 0.1f, 0.1f };
+			Components::Transform& t = entities.getComponent<Components::Transform>(e);
+			t.position.x += i * 10;
+			t.position.z += j * 10;
+			t.scale = { 0.1f, 0.1f, 0.1f };
+		}
 	}
 
-	Transform view;
-
-	float speed = 5.0f;
-	glm::vec3 velocity(0.0f, 0.0f, 0.0f);
-	glm::dvec2 mouse_pos(0.0f, 0.0f), last_mouse_pos(0.0f, 0.0f), relative_mouse_pos(0.0f, 0.0f);
+	EntityID player = entities.addEntity<Components::Transform, Components::Controllable>();
 
 	double current = 0.0f, last = 0.0f, delta = 0.0f;
 	while (!window.shouldClose())
@@ -93,27 +133,10 @@ int main()
 		delta = current - last;
 		last = current;
 
-		if (window.isKeyPressed(GLFW_KEY_ESCAPE)) window.close();
+		if (window.isKeyPressed(GLFW_KEY_ESCAPE))
+			window.close();
 
-		mouse_pos = window.getMousePos();
-		relative_mouse_pos = last_mouse_pos - mouse_pos;
-		last_mouse_pos = mouse_pos;
-
-		view.rotation.x += static_cast<float>(relative_mouse_pos.y * 0.25f);
-		view.rotation.y += static_cast<float>(relative_mouse_pos.x * 0.25f);
-
-		if (view.rotation.x >= 89) view.rotation.x = 89;
-		if (view.rotation.x <= -89) view.rotation.x = -89;
-
-		velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-		if (window.isKeyPressed(GLFW_KEY_W)) velocity = -view.forward();
-		if (window.isKeyPressed(GLFW_KEY_S)) velocity = view.forward();
-		if (window.isKeyPressed(GLFW_KEY_D)) velocity = view.right();
-		if (window.isKeyPressed(GLFW_KEY_A)) velocity = -view.right();
-		view.position += velocity * speed * static_cast<float>(delta);
-
-		shader.setUniform("view", glm::inverse(view.get()));
-		shader.setUniform("view_pos", view.position);
+		move(entities, window, shader, delta);
 
 		window.clear(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 		draw(entities, delta);
