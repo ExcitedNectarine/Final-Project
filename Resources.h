@@ -3,6 +3,7 @@
 #include <map>
 #include "Mesh.h"
 #include "Texture.h"
+#include "Shader.h"
 #include "Tools.h"
 #include "Output.h"
 

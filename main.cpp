@@ -30,6 +30,12 @@ namespace Components
 		glm::dvec2 mouse_pos, last_mouse_pos, relative_mouse_pos;
 		float speed = 15.0f;
 	};
+
+	struct Light : ECSComponent<Light>
+	{
+		glm::vec3 colour;
+		float radius;
+	};
 }
 
 void draw(Entities& entities, double delta)
@@ -41,7 +47,7 @@ void draw(Entities& entities, double delta)
 	{
 		Components::Model& m = ms[entity];
 
-		ts[entity].rotation.y += 45.0f * static_cast<float>(delta);
+		//ts[entity].rotation.y += 45.0f * static_cast<float>(delta);
 		m.shader->setUniform("transform", ts[entity].get());
 
 		m.shader->bind();
@@ -81,15 +87,22 @@ void move(Entities& entities, Window& window, Shader& shader, double delta)
 	}
 }
 
+void setLights(Entities& entities, Shader& shader)
+{
+	ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
+	ComponentMap<Components::Light>& ls = entities.getPool<Components::Light>();
+
+	std::vector<EntityID> ents = entities.entitiesWith<Components::Transform, Components::Light>();
+	for (std::size_t i = 0; i < ents.size(); i++)
+	{
+		shader.setUniform("lights[" + std::to_string(i) + "].position", ts[ents[i]].position);
+		shader.setUniform("lights[" + std::to_string(i) + "].colour", ls[ents[i]].colour);
+		shader.setUniform("lights[" + std::to_string(i) + "].radius", ls[ents[i]].radius);
+	}
+}
+
 int main()
 {
-	Entities entities;
-	entities.addComponentPools<
-		Components::Transform,
-		Components::Model,
-		Components::Controllable
-	>();
-
 	Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
 	window.lockMouse(true);
 	glfwSwapInterval(1);
@@ -107,9 +120,31 @@ int main()
 	resources.loadMeshes({ "Resources/Meshes/car.obj" });
 	resources.loadTextures({ "Resources/Textures/Rock.png" });
 
+	Entities entities;
+	entities.addComponentPools<
+		Components::Transform,
+		Components::Model,
+		Components::Controllable,
+		Components::Light
+	>();
+	EntityID player = entities.addEntity<
+		Components::Transform,
+		Components::Controllable,
+		Components::Model,
+		Components::Light
+	>();
+	Components::Model& m = entities.getComponent<Components::Model>(player);
+	m.mesh = &resources.mesh("car.obj");
+	m.texture = &resources.texture("Rock.png");
+	m.shader = &shader;
+
+	Components::Light& l = entities.getComponent<Components::Light>(player);
+	l.colour = glm::vec3(1.0f, 0.0f, 0.0f);
+	l.radius = 10.0f;
+
 	for (int i = 0; i < 25; i++)
 	{
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < 10; j++)
 		{
 			EntityID e = entities.addEntity<Components::Transform, Components::Model>();
 			Components::Model& m = entities.getComponent<Components::Model>(e);
@@ -124,8 +159,6 @@ int main()
 		}
 	}
 
-	EntityID player = entities.addEntity<Components::Transform, Components::Controllable>();
-
 	double current = 0.0f, last = 0.0f, delta = 0.0f;
 	while (!window.shouldClose())
 	{
@@ -137,6 +170,7 @@ int main()
 			window.close();
 
 		move(entities, window, shader, delta);
+		setLights(entities, shader);
 
 		window.clear(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 		draw(entities, delta);
@@ -146,5 +180,6 @@ int main()
 	}
 
 	glfwTerminate();
+	std::cin.get();
 	return 0;
 }
