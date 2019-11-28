@@ -84,6 +84,8 @@ void move(Entities& entities, Window& window, Shader& shader, double delta)
 
 		shader.setUniform("view", glm::inverse(t.get()));
 		shader.setUniform("view_pos", t.position);
+
+		OUTPUT(glm::to_string(t.position));
 	}
 }
 
@@ -113,8 +115,7 @@ int main()
 	std::string fragment = readTextFile("Resources/Shaders/simple.frag");
 	Shader shader(vertex, fragment);
 	shader.setUniform("projection", glm::perspective(90.0f, static_cast<float>(WIDTH) / HEIGHT, 0.1f, 500.0f));
-	shader.setUniform("light_colour", glm::vec3(1.0f, 1.0f, 1.0f));
-	shader.setUniform("lightpos", glm::vec3(0.0f, 0.0f, 15.0f));
+	shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
 
 	Resources resources;
 	resources.loadMeshes({ "Resources/Meshes/car.obj" });
@@ -130,32 +131,31 @@ int main()
 	EntityID player = entities.addEntity<
 		Components::Transform,
 		Components::Controllable,
-		Components::Model,
 		Components::Light
 	>();
-	Components::Model& m = entities.getComponent<Components::Model>(player);
-	m.mesh = &resources.mesh("car.obj");
-	m.texture = &resources.texture("Rock.png");
-	m.shader = &shader;
 
 	Components::Light& l = entities.getComponent<Components::Light>(player);
-	l.colour = glm::vec3(1.0f, 0.0f, 0.0f);
-	l.radius = 10.0f;
+	l.colour = glm::vec3(0.0f, 1.0f, 1.0f);
+	l.radius = 50.0f;
 
-	for (int i = 0; i < 25; i++)
+	for (int i = 0; i < 5; i++)
 	{
-		for (int j = 0; j < 10; j++)
+		for (int j = 0; j < 5; j++)
 		{
-			EntityID e = entities.addEntity<Components::Transform, Components::Model>();
+			EntityID e = entities.addEntity<Components::Transform, Components::Model>();// , Components::Light > ();
 			Components::Model& m = entities.getComponent<Components::Model>(e);
 			m.mesh = &resources.mesh("car.obj");
 			m.texture = &resources.texture("Rock.png");
 			m.shader = &shader;
 
 			Components::Transform& t = entities.getComponent<Components::Transform>(e);
-			t.position.x += i * 10;
-			t.position.z += j * 10;
+			t.position.x += i * 5;
+			t.position.z += j * 5;
 			t.scale = { 0.1f, 0.1f, 0.1f };
+
+			//Components::Light& l = entities.getComponent<Components::Light>(e);
+			//l.colour = glm::vec3(1.0f, 0.0f, 1.0f);
+			//l.radius = 5.0f;
 		}
 	}
 
