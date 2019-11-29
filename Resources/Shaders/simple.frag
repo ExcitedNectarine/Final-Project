@@ -1,16 +1,16 @@
 uniform sampler2D texture;
 
-varying vec3 uv_frag;
-varying vec3 uv_frag_pos;
-varying vec3 normal_frag;
+varying vec3 out_uv;
+varying vec3 out_normal;
+varying vec3 out_frag_pos;
 
-uniform vec3 view_pos;
 uniform vec3 ambient;
+uniform vec3 view_pos;
 
 #define MAX_LIGHTS 128
 #define CONSTANT 1.0
-#define LINEAR 0.0
-#define QUADRATIC 0.5
+#define LINEAR 0.7
+#define QUADRATIC 1.8
 
 struct Light
 {
@@ -23,32 +23,34 @@ uniform Light lights[MAX_LIGHTS];
 
 void main()
 {
+	float distance;
+	float attenuation;
+	vec3 diffuse;
+	vec3 specular;
 	vec3 total_light = ambient;
-	vec4 tex = texture2D(texture, uv_frag);
+	vec4 tex = texture2D(texture, out_uv);
 	
 	for (int i = 0; i < MAX_LIGHTS; i++)
-	{	
-		// Diffuse
-		vec3 normal = normalize(normal_frag);
-		vec3 dir = normalize(-uv_frag_pos);
-		float diff = max(dot(normal, dir), 0.0);
-		vec3 diffuse = diff * lights[i].colour;
+	{
+		// Calculate diffuse
+		vec3 norm = normalize(out_normal);
+		vec3 light_dir = normalize(lights[i].position - out_frag_pos);
+		float diff = max(dot(norm, light_dir), 0.0);
+		diffuse = diff * vec3(tex) * lights[i].colour;
 		
-		// Specular
-		// float specular_strength = 0.5;
-		// vec3 view_dir = normalize(-uv_frag_pos);
-		// vec3 reflect_dir = reflect(-dir, normal);
-		// float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
-		// vec3 specular = specular_strength * spec * lights[i].colour;
+		// Calculate specular
+		vec3 view_dir = normalize(view_pos - out_frag_pos);
+		vec3 reflect_dir = normalize(-light_dir - norm);
+		float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
+		specular = 0.5 * spec * lights[i].colour;
 		
-		float dist = length(lights[i].position - uv_frag_pos);
-		//float attenuation = 1.0 / (CONSTANT + LINEAR * dist + QUADRATIC * (dist * dist));	
-		float attenuation = max(1.0 / (CONSTANT + LINEAR * dist + QUADRATIC * (dist * dist)) - 1.0f / (lights[i].radius * lights[i].radius), 0.0f);
-		//diffuse = vec3(tex) * 
+		distance = length(lights[i].position - out_frag_pos);
+		attenuation = 1.0 / (CONSTANT + LINEAR * distance + QUADRATIC * (distance * distance));
+		
 		diffuse *= attenuation;
-		//specular *= attenuation;
+		specular *= attenuation;
 		
-		total_light += diffuse;// + specular;
+		total_light += diffuse + specular;
 	}
 	
 	gl_FragColor = tex * vec4(total_light, 1.0);

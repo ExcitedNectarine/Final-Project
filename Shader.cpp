@@ -28,9 +28,9 @@ namespace ENG
 		glAttachShader(id, fragment_id);
 
 		// Attribute binding.
-		glBindAttribLocation(id, 0, "position");
-		glBindAttribLocation(id, 1, "uv");
-		glBindAttribLocation(id, 2, "normal");
+		glBindAttribLocation(id, 0, "in_position");
+		glBindAttribLocation(id, 1, "in_uv");
+		glBindAttribLocation(id, 2, "in_normal");
 
 		glLinkProgram(id);
 		linkErrorCheck();

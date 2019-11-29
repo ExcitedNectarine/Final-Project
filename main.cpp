@@ -28,11 +28,13 @@ namespace Components
 		Controllable() : velocity(0.0f, 0.0f, 0.0f), mouse_pos(0.0f, 0.0f), last_mouse_pos(0.0f, 0.0f), relative_mouse_pos(0.0f, 0.0f) {}
 		glm::vec3 velocity;
 		glm::dvec2 mouse_pos, last_mouse_pos, relative_mouse_pos;
-		float speed = 15.0f;
+		float speed = 5.0f;
 	};
 
 	struct Light : ECSComponent<Light>
 	{
+		Light() : colour(5.0f, 5.0f, 5.0f), radius(50.0f) {}
+
 		glm::vec3 colour;
 		float radius;
 	};
@@ -85,7 +87,7 @@ void move(Entities& entities, Window& window, Shader& shader, double delta)
 		shader.setUniform("view", glm::inverse(t.get()));
 		shader.setUniform("view_pos", t.position);
 
-		OUTPUT(glm::to_string(t.position));
+		//OUTPUT(glm::to_string(t.position));
 	}
 }
 
@@ -122,27 +124,19 @@ int main()
 	resources.loadTextures({ "Resources/Textures/Rock.png" });
 
 	Entities entities;
-	entities.addComponentPools<
-		Components::Transform,
-		Components::Model,
-		Components::Controllable,
-		Components::Light
-	>();
-	EntityID player = entities.addEntity<
-		Components::Transform,
-		Components::Controllable,
-		Components::Light
-	>();
+	entities.addComponentPools<Components::Transform, Components::Model, Components::Controllable, Components::Light>();
 
-	Components::Light& l = entities.getComponent<Components::Light>(player);
-	l.colour = glm::vec3(0.0f, 1.0f, 1.0f);
-	l.radius = 50.0f;
+	entities.addEntity<Components::Transform, Components::Controllable, Components::Light>();
+	EntityID light = entities.addEntity<Components::Transform, Components::Light>();
+	entities.getComponent<Components::Light>(light).colour = { 50.0f, 0.0f, 50.0f };
+	Components::Transform& t1 = entities.getComponent<Components::Transform>(light);
+	t1.position = { 0.0f, 5.0f, 10.0f };
 
 	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 5; j++)
 		{
-			EntityID e = entities.addEntity<Components::Transform, Components::Model>();// , Components::Light > ();
+			EntityID e = entities.addEntity<Components::Transform, Components::Model>();
 			Components::Model& m = entities.getComponent<Components::Model>(e);
 			m.mesh = &resources.mesh("car.obj");
 			m.texture = &resources.texture("Rock.png");
@@ -152,10 +146,6 @@ int main()
 			t.position.x += i * 5;
 			t.position.z += j * 5;
 			t.scale = { 0.1f, 0.1f, 0.1f };
-
-			//Components::Light& l = entities.getComponent<Components::Light>(e);
-			//l.colour = glm::vec3(1.0f, 0.0f, 1.0f);
-			//l.radius = 5.0f;
 		}
 	}
 
@@ -169,6 +159,10 @@ int main()
 		if (window.isKeyPressed(GLFW_KEY_ESCAPE))
 			window.close();
 
+		t1.position.x += 5.0f * delta;
+		if (t1.position.x >= 20.0f)
+			t1.position.x = 0.0f;
+
 		move(entities, window, shader, delta);
 		setLights(entities, shader);
 
@@ -180,6 +174,6 @@ int main()
 	}
 
 	glfwTerminate();
-	std::cin.get();
+	//std::cin.get();
 	return 0;
 }
