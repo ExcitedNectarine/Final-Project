@@ -11,19 +11,17 @@
 constexpr auto WIDTH = 1920;
 constexpr auto HEIGHT = 1080;
 
-using namespace ENG;
-
 namespace Components
 {
-	struct Transform : ::Transform, ECSComponent<Transform> {};
-	struct Model : ECSComponent<Model>
+	struct Transform : ENG::Transform, ENG::ECSComponent<Transform> {};
+	struct Model : ENG::ECSComponent<Model>
 	{
-		Mesh* mesh;
-		Texture* texture;
-		Shader* shader;
+		ENG::Mesh* mesh;
+		ENG::Texture* texture;
+		ENG::Shader* shader;
 	};
 	
-	struct Controllable : ECSComponent<Controllable>
+	struct Controllable : ENG::ECSComponent<Controllable>
 	{
 		Controllable() : velocity(0.0f, 0.0f, 0.0f), mouse_pos(0.0f, 0.0f), last_mouse_pos(0.0f, 0.0f), relative_mouse_pos(0.0f, 0.0f) {}
 		glm::vec3 velocity;
@@ -31,7 +29,7 @@ namespace Components
 		float speed = 5.0f;
 	};
 
-	struct Light : ECSComponent<Light>
+	struct Light : ENG::ECSComponent<Light>
 	{
 		Light() : colour(5.0f, 5.0f, 5.0f), radius(50.0f) {}
 
@@ -40,12 +38,12 @@ namespace Components
 	};
 }
 
-void draw(Entities& entities, double delta)
+void draw(ENG::Entities& entities, double delta)
 {
-	ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
-	ComponentMap<Components::Model>& ms = entities.getPool<Components::Model>();
+	ENG::ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
+	ENG::ComponentMap<Components::Model>& ms = entities.getPool<Components::Model>();
 
-	for (EntityID entity : entities.entitiesWith<Components::Transform, Components::Model>())
+	for (ENG::EntityID entity : entities.entitiesWith<Components::Transform, Components::Model>())
 	{
 		Components::Model& m = ms[entity];
 
@@ -59,12 +57,12 @@ void draw(Entities& entities, double delta)
 	}
 }
 
-void move(Entities& entities, Window& window, Shader& shader, double delta)
+void move(ENG::Entities& entities, ENG::Window& window, ENG::Shader& shader, double delta)
 {
-	ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
-	ComponentMap<Components::Controllable>& cs = entities.getPool<Components::Controllable>();
+	ENG::ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
+	ENG::ComponentMap<Components::Controllable>& cs = entities.getPool<Components::Controllable>();
 
-	for (EntityID entity : entities.entitiesWith<Components::Transform, Components::Controllable>())
+	for (ENG::EntityID entity : entities.entitiesWith<Components::Transform, Components::Controllable>())
 	{
 		Components::Transform& t = ts[entity];
 		Components::Controllable& c = cs[entity];
@@ -91,12 +89,12 @@ void move(Entities& entities, Window& window, Shader& shader, double delta)
 	}
 }
 
-void setLights(Entities& entities, Shader& shader)
+void setLights(ENG::Entities& entities, ENG::Shader& shader)
 {
-	ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
-	ComponentMap<Components::Light>& ls = entities.getPool<Components::Light>();
+	ENG::ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
+	ENG::ComponentMap<Components::Light>& ls = entities.getPool<Components::Light>();
 
-	std::vector<EntityID> ents = entities.entitiesWith<Components::Transform, Components::Light>();
+	std::vector<ENG::EntityID> ents = entities.entitiesWith<Components::Transform, Components::Light>();
 	for (std::size_t i = 0; i < ents.size(); i++)
 	{
 		shader.setUniform("lights[" + std::to_string(i) + "].position", ts[ents[i]].position);
@@ -107,27 +105,27 @@ void setLights(Entities& entities, Shader& shader)
 
 int main()
 {
-	Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
+	ENG::Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
 	window.lockMouse(true);
 	glfwSwapInterval(1);
 
 	glEnable(GL_CULL_FACE);
 
-	std::string vertex = readTextFile("Resources/Shaders/simple.vert");
-	std::string fragment = readTextFile("Resources/Shaders/simple.frag");
-	Shader shader(vertex, fragment);
+	std::string vertex = ENG::readTextFile("Resources/Shaders/simple.vert");
+	std::string fragment = ENG::readTextFile("Resources/Shaders/simple.frag");
+	ENG::Shader shader(vertex, fragment);
 	shader.setUniform("projection", glm::perspective(90.0f, static_cast<float>(WIDTH) / HEIGHT, 0.1f, 500.0f));
 	shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
 
-	Resources resources;
-	resources.loadMeshes({ "Resources/Meshes/car.obj" });
-	resources.loadTextures({ "Resources/Textures/Rock.png" });
+	ENG::Resources resources;
+	resources.loadMeshes({ "Resources/Meshes/skull.obj", "Resources/Meshes/car.obj" });
+	resources.loadTextures({ "Resources/Textures/skull.jpg", "Resources/Textures/rock.png"  });
 
-	Entities entities;
+	ENG::Entities entities;
 	entities.addComponentPools<Components::Transform, Components::Model, Components::Controllable, Components::Light>();
 
 	entities.addEntity<Components::Transform, Components::Controllable, Components::Light>();
-	EntityID light = entities.addEntity<Components::Transform, Components::Light>();
+	ENG::EntityID light = entities.addEntity<Components::Transform, Components::Light>();
 	entities.getComponent<Components::Light>(light).colour = { 50.0f, 0.0f, 50.0f };
 	Components::Transform& t1 = entities.getComponent<Components::Transform>(light);
 	t1.position = { 0.0f, 5.0f, 10.0f };
@@ -136,10 +134,10 @@ int main()
 	{
 		for (int j = 0; j < 5; j++)
 		{
-			EntityID e = entities.addEntity<Components::Transform, Components::Model>();
+			ENG::EntityID e = entities.addEntity<Components::Transform, Components::Model>();
 			Components::Model& m = entities.getComponent<Components::Model>(e);
-			m.mesh = &resources.mesh("car.obj");
-			m.texture = &resources.texture("Rock.png");
+			m.mesh = &resources.mesh("skull.obj");
+			m.texture = &resources.texture("skull.jpg");
 			m.shader = &shader;
 
 			Components::Transform& t = entities.getComponent<Components::Transform>(e);
