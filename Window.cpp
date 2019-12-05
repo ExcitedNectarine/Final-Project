@@ -2,13 +2,14 @@
 
 namespace ENG
 {
+	Window::Window() {}
 	Window::Window(const glm::ivec2& size, const std::string& title) { create(size, title); }
 
 	void Window::create(const glm::ivec2& size, const std::string& title)
 	{
 		glfwInit();
 
-		window = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
+		window = glfwCreateWindow(size.x, size.y, title.c_str(), NULL, NULL);
 		glfwMakeContextCurrent(window);
 
 		glewInit();

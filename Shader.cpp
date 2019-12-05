@@ -2,7 +2,10 @@
 
 namespace ENG
 {
-	Shader::Shader(const std::string& vertex, const std::string& fragment)
+	Shader::Shader() {}
+	Shader::Shader(const std::string& vertex, const std::string& fragment) { create(vertex, fragment); }
+
+	void Shader::create(const std::string& vertex, const std::string& fragment)
 	{
 		// Put strings into char arrays.
 		const GLchar* cvertex = vertex.c_str();

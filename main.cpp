@@ -103,6 +103,21 @@ void setLights(ENG::Entities& entities, ENG::Shader& shader)
 	}
 }
 
+class Application
+{
+public:
+	Application()
+	{
+		window.create(glm::ivec2(WIDTH, HEIGHT), "Application");
+	}
+
+private:
+	ENG::Window window;
+	ENG::Resources resources;
+	ENG::Entities entities;
+	ENG::Shader default_shader;
+};
+
 int main()
 {
 	ENG::Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
@@ -118,7 +133,8 @@ int main()
 	shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
 
 	ENG::Resources resources;
-	resources.loadMeshes({ "Resources/Meshes/skull.obj", "Resources/Meshes/car.obj" });
+	//resources.loadMeshes({ "Resources/Meshes/skull.obj", "Resources/Meshes/car.obj" });
+	resources.loadMeshes({ "Resources/Meshes/car.obj" });
 	resources.loadTextures({ "Resources/Textures/skull.jpg", "Resources/Textures/rock.png"  });
 
 	ENG::Entities entities;
@@ -136,7 +152,7 @@ int main()
 		{
 			ENG::EntityID e = entities.addEntity<Components::Transform, Components::Model>();
 			Components::Model& m = entities.getComponent<Components::Model>(e);
-			m.mesh = &resources.mesh("skull.obj");
+			m.mesh = &resources.mesh("car.obj");
 			m.texture = &resources.texture("skull.jpg");
 			m.shader = &shader;
 

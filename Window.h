@@ -10,6 +10,7 @@ namespace ENG
 	class Window
 	{
 	public:
+		Window();
 		Window(const glm::ivec2& size, const std::string& title);
 		void create(const glm::ivec2& size, const std::string& title);
 		bool shouldClose();

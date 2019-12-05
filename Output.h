@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#define OUTPUT_ENABLED
+#define OUTPUT_ENABLED 1
 
-#ifdef OUTPUT_ENABLED
+#if OUTPUT_ENABLED == 1
 #define OUTPUT(output) (std::cout << output << std::endl)
 #define OUTPUT_ERROR(output) (std::cerr << output << std::endl)
 #else
