@@ -40,14 +40,14 @@ namespace Components
 
 void draw(ENG::Entities& entities, double delta)
 {
-	ENG::ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
-	ENG::ComponentMap<Components::Model>& ms = entities.getPool<Components::Model>();
+	auto& ts = entities.getPool<Components::Transform>();
+	auto& ms = entities.getPool<Components::Model>();
 
 	for (ENG::EntityID entity : entities.entitiesWith<Components::Transform, Components::Model>())
 	{
 		Components::Model& m = ms[entity];
 
-		//ts[entity].rotation.y += 45.0f * static_cast<float>(delta);
+		ts[entity].rotation.y += 45.0f * static_cast<float>(delta);
 		m.shader->setUniform("transform", ts[entity].get());
 
 		m.shader->bind();
@@ -59,8 +59,8 @@ void draw(ENG::Entities& entities, double delta)
 
 void move(ENG::Entities& entities, ENG::Window& window, ENG::Shader& shader, double delta)
 {
-	ENG::ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
-	ENG::ComponentMap<Components::Controllable>& cs = entities.getPool<Components::Controllable>();
+	auto& ts = entities.getPool<Components::Transform>();
+	auto& cs = entities.getPool<Components::Controllable>();
 
 	for (ENG::EntityID entity : entities.entitiesWith<Components::Transform, Components::Controllable>())
 	{
@@ -91,8 +91,8 @@ void move(ENG::Entities& entities, ENG::Window& window, ENG::Shader& shader, dou
 
 void setLights(ENG::Entities& entities, ENG::Shader& shader)
 {
-	ENG::ComponentMap<Components::Transform>& ts = entities.getPool<Components::Transform>();
-	ENG::ComponentMap<Components::Light>& ls = entities.getPool<Components::Light>();
+	auto& ts = entities.getPool<Components::Transform>();
+	auto& ls = entities.getPool<Components::Light>();
 
 	std::vector<ENG::EntityID> ents = entities.entitiesWith<Components::Transform, Components::Light>();
 	for (std::size_t i = 0; i < ents.size(); i++)
@@ -103,28 +103,10 @@ void setLights(ENG::Entities& entities, ENG::Shader& shader)
 	}
 }
 
-class Application
-{
-public:
-	Application()
-	{
-		window.create(glm::ivec2(WIDTH, HEIGHT), "Application");
-	}
-
-private:
-	ENG::Window window;
-	ENG::Resources resources;
-	ENG::Entities entities;
-	ENG::Shader default_shader;
-};
-
 int main()
 {
 	ENG::Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
 	window.lockMouse(true);
-	glfwSwapInterval(1);
-
-	glEnable(GL_CULL_FACE);
 
 	std::string vertex = ENG::readTextFile("Resources/Shaders/simple.vert");
 	std::string fragment = ENG::readTextFile("Resources/Shaders/simple.frag");
@@ -133,18 +115,24 @@ int main()
 	shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
 
 	ENG::Resources resources;
-	//resources.loadMeshes({ "Resources/Meshes/skull.obj", "Resources/Meshes/car.obj" });
-	resources.loadMeshes({ "Resources/Meshes/car.obj" });
+	resources.loadMeshes({ "Resources/Meshes/skull.obj", "Resources/Meshes/cube.obj", "Resources/Meshes/car.obj" });
 	resources.loadTextures({ "Resources/Textures/skull.jpg", "Resources/Textures/rock.png"  });
 
 	ENG::Entities entities;
 	entities.addComponentPools<Components::Transform, Components::Model, Components::Controllable, Components::Light>();
 
-	entities.addEntity<Components::Transform, Components::Controllable, Components::Light>();
-	ENG::EntityID light = entities.addEntity<Components::Transform, Components::Light>();
+	ENG::EntityID player = entities.addEntity<Components::Transform, Components::Controllable, Components::Light>();
+	entities.getComponent<Components::Light>(player).colour = { 10.0f, 10.0f, 0.0f };
+
+	ENG::EntityID light = entities.addEntity<Components::Transform, Components::Light, Components::Model>();
 	entities.getComponent<Components::Light>(light).colour = { 50.0f, 0.0f, 50.0f };
 	Components::Transform& t1 = entities.getComponent<Components::Transform>(light);
 	t1.position = { 0.0f, 5.0f, 10.0f };
+	t1.scale = { 0.1f, 0.1f, 0.1f };
+	auto& m = entities.getComponent<Components::Model>(light);
+	m.mesh = &resources.mesh("cube.obj");
+	m.texture = &resources.texture("rock.png");
+	m.shader = &shader;
 
 	for (int i = 0; i < 5; i++)
 	{
@@ -152,7 +140,7 @@ int main()
 		{
 			ENG::EntityID e = entities.addEntity<Components::Transform, Components::Model>();
 			Components::Model& m = entities.getComponent<Components::Model>(e);
-			m.mesh = &resources.mesh("car.obj");
+			m.mesh = &resources.mesh("skull.obj");
 			m.texture = &resources.texture("skull.jpg");
 			m.shader = &shader;
 
@@ -173,7 +161,7 @@ int main()
 		if (window.isKeyPressed(GLFW_KEY_ESCAPE))
 			window.close();
 
-		t1.position.x += 5.0f * delta;
+		t1.position.x += 5.0f * static_cast<float>(delta);
 		if (t1.position.x >= 20.0f)
 			t1.position.x = 0.0f;
 

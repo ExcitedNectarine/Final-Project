@@ -14,8 +14,11 @@ namespace ENG
 
 		glewInit();
 
+		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
+
+		glfwSwapInterval(1);
 	}
 
 	void Window::clear(const glm::vec4& colour)
