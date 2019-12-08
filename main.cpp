@@ -6,50 +6,39 @@
 #include "Tools.h"
 #include "Entities.h"
 #include "Resources.h"
+#include "CubeMap.h"
 #include <glm/gtx/string_cast.hpp>
 
-constexpr auto WIDTH = 1920;
-constexpr auto HEIGHT = 1080;
-
-namespace Components
+namespace CS
 {
 	struct Transform : ENG::Transform, ENG::ECSComponent<Transform> {};
+
 	struct Model : ENG::ECSComponent<Model>
 	{
 		ENG::Mesh* mesh;
 		ENG::Texture* texture;
 		ENG::Shader* shader;
 	};
-	
-	struct Controllable : ENG::ECSComponent<Controllable>
-	{
-		Controllable() : velocity(0.0f, 0.0f, 0.0f), mouse_pos(0.0f, 0.0f), last_mouse_pos(0.0f, 0.0f), relative_mouse_pos(0.0f, 0.0f) {}
-		glm::vec3 velocity;
-		glm::dvec2 mouse_pos, last_mouse_pos, relative_mouse_pos;
-		float speed = 5.0f;
-	};
 
 	struct Light : ENG::ECSComponent<Light>
 	{
-		Light() : colour(5.0f, 5.0f, 5.0f), radius(50.0f) {}
+		Light() : colour(1.0f, 1.0f, 0.0f), radius(5.0f) {}
 
 		glm::vec3 colour;
 		float radius;
 	};
 }
 
-void draw(ENG::Entities& entities, double delta)
+void drawModels(ENG::Entities& entities)
 {
-	auto& ts = entities.getPool<Components::Transform>();
-	auto& ms = entities.getPool<Components::Model>();
+	auto& ts = entities.getPool<CS::Transform>();
+	auto& ms = entities.getPool<CS::Model>();
 
-	for (ENG::EntityID entity : entities.entitiesWith<Components::Transform, Components::Model>())
+	for (ENG::EntityID entity : entities.entitiesWith<CS::Transform, CS::Model>())
 	{
-		Components::Model& m = ms[entity];
+		CS::Model& m = ms[entity];
 
-		ts[entity].rotation.y += 45.0f * static_cast<float>(delta);
 		m.shader->setUniform("transform", ts[entity].get());
-
 		m.shader->bind();
 		m.mesh->bind();
 		m.texture->bind();
@@ -57,44 +46,12 @@ void draw(ENG::Entities& entities, double delta)
 	}
 }
 
-void move(ENG::Entities& entities, ENG::Window& window, ENG::Shader& shader, double delta)
-{
-	auto& ts = entities.getPool<Components::Transform>();
-	auto& cs = entities.getPool<Components::Controllable>();
-
-	for (ENG::EntityID entity : entities.entitiesWith<Components::Transform, Components::Controllable>())
-	{
-		Components::Transform& t = ts[entity];
-		Components::Controllable& c = cs[entity];
-
-		c.mouse_pos = window.getMousePos();
-		c.relative_mouse_pos = c.last_mouse_pos - c.mouse_pos;
-		c.last_mouse_pos = c.mouse_pos;
-		t.rotation.x += static_cast<float>(c.relative_mouse_pos.y * 0.25f);
-		t.rotation.y += static_cast<float>(c.relative_mouse_pos.x * 0.25f);
-		if (t.rotation.x >= 89) t.rotation.x = 89;
-		if (t.rotation.x <= -89) t.rotation.x = -89;
-
-		c.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-		if (window.isKeyPressed(GLFW_KEY_W)) c.velocity = -t.forward();
-		if (window.isKeyPressed(GLFW_KEY_S)) c.velocity = t.forward();
-		if (window.isKeyPressed(GLFW_KEY_D)) c.velocity = t.right();
-		if (window.isKeyPressed(GLFW_KEY_A)) c.velocity = -t.right();
-		t.position += c.velocity * c.speed * static_cast<float>(delta);
-
-		shader.setUniform("view", glm::inverse(t.get()));
-		shader.setUniform("view_pos", t.position);
-
-		//OUTPUT(glm::to_string(t.position));
-	}
-}
-
 void setLights(ENG::Entities& entities, ENG::Shader& shader)
 {
-	auto& ts = entities.getPool<Components::Transform>();
-	auto& ls = entities.getPool<Components::Light>();
+	auto& ts = entities.getPool<CS::Transform>();
+	auto& ls = entities.getPool<CS::Light>();
 
-	std::vector<ENG::EntityID> ents = entities.entitiesWith<Components::Transform, Components::Light>();
+	std::vector<ENG::EntityID> ents = entities.entitiesWith<CS::Transform, CS::Light>();
 	for (std::size_t i = 0; i < ents.size(); i++)
 	{
 		shader.setUniform("lights[" + std::to_string(i) + "].position", ts[ents[i]].position);
@@ -105,77 +62,86 @@ void setLights(ENG::Entities& entities, ENG::Shader& shader)
 
 int main()
 {
-	ENG::Window window(glm::ivec2(WIDTH, HEIGHT), "Final Project");
-	window.lockMouse(true);
+	glm::ivec2 window_size(1920, 1080);
+	glm::mat4 projection = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
 
-	std::string vertex = ENG::readTextFile("Resources/Shaders/simple.vert");
-	std::string fragment = ENG::readTextFile("Resources/Shaders/simple.frag");
-	ENG::Shader shader(vertex, fragment);
-	shader.setUniform("projection", glm::perspective(90.0f, static_cast<float>(WIDTH) / HEIGHT, 0.1f, 500.0f));
-	shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-
+	ENG::Window window(window_size, "ENG");
+	ENG::Entities entities;
 	ENG::Resources resources;
-	resources.loadMeshes({ "Resources/Meshes/skull.obj", "Resources/Meshes/cube.obj", "Resources/Meshes/car.obj" });
+	
+	ENG::Shader def_shader(
+		ENG::readTextFile("Resources/Shaders/simple.vert"),
+		ENG::readTextFile("Resources/Shaders/simple.frag")
+	);
+
+	ENG::Shader skybox_shader(
+		ENG::readTextFile("Resources/Shaders/skybox.vert"),
+		ENG::readTextFile("Resources/Shaders/skybox.frag")
+	);
+
+	ENG::CubeMap cubemap;
+	cubemap.create({
+		"Resources/Textures/right.png",
+		"Resources/Textures/left.png",
+		"Resources/Textures/up.png",
+		"Resources/Textures/down.png",
+		"Resources/Textures/back.png",
+		"Resources/Textures/front.png"
+	});
+
+	resources.loadMeshes({ "Resources/Meshes/cube.obj", "Resources/Meshes/car.obj" });
 	resources.loadTextures({ "Resources/Textures/skull.jpg", "Resources/Textures/rock.png"  });
 
-	ENG::Entities entities;
-	entities.addComponentPools<Components::Transform, Components::Model, Components::Controllable, Components::Light>();
+	def_shader.setUniform("projection", projection);
+	def_shader.setUniform("ambient", { 0.2f, 0.2f, 0.2f });
 
-	ENG::EntityID player = entities.addEntity<Components::Transform, Components::Controllable, Components::Light>();
-	entities.getComponent<Components::Light>(player).colour = { 10.0f, 10.0f, 0.0f };
+	skybox_shader.setUniform("projection", projection);
 
-	ENG::EntityID light = entities.addEntity<Components::Transform, Components::Light, Components::Model>();
-	entities.getComponent<Components::Light>(light).colour = { 50.0f, 0.0f, 50.0f };
-	Components::Transform& t1 = entities.getComponent<Components::Transform>(light);
-	t1.position = { 0.0f, 5.0f, 10.0f };
-	t1.scale = { 0.1f, 0.1f, 0.1f };
-	auto& m = entities.getComponent<Components::Model>(light);
-	m.mesh = &resources.mesh("cube.obj");
-	m.texture = &resources.texture("rock.png");
-	m.shader = &shader;
+	entities.addComponentPools<CS::Transform, CS::Model, CS::Light>();
 
-	for (int i = 0; i < 5; i++)
-	{
-		for (int j = 0; j < 5; j++)
-		{
-			ENG::EntityID e = entities.addEntity<Components::Transform, Components::Model>();
-			Components::Model& m = entities.getComponent<Components::Model>(e);
-			m.mesh = &resources.mesh("skull.obj");
-			m.texture = &resources.texture("skull.jpg");
-			m.shader = &shader;
+	auto e = entities.addEntity();
+	auto& m = entities.addComponent<CS::Model>(e);
+	m.mesh = &resources.mesh("car.obj");
+	m.texture = &resources.texture("skull.jpg");
+	m.shader = &def_shader;
 
-			Components::Transform& t = entities.getComponent<Components::Transform>(e);
-			t.position.x += i * 5;
-			t.position.z += j * 5;
-			t.scale = { 0.1f, 0.1f, 0.1f };
-		}
-	}
+	auto& t = entities.addComponent<CS::Transform>(e);
+	t.position = { 0.0f, 0.0f, -5.0f };
+	t.scale = { 0.1f, 0.1f, 0.1f };
+	t.rotation = { 0.0f, 90.0f, 0.0f };
 
-	double current = 0.0f, last = 0.0f, delta = 0.0f;
+	auto p = entities.addEntity<CS::Transform, CS::Light>();
+	auto& t2 = entities.getComponent<CS::Transform>(p);
+	def_shader.setUniform("view_pos", t2.position);
+	def_shader.setUniform("view", glm::inverse(t2.get()));
+
+	skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(t2.get()))));
+
 	while (!window.shouldClose())
 	{
-		current = glfwGetTime();
-		delta = current - last;
-		last = current;
-
 		if (window.isKeyPressed(GLFW_KEY_ESCAPE))
 			window.close();
 
-		t1.position.x += 5.0f * static_cast<float>(delta);
-		if (t1.position.x >= 20.0f)
-			t1.position.x = 0.0f;
+		setLights(entities, def_shader);
 
-		move(entities, window, shader, delta);
-		setLights(entities, shader);
+		t2.rotation.y += 0.2f;
+		def_shader.setUniform("view", glm::inverse(t2.get()));
+		skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(t2.get()))));
 
-		window.clear(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-		draw(entities, delta);
+		window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
+
+		glDepthMask(GL_FALSE);
+		cubemap.bind();
+		skybox_shader.bind();
+		resources.mesh("cube.obj").bind();
+		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
+		glDepthMask(GL_TRUE);
+
+		drawModels(entities);
 		window.display();
 
 		glfwPollEvents();
 	}
 
-	glfwTerminate();
-	//std::cin.get();
 	return 0;
 }

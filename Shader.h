@@ -15,12 +15,13 @@ namespace ENG
 		Shader();
 		Shader(const std::string& vertex, const std::string& fragment);
 		void create(const std::string& vertex, const std::string& fragment);
-		void bind();
-		void unbind();
 		void setUniform(const std::string& name, const glm::mat4& value);
 		void setUniform(const std::string& name, const glm::vec3& value);
 		void setUniform(const std::string& name, const float value);
 		void setUniform(const std::string& name, const int value);
+		void bind();
+		void unbind();
+		void cleanUp();
 
 	private:
 		void compileErrorCheck(const GLuint shader_id);

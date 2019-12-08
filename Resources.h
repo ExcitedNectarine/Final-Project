@@ -12,6 +12,8 @@ namespace ENG
 	class Resources
 	{
 	public:
+		~Resources();
+		void cleanup();
 		void loadMeshes(const std::vector<std::string>& files);
 		void loadTextures(const std::vector<std::string>& files);
 		Mesh& mesh(const std::string& file);

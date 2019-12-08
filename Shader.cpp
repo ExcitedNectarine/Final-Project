@@ -48,9 +48,6 @@ namespace ENG
 		glUseProgram(id);
 	}
 
-	void Shader::bind() { glUseProgram(id); }
-	void Shader::unbind() { glUseProgram(NULL); }
-
 	void Shader::setUniform(const std::string& name, const glm::mat4& value)
 	{
 		GLint uniform_id = glGetUniformLocation(id, name.c_str());
@@ -82,6 +79,10 @@ namespace ENG
 		glUniform1i(uniform_id, value);
 		glUseProgram(NULL);
 	}
+
+	void Shader::bind() { glUseProgram(id); }
+	void Shader::unbind() { glUseProgram(NULL); }
+	void Shader::cleanUp() { glDeleteProgram(id); }
 
 	void Shader::compileErrorCheck(const GLuint shader_id)
 	{

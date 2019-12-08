@@ -5,18 +5,14 @@
 
 namespace ENG
 {
-	Texture::Texture() { glGenTextures(1, &id); }
-	Texture::~Texture() { glDeleteTextures(1, &id); }
-
 	void Texture::load(const std::string& filename)
 	{
+		glGenTextures(1, &id);
+
 		stbi_set_flip_vertically_on_load(1);
 
 		unsigned char* data = stbi_load(filename.c_str(), &size.x, &size.y, &channels, 4);
 		if (!data)
-			throw std::exception();
-
-		if (!id)
 			throw std::exception();
 
 		glBindTexture(GL_TEXTURE_2D, id);
@@ -32,4 +28,5 @@ namespace ENG
 
 	void Texture::bind() { glBindTexture(GL_TEXTURE_2D, id); }
 	void Texture::unbind() { glBindTexture(GL_TEXTURE_2D, NULL); }
+	void Texture::cleanup() { glDeleteTextures(1, &id); }
 }

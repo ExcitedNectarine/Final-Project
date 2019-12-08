@@ -2,9 +2,6 @@
 
 namespace ENG
 {
-	Mesh::Mesh() {}
-	Mesh::~Mesh() { glDeleteVertexArrays(1, &id); }
-
 	void Mesh::setVertices(const std::vector<Vertex>& new_vertices)
 	{
 		vertices = new_vertices;
@@ -82,4 +79,5 @@ namespace ENG
 	std::size_t Mesh::vertexCount() { return vertices.size(); }
 	void Mesh::bind() { glBindVertexArray(id); }
 	void Mesh::unbind() { glBindVertexArray(NULL); }
+	void Mesh::cleanup() { glDeleteVertexArrays(1, &id); }
 }

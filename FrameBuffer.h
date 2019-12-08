@@ -8,10 +8,14 @@ namespace ENG
 	class FrameBuffer
 	{
 	public:
-		FrameBuffer();
-		~FrameBuffer();
+		void create(const glm::ivec2& size);
+		void bind();
+		void unbind();
+		void cleanup(); 
 
 	private:
 		GLuint id;
+		GLuint tex_id;
+		GLuint depth_id;
 	};
 }

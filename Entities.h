@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <bitset>
+#include "Output.h"
 
 namespace ENG
 {
@@ -14,6 +15,7 @@ namespace ENG
 	// Don't ask me how it works.
 	using expand = int[];
 	#define FOR_EACH_T(instruction) (void)expand { 0, (instruction, 0)...}
+	#define BASE_ASSERT(base, type, text) static_assert(std::is_base_of<base, type>::value, text)
 
 	// Declaring types
 	using EntityID = uint16_t;
@@ -65,58 +67,51 @@ namespace ENG
 			return entities;
 		}
 
-		template <typename... ComponentType> void addComponentPools()
-		{
-			//FOR_EACH_T(static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'."));
-			FOR_EACH_T(addComponentPool<ComponentType>());
-		}
-
+		template <typename... ComponentType> void addComponentPools() { FOR_EACH_T(addComponentPool<ComponentType>()); }
 		template <typename ComponentType> void addComponentPool()
 		{
-			static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'.");
+			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
+			OUTPUT("Adding component pool '" + std::string(typeid(ComponentType).name()) + "'");
 			table[ComponentType::ID] = std::make_shared<ComponentPool<ComponentType>>();
 		}
 
 		template <typename ComponentType> ComponentType& addComponent(const EntityID id)
 		{
-			static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'.");
-
+			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
+			OUTPUT("Adding component '" + std::string(typeid(ComponentType).name()) + "' to entity ID " + std::to_string(id));
 			has[id][ComponentType::ID] = 1;
 			ComponentMap<ComponentType>& pool = getPool<ComponentType>();
 			pool.insert({ id, ComponentType() });
-			return pool[id];
+			return pool.at(id);
 		}
 
 		template <typename ComponentType> ComponentType removeComponent(const EntityID id)
 		{
-			static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'.");
-
+			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
 			has[id][ComponentType::ID] = 0;
 			ComponentMap<ComponentType>& pool = getPool<ComponentType>();
-			ComponentType c = pool[id];
+			ComponentType c = pool.at(id);
 			pool.erase(id);
 			return c;
 		}
 
 		template <typename ComponentType> ComponentType& getComponent(const EntityID id)
 		{
-			static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'.");
-
+			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
 			ComponentMap<ComponentType>& pool = getPool<ComponentType>();
-			return pool[id];
+			return pool.at(id);
 		}
 
 		template <typename ComponentType> inline bool hasComponent(const EntityID id)
 		{
-			static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'.");
-
+			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
 			ComponentMap<ComponentType>& pool = getPool<ComponentType>();
 			return pool.find(id) != pool.end();
 		}
 
 		template <typename ComponentType> inline ComponentMap<ComponentType>& getPool()
 		{
-			static_assert(std::is_base_of<BaseComponent, ComponentType>::value, "'ComponentType' must inherit 'BaseComponent'.");
+			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
 			return (*std::static_pointer_cast<ComponentPool<ComponentType>>(table[ComponentType::ID])).pool;
 		}
 

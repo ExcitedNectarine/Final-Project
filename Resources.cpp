@@ -2,11 +2,21 @@
 
 namespace ENG
 {
+	Resources::~Resources() { cleanup(); }
+
+	void Resources::cleanup()
+	{
+		for (auto& p : meshes)
+			p.second.cleanup();
+		for (auto& p : textures)
+			p.second.cleanup();
+	}
+
 	void Resources::loadMeshes(const std::vector<std::string>& files)
 	{
 		for (const std::string& mesh : files) // TODO: Run each iteration as a seperate task using std::async
 		{
-			OUTPUT("Loading mesh: " << mesh);
+			OUTPUT("Loading mesh '" << mesh << "'");
 
 			std::string file = splitText(mesh, '/').back();
 			meshes.insert({ file, Mesh() });
@@ -18,7 +28,7 @@ namespace ENG
 	{
 		for (const std::string& texture : files)
 		{
-			OUTPUT("Loading texture: " << texture);
+			OUTPUT("Loading texture '" << texture << "'");
 
 			std::string file = splitText(texture, '/').back();
 			textures.insert({ file, Texture() });

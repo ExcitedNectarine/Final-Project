@@ -124,6 +124,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="Entities.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="main.cpp" />
@@ -136,6 +137,7 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CubeMap.h" />
     <ClInclude Include="Entities.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="Mesh.h" />
