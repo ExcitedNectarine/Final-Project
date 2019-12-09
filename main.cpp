@@ -89,8 +89,8 @@ int main()
 		"Resources/Textures/front.png"
 	});
 
-	resources.loadMeshes({ "Resources/Meshes/cube.obj", "Resources/Meshes/car.obj" });
-	resources.loadTextures({ "Resources/Textures/skull.jpg", "Resources/Textures/rock.png"  });
+	resources.loadMeshes({ "Resources/Meshes/cube.obj", "Resources/Meshes/lorry.obj", "Resources/Meshes/skull.obj", "Resources/Meshes/car.obj" });
+	resources.loadTextures({ "Resources/Textures/lorry.jpg", "Resources/Textures/rock.png"  });
 
 	def_shader.setUniform("projection", projection);
 	def_shader.setUniform("ambient", { 0.2f, 0.2f, 0.2f });
@@ -101,13 +101,12 @@ int main()
 
 	auto e = entities.addEntity();
 	auto& m = entities.addComponent<CS::Model>(e);
-	m.mesh = &resources.mesh("car.obj");
-	m.texture = &resources.texture("skull.jpg");
+	m.mesh = &resources.mesh("skull.obj");
+	m.texture = &resources.texture("lorry.jpg");
 	m.shader = &def_shader;
 
 	auto& t = entities.addComponent<CS::Transform>(e);
 	t.position = { 0.0f, 0.0f, -5.0f };
-	t.scale = { 0.1f, 0.1f, 0.1f };
 	t.rotation = { 0.0f, 90.0f, 0.0f };
 
 	auto p = entities.addEntity<CS::Transform, CS::Light>();
@@ -124,7 +123,8 @@ int main()
 
 		setLights(entities, def_shader);
 
-		t2.rotation.y += 0.2f;
+		t.rotation.y += 0.2f;
+		t2.rotation.y -= -0.2f;
 		def_shader.setUniform("view", glm::inverse(t2.get()));
 		skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(t2.get()))));
 
