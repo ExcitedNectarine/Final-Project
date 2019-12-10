@@ -31,16 +31,19 @@ namespace ENG
 
 	void Resources::loadTextures(const std::vector<std::string>& files)
 	{
-		std::map<std::string, std::future<Texture>> futures;
+		std::map<std::string, std::future<Image>> futures;
 		for (const std::string& texture : files)
 		{
 			OUTPUT("Loading texture '" << texture << "'");
 
 			std::string file = splitText(texture, '/').back();
-			textures.insert({ file, Texture() });
-			textures.at(file).load(texture);
+			futures[file] = std::async(std::launch::async, loadImage, texture);
+		}
 
-			futures[file] = std::async(std::launch::async, [texture]() { Texture t; t.load(texture); return t; });
+		for (auto& f : futures)
+		{
+			textures.insert({ f.first, Texture() });
+			textures.at(f.first).load(f.second.get());
 		}
 	}
 

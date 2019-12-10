@@ -7,18 +7,15 @@ namespace ENG
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-		glm::ivec2 size;
-		int channels;
-		unsigned char* data;
-
+		Image image;
 		for (GLuint i = 0; i < 6; i++)
 		{
-			data = stbi_load(files[i].c_str(), &size.x, &size.y, &channels, 4);
-			if (!data)
+			image = loadImage(files[i].c_str());
+			if (!image.pixels)
 				throw std::exception("apples");
 
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			stbi_image_free(data);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, image.size.x, image.size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.pixels);
+			image.cleanup();
 		}
 
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

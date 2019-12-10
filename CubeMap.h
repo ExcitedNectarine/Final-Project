@@ -4,7 +4,7 @@
 #include <array>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
-#include <stb_image.h>
+#include "Image.h"
 
 namespace ENG
 {

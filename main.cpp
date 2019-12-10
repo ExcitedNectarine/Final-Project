@@ -62,6 +62,8 @@ void setLights(ENG::Entities& entities, ENG::Shader& shader)
 
 int main()
 {
+	stbi_set_flip_vertically_on_load(1);
+
 	glm::ivec2 window_size(1920, 1080);
 	glm::mat4 projection = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
 
@@ -89,8 +91,8 @@ int main()
 		"Resources/Textures/front.png"
 	});
 
-	resources.loadMeshes({ "Resources/Meshes/cube.obj", "Resources/Meshes/lorry.obj", "Resources/Meshes/skull.obj", "Resources/Meshes/car.obj" });
-	resources.loadTextures({ "Resources/Textures/lorry.jpg", "Resources/Textures/rock.png"  });
+	resources.loadMeshes({ "Resources/Meshes/cube.obj", "Resources/Meshes/lorry.obj", "Resources/Meshes/car.obj", "Resources/Meshes/skull.obj" });
+	resources.loadTextures({ "Resources/Textures/lorry.jpg", "Resources/Textures/rock.png", "Resources/Textures/skull.jpg" });
 
 	def_shader.setUniform("projection", projection);
 	def_shader.setUniform("ambient", { 0.2f, 0.2f, 0.2f });
@@ -102,7 +104,7 @@ int main()
 	auto e = entities.addEntity();
 	auto& m = entities.addComponent<CS::Model>(e);
 	m.mesh = &resources.mesh("skull.obj");
-	m.texture = &resources.texture("lorry.jpg");
+	m.texture = &resources.texture("skull.jpg");
 	m.shader = &def_shader;
 
 	auto& t = entities.addComponent<CS::Transform>(e);
