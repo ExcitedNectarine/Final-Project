@@ -23,5 +23,6 @@ namespace ENG
 
 	private:
 		GLFWwindow* window;
+		glm::dvec2 mouse_pos;
 	};
 }

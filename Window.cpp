@@ -34,7 +34,6 @@ namespace ENG
 
 	glm::dvec2 Window::getMousePos()
 	{
-		glm::dvec2 mouse_pos;
 		glfwGetCursorPos(window, &mouse_pos.x, &mouse_pos.y);
 		return mouse_pos;
 	}

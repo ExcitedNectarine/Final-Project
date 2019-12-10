@@ -3,7 +3,6 @@
 #include <string>
 #include <array>
 #include <GL/glew.h>
-#include <glm/glm.hpp>
 #include "Image.h"
 
 namespace ENG

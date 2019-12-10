@@ -31,6 +31,7 @@ namespace ENG
 
 	void Resources::loadTextures(const std::vector<std::string>& files)
 	{
+		stbi_set_flip_vertically_on_load(1);
 		std::map<std::string, std::future<Image>> futures;
 		for (const std::string& texture : files)
 		{
@@ -43,7 +44,10 @@ namespace ENG
 		for (auto& f : futures)
 		{
 			textures.insert({ f.first, Texture() });
-			textures.at(f.first).load(f.second.get());
+
+			Image image = f.second.get();
+			textures.at(f.first).load(image);
+			image.cleanup();
 		}
 	}
 
