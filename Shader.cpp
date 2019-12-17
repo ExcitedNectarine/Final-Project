@@ -16,14 +16,14 @@ namespace ENG
 		glShaderSource(vertex_id, 1, &cvertex, NULL);
 		glCompileShader(vertex_id);
 		compileErrorCheck(vertex_id);
-		//OUTPUT("Vertex shader compiled successfully.");
+		OUTPUT("Vertex shader compiled successfully.");
 
 		// Craate fragment shader.
 		GLuint fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(fragment_id, 1, &cfragment, NULL);
 		glCompileShader(fragment_id);
 		compileErrorCheck(fragment_id);
-		//OUTPUT("Fragment shader compiled successfully.");
+		OUTPUT("Fragment shader compiled successfully.");
 
 		// Create shader program.
 		id = glCreateProgram();
@@ -37,7 +37,7 @@ namespace ENG
 
 		glLinkProgram(id);
 		linkErrorCheck();
-		//OUTPUT("Shader linked successfully.");
+		OUTPUT("Shader linked successfully.");
 
 		// Clean up.
 		glDetachShader(id, vertex_id);
@@ -96,7 +96,7 @@ namespace ENG
 			std::vector<GLchar> log(max);
 			glGetShaderInfoLog(shader_id, max, &max, &log[0]);
 
-			OUTPUT_ERROR(&log[0]);
+			throw std::exception(&log[0]);
 		}
 	}
 
@@ -112,7 +112,7 @@ namespace ENG
 			std::vector<GLchar> log(max);
 			glGetProgramInfoLog(id, max, &max, &log[0]);
 
-			OUTPUT_ERROR(&log[0]);
+			throw std::exception(&log[0]);
 		}
 	}
 }

@@ -20,7 +20,8 @@ namespace ENG
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_id, 0);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_id);
 
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) OUTPUT_ERROR("FRAMEBUFFER FAILED");
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			throw std::exception("ENG::FrameBuffer failed.");
 	}
 
 	void FrameBuffer::bind() { glBindFramebuffer(GL_FRAMEBUFFER, id); }
