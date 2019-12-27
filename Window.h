@@ -13,13 +13,13 @@ namespace ENG
 		Window();
 		Window(const glm::ivec2& size, const std::string& title);
 		void create(const glm::ivec2& size, const std::string& title);
-		bool shouldClose();
 		void clear(const glm::vec4& colour);
-		void display();
-		void close();
-		bool isKeyPressed(int key);
 		glm::dvec2 getMousePos();
 		void lockMouse(const bool lock);
+		void display();
+		bool shouldClose();
+		void close();
+		bool isKeyPressed(int key);
 
 	private:
 		GLFWwindow* window;

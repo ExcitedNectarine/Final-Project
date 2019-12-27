@@ -27,11 +27,6 @@ namespace ENG
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
-	void Window::display() { glfwSwapBuffers(window); }
-	bool Window::shouldClose() { return static_cast<bool>(glfwWindowShouldClose(window)); }
-	void Window::close() { glfwSetWindowShouldClose(window, true); }
-	bool Window::isKeyPressed(int key) { return glfwGetKey(window, key); }
-
 	glm::dvec2 Window::getMousePos()
 	{
 		glfwGetCursorPos(window, &mouse_pos.x, &mouse_pos.y);
@@ -43,4 +38,9 @@ namespace ENG
 		if (lock) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
+
+	void Window::display() { glfwSwapBuffers(window); }
+	bool Window::shouldClose() { return static_cast<bool>(glfwWindowShouldClose(window)); }
+	void Window::close() { glfwSetWindowShouldClose(window, true); }
+	bool Window::isKeyPressed(int key) { return glfwGetKey(window, key); }
 }

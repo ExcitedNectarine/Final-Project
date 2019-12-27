@@ -9,6 +9,8 @@ namespace ENG
 	{
 		Image image;
 		image.pixels = stbi_load(filename.c_str(), &image.size.x, &image.size.y, &image.channels, 4);
+		if (!image.pixels)
+			throw std::exception(std::string("Failed to load image: " + filename).c_str());
 		return image;
 	}
 }

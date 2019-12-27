@@ -8,6 +8,7 @@
 #include "Resources.h"
 #include "CubeMap.h"
 #include "FrameBuffer.h"
+#include "Settings.h"
 #include <glm/gtx/string_cast.hpp>
 
 namespace CS
@@ -63,7 +64,9 @@ void setLights(ENG::Entities& entities, ENG::Shader& shader)
 
 void run()
 {
-	glm::ivec2 window_size(1920, 1080);
+	ENG::Settings s("Resources/settings.set");
+
+	glm::ivec2 window_size(atoi(s.get("width").c_str()), atoi(s.get("height").c_str()));
 	glm::mat4 projection = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
 
 	ENG::Window window(window_size, "ENG");
@@ -71,8 +74,8 @@ void run()
 	ENG::Resources resources;
 
 	ENG::Shader def_shader(
-		ENG::readTextFile("Resources/Shaders/simple.vert"),
-		ENG::readTextFile("Resources/Shaders/simple.frag")
+		ENG::readTextFile("Resources/Shaders/default.vert"),
+		ENG::readTextFile("Resources/Shaders/default.frag")
 	);
 
 	ENG::Shader skybox_shader(
@@ -129,52 +132,10 @@ void run()
 	}
 
 	auto p = entities.addEntity<CS::Transform, CS::Light>();
-	auto& t2 = entities.getComponent<CS::Transform>(p);
-	def_shader.setUniform("view_pos", t2.position);
-	def_shader.setUniform("view", glm::inverse(t2.get()));
-
-	skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(t2.get()))));
-
-	// FRAMEBUFFER =======================================================================
-
-	ENG::FrameBuffer buf;
-	buf.create(window_size);
-
-	ENG::Mesh& m = resources.mesh("cube.obj");
-	ENG::Transform t;
-	ENG::Transform c;
-	t.position.z = -2;
-	c.position = { 0, 2, 0 };
-	c.rotation.x = 31;
-
-	std::vector<GLfloat> positions = {
-		-1, 1,
-		1, -1,
-		-1, -1,
-		-1, 1,
-		1, 1,
-		1, -1
-	};
-
-	GLuint position_buffer;
-	glGenBuffers(1, &position_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-	glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(GLfloat), &positions.at(0), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, NULL);
-
-	GLuint fb_vao;
-	glGenVertexArrays(1, &fb_vao);
-	glBindVertexArray(fb_vao);
-
-	// Bind position buffer to vertex array.
-	glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, NULL);
-
-	buf.unbind();
-
-	// FRAMEBUFFER ========================================================================
+	auto& pview = entities.getComponent<CS::Transform>(p);
+	def_shader.setUniform("view_pos", pview.position);
+	def_shader.setUniform("view", glm::inverse(pview.get()));
+	skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(pview.get()))));
 
 	while (!window.shouldClose())
 	{
@@ -183,10 +144,13 @@ void run()
 
 		setLights(entities, def_shader);
 
-		skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(t2.get()))));
-
+		def_shader.setUniform("view_pos", pview.position);
+		def_shader.setUniform("view", glm::inverse(pview.get()));
+		skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(pview.get()))));
+		
 		window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
+		// draw skybox
 		glDepthMask(GL_FALSE);
 		cubemap.bind();
 		skybox_shader.bind();
@@ -194,29 +158,8 @@ void run()
 		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
 		glDepthMask(GL_TRUE);
 
-		//drawModels(entities);
-
-		def_shader.setUniform("view", glm::inverse(c.get()));
-		buf.bind();
-		fb_shader.bind();
-		glBindVertexArray(fb_vao);
 		drawModels(entities);
-		glBindVertexArray(NULL);
-		fb_shader.unbind();
-		buf.unbind();
-
-		t.rotation.y -= 0.2f;
-
-		def_shader.setUniform("view", glm::inverse(t2.get()));
-		buf.bind();
-		m.bind();
-		def_shader.bind();
-		def_shader.setUniform("transform", t.get());
-		glDrawArrays(GL_TRIANGLES, 0, m.vertexCount());
-		def_shader.unbind();
-		m.unbind();
-		buf.unbind();
-
+		
 		window.display();
 
 		glfwPollEvents();
