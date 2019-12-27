@@ -18,6 +18,9 @@ namespace ENG
 	{
 		std::ifstream file(filename.c_str());
 
+		if (!file.is_open())
+			throw std::exception(std::string("ENG::readTextFile failed to open file '" + filename + "'.").c_str());
+
 		std::string contents;
 		std::string line;
 

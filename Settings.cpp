@@ -21,8 +21,18 @@ namespace ENG
 	
 	void Settings::write(const std::string& filename)
 	{
+		std::ofstream file;
+		file.open(filename);
+
+		if (!file.is_open())
+			throw std::exception(std::string("ENG::Settings::write failed to open file '" + filename + "'.").c_str());
+
+		file.clear();
+		for (auto& p : settings)
+			file << p.first << "=" << p.second << std::endl;
+		file.close();
 	}
 	
 	std::string Settings::get(const std::string& key) { return settings.at(key); }
-	void Settings::set(const std::string& key, const std::string& value) {}
+	void Settings::set(const std::string& key, const std::string& value) { settings[key] = value; }
 }
