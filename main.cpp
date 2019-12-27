@@ -74,18 +74,18 @@ void run()
 	ENG::Resources resources;
 
 	ENG::Shader def_shader(
-		ENG::readTextFile("Resources/Shaders/default.vert"),
-		ENG::readTextFile("Resources/Shaders/default.frag")
+		"Resources/Shaders/default.vert",
+		"Resources/Shaders/default.frag"
 	);
 
 	ENG::Shader skybox_shader(
-		ENG::readTextFile("Resources/Shaders/skybox.vert"),
-		ENG::readTextFile("Resources/Shaders/skybox.frag")
+		"Resources/Shaders/skybox.vert",
+		"Resources/Shaders/skybox.frag"
 	);
 
 	ENG::Shader fb_shader(
-		ENG::readTextFile("Resources/Shaders/framebuffer.vert"),
-		ENG::readTextFile("Resources/Shaders/framebuffer.frag")
+		"Resources/Shaders/framebuffer.vert",
+		"Resources/Shaders/framebuffer.frag"
 	);
 
 	ENG::CubeMap cubemap;
