@@ -15,13 +15,16 @@ namespace ENG
 	void Resources::loadMeshes(const std::vector<std::string>& files)
 	{
 		std::map<std::string, std::future<std::vector<Vertex>>> futures;
-		for (const std::string& mesh : files) // TODO: Run each iteration as a seperate task using std::async
+
+		// A threaded for loop, each mesh is loaded asynchronously, reducing loading times.
+		for (const std::string& mesh : files)
 		{
 			OUTPUT("Loading mesh '" << mesh << "'");
 			std::string file = splitText(mesh, '/').back();
-			futures[file] = std::async(std::launch::async, [mesh]() { return loadOBJ(readTextFile(mesh)); });
+			futures[file] = std::async(std::launch::async, [mesh]() { return loadOBJ(mesh); });
 		}
 
+		// Must retrieve the loaded mesh afterwards.
 		for (auto& f : futures)
 		{
 			meshes.insert({ f.first, Mesh() });
@@ -33,6 +36,8 @@ namespace ENG
 	{
 		stbi_set_flip_vertically_on_load(1);
 		std::map<std::string, std::future<Image>> futures;
+
+		// Same as the loop for loading meshes. Asynchronously loads textures.
 		for (const std::string& texture : files)
 		{
 			OUTPUT("Loading texture '" << texture << "'");

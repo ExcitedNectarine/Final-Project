@@ -142,6 +142,9 @@ void run()
 		if (window.isKeyPressed(GLFW_KEY_ESCAPE))
 			window.close();
 
+		if (window.isKeyPressed(GLFW_KEY_SPACE))
+			entities.clear();
+
 		setLights(entities, def_shader);
 
 		def_shader.setUniform("view_pos", pview.position);

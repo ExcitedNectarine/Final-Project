@@ -11,7 +11,7 @@ namespace ENG
 		std::vector<GLfloat> normals;
 
 		// Add vertices to buffers.
-		for (Vertex& vertex : vertices)
+		for (const Vertex& vertex : vertices)
 		{
 			positions.push_back(vertex.position.x);
 			positions.push_back(vertex.position.y);

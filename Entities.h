@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <bitset>
+#include <cassert>
 #include "Output.h"
 
 namespace ENG
@@ -46,10 +47,12 @@ namespace ENG
 	public:
 		EntityID addEntity();
 		void removeEntity(const EntityID id);
+		void clear();
 
 		template <typename... ComponentType> EntityID addEntity()
 		{
 			ids++;
+			assert(ids <= MAX_ENTITIES);
 			FOR_EACH_T(addComponent<ComponentType>(ids));
 			return ids;
 		}
@@ -61,7 +64,7 @@ namespace ENG
 
 			std::vector<EntityID> entities;
 			for (auto& pair : has)
-				if ((mask & pair.second) == mask)
+				if ((mask & pair.second) == mask) // Fast bitwise AND determines if an entity has the required components
 					entities.push_back(pair.first);
 
 			return entities;
@@ -105,8 +108,7 @@ namespace ENG
 		template <typename ComponentType> inline bool hasComponent(const EntityID id)
 		{
 			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
-			ComponentMap<ComponentType>& pool = getPool<ComponentType>();
-			return pool.find(id) != pool.end();
+			return has[id][ComponentType::ID];
 		}
 
 		template <typename ComponentType> inline ComponentMap<ComponentType>& getPool()

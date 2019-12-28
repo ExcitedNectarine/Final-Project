@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "Shader.h"
 #include "Entities.h"
+#include "Settings.h"
 
 namespace ENG
 {
@@ -12,5 +13,6 @@ namespace ENG
 		Window window;
 		Entities entities;
 		Shader def_shader;
+		Settings settings;
 	};
 }

@@ -33,9 +33,9 @@ namespace ENG
 		return contents;
 	}
 
-	std::vector<Vertex> loadOBJ(const std::string& model)
+	std::vector<Vertex> loadOBJ(const std::string& filename)
 	{
-		std::stringstream stream(model);
+		std::stringstream stream(readTextFile(filename));
 		std::string line;
 
 		// Used to store vertices for indexing.

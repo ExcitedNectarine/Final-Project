@@ -7,6 +7,8 @@ namespace ENG
 
 	void Shader::create(const std::string& vertex_file, const std::string& fragment_file)
 	{
+		OUTPUT("Loading and compiling shader files '" + vertex_file + "', '" + fragment_file + "'.");
+
 		// Put strings into char arrays.
 		std::string vertex_str = readTextFile(vertex_file);
 		std::string fragment_str = readTextFile(fragment_file);
@@ -19,14 +21,12 @@ namespace ENG
 		glShaderSource(vertex_id, 1, &cvertex, NULL);
 		glCompileShader(vertex_id);
 		compileErrorCheck(vertex_id);
-		OUTPUT("Vertex shader compiled successfully.");
 
 		// Craate fragment shader.
 		GLuint fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(fragment_id, 1, &cfragment, NULL);
 		glCompileShader(fragment_id);
 		compileErrorCheck(fragment_id);
-		OUTPUT("Fragment shader compiled successfully.");
 
 		// Create shader program.
 		id = glCreateProgram();
@@ -40,7 +40,6 @@ namespace ENG
 
 		glLinkProgram(id);
 		linkErrorCheck();
-		OUTPUT("Shader linked successfully.");
 
 		// Clean up.
 		glDetachShader(id, vertex_id);

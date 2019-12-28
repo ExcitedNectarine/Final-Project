@@ -28,7 +28,7 @@ namespace ENG
 			throw std::exception(std::string("ENG::Settings::write failed to open file '" + filename + "'.").c_str());
 
 		file.clear();
-		for (auto& p : settings)
+		for (const auto& p : settings)
 			file << p.first << "=" << p.second << std::endl;
 		file.close();
 	}
