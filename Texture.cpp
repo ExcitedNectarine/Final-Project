@@ -5,7 +5,7 @@
 
 namespace ENG
 {
-	void Texture::load(const Image& image)
+	void Texture::createFromImage(const Image& image)
 	{
 		glGenTextures(1, &id);
 

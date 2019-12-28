@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include "Tools.h"
+#include "Output.h"
 
 namespace ENG
 {

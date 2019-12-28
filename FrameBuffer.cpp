@@ -2,6 +2,8 @@
 
 namespace ENG
 {
+	FrameBuffer::FrameBuffer(const glm::ivec2& size) { create(size); }
+
 	void FrameBuffer::create(const glm::ivec2& size)
 	{
 		glGenFramebuffers(1, &id);
@@ -9,7 +11,7 @@ namespace ENG
 
 		glGenTextures(1, &tex_id);
 		glBindTexture(GL_TEXTURE_2D, tex_id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -26,5 +28,7 @@ namespace ENG
 
 	void FrameBuffer::bind() { glBindFramebuffer(GL_FRAMEBUFFER, id); }
 	void FrameBuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, NULL); }
+	void FrameBuffer::bindTex() { glBindTexture(GL_TEXTURE_2D, tex_id); }
+	void FrameBuffer::unbindTex() { glBindTexture(GL_TEXTURE_2D, NULL); }
 	void FrameBuffer::cleanup() { glDeleteFramebuffers(1, &id); }
 }

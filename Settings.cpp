@@ -7,6 +7,8 @@ namespace ENG
 	
 	void Settings::load(const std::string& filename)
 	{
+		OUTPUT("Loading settings file '" + filename + "'.");
+
 		std::stringstream stream(readTextFile(filename));
 		std::string line;
 
@@ -21,6 +23,8 @@ namespace ENG
 	
 	void Settings::write(const std::string& filename)
 	{
+		OUTPUT("Writing settings file '" + filename + "'.");
+
 		std::ofstream file;
 		file.open(filename);
 

@@ -68,25 +68,33 @@ void run()
 
 	glm::ivec2 window_size(s.geti("width"), s.geti("height"));
 	glm::mat4 projection = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
-
 	ENG::Window window(window_size, "ENG");
-	ENG::Entities entities;
+
+	// Shaders ==============================================================================================
+
+	ENG::Shader def_shader("Resources/Shaders/default.vert", "Resources/Shaders/default.frag");
+	ENG::Shader skybox_shader("Resources/Shaders/skybox.vert", "Resources/Shaders/skybox.frag");
+	ENG::Shader fb_shader("Resources/Shaders/framebuffer.vert", "Resources/Shaders/framebuffer.frag");
+
+	def_shader.setUniform("projection", projection);
+	def_shader.setUniform("ambient", { 0.2f, 0.2f, 0.2f });
+	skybox_shader.setUniform("projection", projection);
+
+	// Resources ==============================================================================================
+
 	ENG::Resources resources;
 
-	ENG::Shader def_shader(
-		"Resources/Shaders/default.vert",
-		"Resources/Shaders/default.frag"
-	);
-
-	ENG::Shader skybox_shader(
-		"Resources/Shaders/skybox.vert",
-		"Resources/Shaders/skybox.frag"
-	);
-
-	ENG::Shader fb_shader(
-		"Resources/Shaders/framebuffer.vert",
-		"Resources/Shaders/framebuffer.frag"
-	);
+	resources.loadMeshes({
+		"Resources/Meshes/cube.obj",
+		"Resources/Meshes/lorry.obj",
+		"Resources/Meshes/car.obj"
+		//"Resources/Meshes/skull.obj"
+	});
+	resources.loadTextures({
+		"Resources/Textures/lorry.jpg",
+		"Resources/Textures/rock.png",
+		"Resources/Textures/skull.jpg"
+	});
 
 	ENG::CubeMap cubemap;
 	cubemap.create({
@@ -96,25 +104,11 @@ void run()
 		"Resources/Textures/down.png",
 		"Resources/Textures/back.png",
 		"Resources/Textures/front.png"
-		});
+	});
 
-	resources.loadMeshes({
-		"Resources/Meshes/cube.obj",
-		"Resources/Meshes/lorry.obj",
-		"Resources/Meshes/car.obj"
-		//"Resources/Meshes/skull.obj"
-		});
-	resources.loadTextures({
-		"Resources/Textures/lorry.jpg",
-		"Resources/Textures/rock.png",
-		"Resources/Textures/skull.jpg"
-		});
+	// Entities ==============================================================================================
 
-	def_shader.setUniform("projection", projection);
-	def_shader.setUniform("ambient", { 0.2f, 0.2f, 0.2f });
-
-	skybox_shader.setUniform("projection", projection);
-
+	ENG::Entities entities;
 	entities.addComponentPools<CS::Transform, CS::Model, CS::Light>();
 
 	for (int i = -5; i < 5; i++)
@@ -137,8 +131,22 @@ void run()
 	def_shader.setUniform("view", glm::inverse(pview.get()));
 	skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(pview.get()))));
 
+	// Framebuffer ==============================================================================================
+
+	ENG::FrameBuffer fb({ 800, 600 });
+	ENG::Transform camera;
+	//camera.position = { -5, -5, 5 };
+	//camera.rotation.x = 45;
+
+	ENG::Transform cube_t;
+	cube_t.position.z = -2;
+
+	// Main loop ==============================================================================================
+
 	while (!window.shouldClose())
 	{
+		// Input ==============================================================================================
+
 		if (window.isKeyPressed(GLFW_KEY_ESCAPE))
 			window.close();
 
@@ -147,10 +155,32 @@ void run()
 
 		setLights(entities, def_shader);
 
+		// DRAW TO FRAMEBUFFER ==============================================================================================
+
+		def_shader.setUniform("view_pos", camera.position);
+		def_shader.setUniform("view", glm::inverse(camera.get()));
+		skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(camera.get()))));
+
+		fb.bind();
+
+		// draw skybox
+		glDepthMask(GL_FALSE);
+		cubemap.bind();
+		skybox_shader.bind();
+		resources.mesh("cube.obj").bind();
+		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
+		glDepthMask(GL_TRUE);
+
+		drawModels(entities);
+
+		fb.unbind();
+		
+		// DRAW TO WINDOW ==============================================================================================
+
 		def_shader.setUniform("view_pos", pview.position);
 		def_shader.setUniform("view", glm::inverse(pview.get()));
 		skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(pview.get()))));
-		
+
 		window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
 		// draw skybox
@@ -162,7 +192,15 @@ void run()
 		glDepthMask(GL_TRUE);
 
 		drawModels(entities);
-		
+
+		cube_t.rotation.y += 0.2f;
+		fb.bindTex();
+		resources.mesh("cube.obj").bind();
+		def_shader.setUniform("transform", cube_t.get());
+		def_shader.bind();
+		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
+		fb.unbindTex();
+
 		window.display();
 
 		glfwPollEvents();

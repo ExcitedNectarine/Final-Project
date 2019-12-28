@@ -51,7 +51,7 @@ namespace ENG
 			textures.insert({ f.first, Texture() });
 
 			Image image = f.second.get();
-			textures.at(f.first).load(image);
+			textures.at(f.first).createFromImage(image);
 			image.cleanup();
 		}
 	}

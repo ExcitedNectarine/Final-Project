@@ -10,7 +10,7 @@ namespace ENG
 	class Texture
 	{
 	public:
-		void load(const Image& image);
+		void createFromImage(const Image& image);
 		void bind();
 		void unbind();
 		void cleanup();
