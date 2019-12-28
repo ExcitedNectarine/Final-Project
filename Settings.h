@@ -14,6 +14,7 @@ namespace ENG
 		void load(const std::string& filename);
 		void write(const std::string& filename);
 		std::string get(const std::string& key);
+		int geti(const std::string& key);
 		void set(const std::string& key, const std::string& value);
 
 	private:

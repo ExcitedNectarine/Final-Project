@@ -7,7 +7,7 @@ namespace ENG
 
 	void Shader::create(const std::string& vertex_file, const std::string& fragment_file)
 	{
-		OUTPUT("Loading and compiling shader files '" + vertex_file + "', '" + fragment_file + "'.");
+		OUTPUT("Loading and compiling shaders '" + vertex_file + "', '" + fragment_file + "'.");
 
 		// Put strings into char arrays.
 		std::string vertex_str = readTextFile(vertex_file);

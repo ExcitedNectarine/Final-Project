@@ -66,7 +66,7 @@ void run()
 {
 	ENG::Settings s("Resources/settings.set");
 
-	glm::ivec2 window_size(atoi(s.get("width").c_str()), atoi(s.get("height").c_str()));
+	glm::ivec2 window_size(s.geti("width"), s.geti("height"));
 	glm::mat4 projection = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
 
 	ENG::Window window(window_size, "ENG");
