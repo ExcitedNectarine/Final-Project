@@ -86,6 +86,7 @@ void run()
 
 	resources.loadMeshes({
 		"Resources/Meshes/cube.obj",
+		"Resources/Meshes/cube2.obj",
 		"Resources/Meshes/lorry.obj",
 		"Resources/Meshes/car.obj"
 		//"Resources/Meshes/skull.obj"
@@ -135,8 +136,8 @@ void run()
 
 	ENG::FrameBuffer fb({ 800, 600 });
 	ENG::Transform camera;
-	//camera.position = { -5, -5, 5 };
-	//camera.rotation.x = 45;
+	camera.position = { -5, -5, 5 };
+	camera.rotation.x = 45;
 
 	ENG::Transform cube_t;
 	cube_t.position.z = -2;
@@ -156,6 +157,9 @@ void run()
 		setLights(entities, def_shader);
 
 		// DRAW TO FRAMEBUFFER ==============================================================================================
+
+		camera.rotation.y += 0.2f;
+		window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
 		def_shader.setUniform("view_pos", camera.position);
 		def_shader.setUniform("view", glm::inverse(camera.get()));
@@ -195,10 +199,10 @@ void run()
 
 		cube_t.rotation.y += 0.2f;
 		fb.bindTex();
-		resources.mesh("cube.obj").bind();
+		resources.mesh("cube2.obj").bind();
 		def_shader.setUniform("transform", cube_t.get());
 		def_shader.bind();
-		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
+		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube2.obj").vertexCount());
 		fb.unbindTex();
 
 		window.display();
