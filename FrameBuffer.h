@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include "Texture.h"
 #include "Output.h"
 
 namespace ENG
@@ -13,13 +14,12 @@ namespace ENG
 		void create(const glm::ivec2& size);
 		void bind();
 		void unbind();
-		void bindTex();
-		void unbindTex();
 		void cleanup(); 
+		Texture& getTexture();
 
 	private:
 		GLuint id;
-		GLuint tex_id;
 		GLuint depth_id;
+		Texture texture;
 	};
 }

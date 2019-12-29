@@ -132,15 +132,22 @@ void run()
 	def_shader.setUniform("view", glm::inverse(pview.get()));
 	skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(pview.get()))));
 
+	entities.getComponent<CS::Light>(p).colour = { 50.0f, 50.0f, 50.0f };
+
 	// Framebuffer ==============================================================================================
 
 	ENG::FrameBuffer fb({ 800, 600 });
+
+	auto screen = entities.addEntity<CS::Transform, CS::Model>();
+	auto& m = entities.getComponent<CS::Model>(screen);
+	m.mesh = &resources.mesh("cube2.obj");
+	m.texture = &fb.getTexture();
+	m.shader = &def_shader;
+	auto& st = entities.getComponent<CS::Transform>(screen);
+	st.position.z = -2;
+
 	ENG::Transform camera;
 	camera.position = { -5, -5, 5 };
-	camera.rotation.x = 45;
-
-	ENG::Transform cube_t;
-	cube_t.position.z = -2;
 
 	// Main loop ==============================================================================================
 
@@ -181,6 +188,8 @@ void run()
 		
 		// DRAW TO WINDOW ==============================================================================================
 
+		st.rotation.y += 0.2f;
+
 		def_shader.setUniform("view_pos", pview.position);
 		def_shader.setUniform("view", glm::inverse(pview.get()));
 		skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(pview.get()))));
@@ -196,14 +205,6 @@ void run()
 		glDepthMask(GL_TRUE);
 
 		drawModels(entities);
-
-		cube_t.rotation.y += 0.2f;
-		fb.bindTex();
-		resources.mesh("cube2.obj").bind();
-		def_shader.setUniform("transform", cube_t.get());
-		def_shader.bind();
-		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube2.obj").vertexCount());
-		fb.unbindTex();
 
 		window.display();
 
