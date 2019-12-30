@@ -62,6 +62,37 @@ void setLights(ENG::Entities& entities, ENG::Shader& shader)
 	}
 }
 
+// PLAYER STUFF ==============================================================================================
+
+struct MoveableCamera : ENG::ECSComponent<MoveableCamera>
+{
+	float speed = 15.0f;
+	glm::vec3 velocity;
+	glm::vec3 direction;
+};
+
+void moveCamera(ENG::Entities& entities, ENG::Window& window, const float delta)
+{
+	auto& ts = entities.getPool<CS::Transform>();
+	auto& ms = entities.getPool<MoveableCamera>();
+
+	for (ENG::EntityID entity : entities.entitiesWith<CS::Transform, MoveableCamera>())
+	{
+		MoveableCamera& m = ms[entity];
+		CS::Transform& t = ts[entity];
+
+		m.velocity = { 0.0f, 0.0f, 0.0f };
+		if (window.isKeyPressed(GLFW_KEY_A)) m.velocity.x = -m.speed;
+		if (window.isKeyPressed(GLFW_KEY_D)) m.velocity.x = m.speed;
+		if (window.isKeyPressed(GLFW_KEY_W)) m.velocity.z = -m.speed;
+		if (window.isKeyPressed(GLFW_KEY_S)) m.velocity.z = m.speed;
+
+		ts[entity].position += m.velocity * delta;
+	}
+}
+
+// MAIN LOOP ==============================================================================================
+
 void run()
 {
 	ENG::Settings s("Resources/settings.set");
@@ -110,7 +141,7 @@ void run()
 	// Entities ==============================================================================================
 
 	ENG::Entities entities;
-	entities.addComponentPools<CS::Transform, CS::Model, CS::Light>();
+	entities.addComponentPools<CS::Transform, CS::Model, CS::Light, MoveableCamera>();
 
 	for (int i = -5; i < 5; i++)
 	{
@@ -126,13 +157,11 @@ void run()
 		t.scale *= 0.5f;
 	}
 
-	auto p = entities.addEntity<CS::Transform, CS::Light>();
+	auto p = entities.addEntity<CS::Transform, MoveableCamera>();
 	auto& pview = entities.getComponent<CS::Transform>(p);
 	def_shader.setUniform("view_pos", pview.position);
 	def_shader.setUniform("view", glm::inverse(pview.get()));
 	skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(pview.get()))));
-
-	entities.getComponent<CS::Light>(p).colour = { 50.0f, 50.0f, 50.0f };
 
 	// Framebuffer ==============================================================================================
 
@@ -151,8 +180,14 @@ void run()
 
 	// Main loop ==============================================================================================
 
+	float current = 0.0f, last = 0.0f, delta = 0.0f;
+
 	while (!window.shouldClose())
 	{
+		current = glfwGetTime();
+		delta = current - last;
+		last = current;
+
 		// Input ==============================================================================================
 
 		if (window.isKeyPressed(GLFW_KEY_ESCAPE))
@@ -162,6 +197,7 @@ void run()
 			entities.clear();
 
 		setLights(entities, def_shader);
+		moveCamera(entities, window, delta);
 
 		// DRAW TO FRAMEBUFFER ==============================================================================================
 

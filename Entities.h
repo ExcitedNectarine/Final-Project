@@ -74,6 +74,7 @@ namespace ENG
 		template <typename ComponentType> void addComponentPool()
 		{
 			BASE_ASSERT(BaseComponent, ComponentType, "'ComponentType' must inherit 'BaseComponent'.");
+			assert(table.size() <= MAX_COMPONENTS);
 			OUTPUT("Adding component pool '" + std::string(typeid(ComponentType).name()) + "'");
 			table[ComponentType::ID] = std::make_shared<ComponentPool<ComponentType>>();
 		}
