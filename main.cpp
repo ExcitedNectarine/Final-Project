@@ -11,6 +11,8 @@
 #include "Settings.h"
 #include <glm/gtx/string_cast.hpp>
 
+#include "Audio.h"
+
 namespace CS
 {
 	struct Transform : ENG::Transform, ENG::ECSComponent<Transform> {};
@@ -95,6 +97,10 @@ void moveCamera(ENG::Entities& entities, ENG::Window& window, const float delta)
 
 void run()
 {
+	ENG::audioInit();
+	ENG::SoundBuffer sound("Resources/Sounds/Track 1.ogg");
+	ENG::SoundSource track(&sound);
+
 	ENG::Settings s("Resources/settings.set");
 
 	glm::ivec2 window_size(s.geti("width"), s.geti("height"));
@@ -194,7 +200,7 @@ void run()
 			window.close();
 
 		if (window.isKeyPressed(GLFW_KEY_SPACE))
-			entities.clear();
+			track.play();
 
 		setLights(entities, def_shader);
 		moveCamera(entities, window, delta);

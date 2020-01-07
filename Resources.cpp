@@ -56,6 +56,24 @@ namespace ENG
 		}
 	}
 
+	void Resources::loadSounds(const std::vector<std::string>& files)
+	{
+		std::map<std::string, std::future<SoundBuffer>> futures;
+
+		for (const std::string& sound : files)
+		{
+			OUTPUT("Loading sound '" << sound << "'");
+			std::string file = splitText(sound, '/').back();
+			futures[file] = std::async(std::launch::async, [sound]() { return SoundBuffer(sound); });
+		}
+
+		for (auto& f : futures)
+		{
+			sounds.insert({ f.first, f.second.get() });
+		}
+	}
+
 	Mesh& Resources::mesh(const std::string& file) { return meshes.at(file); }
 	Texture& Resources::texture(const std::string& file) { return textures.at(file); }
+	SoundBuffer& Resources::sound(const std::string& file) { return sounds.at(file); }
 }

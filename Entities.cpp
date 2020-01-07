@@ -7,7 +7,7 @@ namespace ENG
 
 	void Entities::removeEntity(const EntityID id)
 	{
-		assert(has.find(id) != has.end());
+		//assert(has.find(id) != has.end());
 
 		has.erase(id);
 		for (auto& pair : table)
