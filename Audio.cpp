@@ -25,6 +25,13 @@ namespace ENG
 		}
 	}
 
+	SoundFile loadSoundFile(const std::string& filename)
+	{
+		SoundFile sound;
+		sound.samples = stb_vorbis_decode_filename(filename.c_str(), &sound.channels, &sound.sample_rate, &sound.data);
+		return sound;
+	}
+
 	SoundBuffer::SoundBuffer(const std::string& filename)
 	{
 		int channels;

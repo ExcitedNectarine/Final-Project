@@ -9,6 +9,16 @@ namespace ENG
 {
 	void audioInit();
 
+	struct SoundFile
+	{
+		int channels;
+		int sample_rate;
+		short* data;
+		std::size_t samples;
+	};
+
+	SoundFile loadSoundFile(const std::string& filename);
+
 	class SoundBuffer
 	{
 	public:
