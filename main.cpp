@@ -14,10 +14,10 @@ struct PlayerScript : ENG::Script
 
 	void start(ENG::Application& app)
 	{
-		t = &app.getEntities().getComponent<CS::Transform>(id);
+		t = &app.getEntities().getComponent<CS::Transform>(id); // get components
 		aabb = &app.getEntities().getComponent<CS::AABB>(id);
 
-		app.getEntities().getComponent<CS::Light>(id).colour *= 30.0f;
+		app.getEntities().getComponent<CS::Light>(id).colour *= 30.0f;  // intensify light
 
 		s.setBuffer(&app.getResources().sound("gunfire.ogg"));
 	}
@@ -32,7 +32,7 @@ struct PlayerScript : ENG::Script
 			if (++score >= 10)
 				app.getWindow().close();
 		}
-
+		 // movement
 		direction = { 0.0f, 0.0f, 0.0f };
 		if (app.getWindow().isKeyPressed(GLFW_KEY_W)) direction -= t->forward();
 		if (app.getWindow().isKeyPressed(GLFW_KEY_S)) direction += t->forward();
@@ -47,14 +47,17 @@ struct PlayerScript : ENG::Script
 
 		t->position += velocity * app.getDeltaTime();
 
+		// rotation
 		if (app.getWindow().isKeyPressed(GLFW_KEY_LEFT)) t->rotation.y += 90.0f * app.getDeltaTime();
 		if (app.getWindow().isKeyPressed(GLFW_KEY_RIGHT)) t->rotation.y -= 90.0f * app.getDeltaTime();
 
+		// update app's view
 		app.setView(t->get());
 		app.getShader().setUniform("view_pos", t->position);
 	}
 };
 
+// simple random float between two values.
 float randomFloat(const float from, const float to)
 {
 	static std::default_random_engine engine(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
@@ -73,9 +76,11 @@ void createPickup(ENG::Application& app)
 	
 	// Set the mesh, texture and shader the pickup will use for drawing.
 	CS::Model& m = app.getEntities().getComponent<CS::Model>(pickup);
-	m.mesh = &app.getResources().mesh("cube2.obj");
-	m.texture = &app.getResources().texture("rock.png");
+	m.mesh = &app.getResources().mesh("skull.obj");
+	m.texture = &app.getResources().texture("skull.jpg");
 	m.shader = &app.getShader();
+
+	app.getEntities().getComponent<CS::Transform>(pickup).scale = { 0.1f, 0.1f, 0.1f }; // lower skull scale
 }
 
 int main()
@@ -88,7 +93,7 @@ int main()
 
 	// CREATE PLAYER ENTITY
 	ENG::EntityID player = app.getEntities().addEntity<CS::Transform, CS::Script, CS::AABB, CS::Light>();
-	app.getEntities().getComponent<CS::Script>(player).script = std::make_unique<PlayerScript>();
+	app.getEntities().getComponent<CS::Script>(player).script = std::make_unique<PlayerScript>(); // attach player script.
 
 	app.run();
 	return 0;

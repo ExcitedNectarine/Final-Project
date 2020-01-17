@@ -6,6 +6,9 @@
 
 namespace ENG
 {
+	/**
+	* Stores image data, to be passed to textures.
+	*/
 	struct Image
 	{
 		void cleanup();

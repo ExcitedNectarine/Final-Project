@@ -10,6 +10,9 @@
 
 namespace ENG
 {
+	/**
+	* Simple shader class, allows compiling of shaders and uniform setting.
+	*/
 	class Shader
 	{
 	public:

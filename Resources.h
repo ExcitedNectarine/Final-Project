@@ -10,6 +10,9 @@
 
 namespace ENG
 {
+	/**
+	* Stores all resources, and loads resources in using multithreading.
+	*/
 	class Resources
 	{
 	public:

@@ -7,6 +7,9 @@
 
 namespace ENG
 {
+	/**
+	* Simple window class, provides basic window control and input.
+	*/
 	class Window
 	{
 	public:

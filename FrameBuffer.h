@@ -7,6 +7,9 @@
 
 namespace ENG
 {
+	/**
+	* Simple framebuffer, if drawn to, will draw to a texture that can be retrieved using getTexture().
+	*/
 	class FrameBuffer
 	{
 	public:

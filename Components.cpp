@@ -1,5 +1,8 @@
 #include "Components.h"
 
+/**
+* Draws model components.
+*/
 void drawModels(ENG::Entities& entities)
 {
 	auto& ts = entities.getPool<CS::Transform>();
@@ -17,6 +20,9 @@ void drawModels(ENG::Entities& entities)
 	}
 }
 
+/**
+* Uploads lighting information to shader.
+*/
 void setLights(ENG::Entities& entities, ENG::Shader& shader)
 {
 	auto& ts = entities.getPool<CS::Transform>();
@@ -31,6 +37,9 @@ void setLights(ENG::Entities& entities, ENG::Shader& shader)
 	}
 }
 
+/**
+* Tests every AABB component for collisions against any other AABB components.
+*/
 void AABBCollision(ENG::Entities& entities)
 {
 	auto& ts = entities.getPool<CS::Transform>();
@@ -61,7 +70,7 @@ void AABBCollision(ENG::Entities& entities)
 				a_pos.z + a_size.z > b_pos.z)
 			{
 				aabbs[a].hit = true;
-				aabbs[a].hit_id = b;
+				aabbs[a].hit_id = b; // store which entity it hit
 				break;
 			}
 			else

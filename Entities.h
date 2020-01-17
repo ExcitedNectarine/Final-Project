@@ -13,7 +13,7 @@ namespace ENG
 	constexpr auto MAX_COMPONENTS = 128;
 
 	// An expander, basically allows an instruction to be ran on every template argument.
-	// Don't ask me how it works.
+	// Works by expanding out an array with each instruction
 	using expand = int[];
 	#define FOR_EACH_T(instruction) (void)expand { 0, (instruction, 0)...}
 	#define BASE_ASSERT(base, type, text) static_assert(std::is_base_of<base, type>::value, text)
@@ -27,6 +27,10 @@ namespace ENG
 	// Template trickery that assigns a unique ID for each type of component.
 	static ComponentID ids = 0;
 	struct BaseComponent { static ComponentID getID(); };
+
+	/**
+	* Base component class, all components should inherit from this.
+	*/
 	template <typename ComponentType> struct ECSComponent : BaseComponent { static const ComponentID ID; };
 	template <typename ComponentType> const ComponentID ECSComponent<ComponentType>::ID(BaseComponent::getID());
 
@@ -40,7 +44,7 @@ namespace ENG
 
 	/**
 	* This class can be thought of as a storage class for every entity in the game. Entities
-	* are represented by a simple integer ID, that is used to reference components
+	* are represented by a simple integer ID, that is used to reference components.
 	**/
 	class Entities
 	{
@@ -49,14 +53,20 @@ namespace ENG
 		void removeEntity(const EntityID id);
 		void clear();
 
+		/**
+		* Create an entity, and attach template arguments as components.
+		*/
 		template <typename... ComponentType> EntityID addEntity()
 		{
 			ids++;
 			assert(ids <= MAX_ENTITIES);
-			FOR_EACH_T(addComponent<ComponentType>(ids));
+			FOR_EACH_T(addComponent<ComponentType>(ids)); // for each template, add it as a component
 			return ids;
 		}
 
+		/**
+		* Returns a vector of entities that have the required components.
+		*/
 		template <typename... RequiredComponent> std::vector<EntityID> entitiesWith()
 		{
 			ComponentMask mask;

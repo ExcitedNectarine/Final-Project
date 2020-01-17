@@ -7,6 +7,9 @@
 
 namespace ENG
 {
+	/**
+	* Simple texture class. Creates a texture that is uploaded to the GPU.
+	*/
 	class Texture
 	{
 	public:

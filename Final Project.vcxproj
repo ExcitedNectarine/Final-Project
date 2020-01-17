@@ -100,13 +100,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\Samuel Ware\Documents\Libraries\stb-master;D:\Samuel Ware\Documents\Libraries\glm;D:\Samuel Ware\Documents\Libraries\glew-2.1.0\include;D:\Samuel Ware\Documents\Libraries\glfw-3.3.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Samuel Ware\Documents\Libraries\OpenAL\include;D:\Samuel Ware\Documents\Libraries\stb-master;D:\Samuel Ware\Documents\Libraries\glm;D:\Samuel Ware\Documents\Libraries\glew-2.1.0\include;D:\Samuel Ware\Documents\Libraries\glfw-3.3.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>D:\Samuel Ware\Documents\Libraries\glew-2.1.0\lib\Release\Win32;D:\Samuel Ware\Documents\Libraries\glfw-3.3.bin.WIN32\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Samuel Ware\Documents\Libraries\OpenAL\libs\Win32;D:\Samuel Ware\Documents\Libraries\glew-2.1.0\lib\Release\Win32;D:\Samuel Ware\Documents\Libraries\glfw-3.3.bin.WIN32\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;OpenAL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

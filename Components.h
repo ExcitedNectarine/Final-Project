@@ -7,6 +7,9 @@
 #include "Shader.h"
 #include "Script.h"
 
+/**
+* Component namespace. All components that can make up an entity are declared here.
+*/
 namespace CS
 {
 	struct Transform : ENG::Transform, ENG::ECSComponent<Transform> {};
@@ -35,9 +38,14 @@ namespace CS
 		ENG::EntityID hit_id;
 	};
 
+	/**
+	* Script component, used for adding scripts to entities.
+	*/
 	struct Script : ENG::ECSComponent<Script>
 	{
-		std::unique_ptr<ENG::Script> script; // accidentally coded myself into a corner haha, gotta use pointers for scripts
+		// Because the entity manager stores components by value, we have to use one level of
+		// indirection and store a pointer to the script.
+		std::unique_ptr<ENG::Script> script;
 	};
 }
 

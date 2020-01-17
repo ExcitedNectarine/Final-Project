@@ -7,6 +7,9 @@
 
 namespace ENG
 {
+	/**
+	* Simple cubemap texture class, used for skyboxes.
+	*/
 	class CubeMap
 	{
 	public:

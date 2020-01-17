@@ -10,6 +10,9 @@
 
 namespace ENG
 {
+	/**
+	* Simple mesh class, simply stores vertices and uploads them to the GPU. 
+	*/
 	class Mesh
 	{
 	public:

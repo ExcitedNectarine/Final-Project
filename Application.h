@@ -11,10 +11,17 @@
 
 namespace ENG
 {
+	/**
+	* Main application class, all game objects and entities are used in this class.
+	*/
 	class Application
 	{
 	public:
 		Application(const std::string& setting_file);
+
+		/**
+		* Run main game loop.
+		*/
 		void run();
 
 		void scriptStart();

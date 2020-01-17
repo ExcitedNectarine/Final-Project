@@ -60,6 +60,7 @@ namespace ENG
 	{
 		std::map<std::string, std::future<Audio>> futures;
 
+		// Same as the loop for loading meshes. Asynchronously loads sounds.
 		for (const std::string& sound : files)
 		{
 			OUTPUT("Loading sound '" << sound << "'");
