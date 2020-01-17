@@ -58,18 +58,22 @@ namespace ENG
 
 	void Resources::loadSounds(const std::vector<std::string>& files)
 	{
-		std::map<std::string, std::future<SoundBuffer>> futures;
+		std::map<std::string, std::future<Audio>> futures;
 
 		for (const std::string& sound : files)
 		{
 			OUTPUT("Loading sound '" << sound << "'");
 			std::string file = splitText(sound, '/').back();
-			futures[file] = std::async(std::launch::async, [sound]() { return SoundBuffer(sound); });
+			futures[file] = std::async(std::launch::async, loadAudio, sound);
 		}
 
 		for (auto& f : futures)
 		{
-			sounds.insert({ f.first, f.second.get() });
+			sounds.insert({ f.first, SoundBuffer() });
+
+			Audio audio = f.second.get();
+			sounds.at(f.first).createFromAudio(audio);
+			audio.cleanup();
 		}
 	}
 

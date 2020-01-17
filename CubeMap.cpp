@@ -2,7 +2,7 @@
 
 namespace ENG
 {
-	void CubeMap::create(const std::array<std::string, 6>& files)
+	void CubeMap::create(const std::vector<std::string>& files)
 	{
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, id);

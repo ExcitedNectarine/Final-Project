@@ -126,6 +126,7 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="Components.cpp" />
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="Entities.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
@@ -143,6 +144,7 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Audio.h" />
+    <ClInclude Include="Components.h" />
     <ClInclude Include="CubeMap.h" />
     <ClInclude Include="Entities.h" />
     <ClInclude Include="FrameBuffer.h" />
@@ -150,6 +152,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Output.h" />
     <ClInclude Include="Resources.h" />
+    <ClInclude Include="Script.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />

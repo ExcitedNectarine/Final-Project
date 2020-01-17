@@ -1,0 +1,6 @@
+Resources/Textures/right.png
+Resources/Textures/left.png
+Resources/Textures/up.png
+Resources/Textures/down.png
+Resources/Textures/back.png
+Resources/Textures/front.png

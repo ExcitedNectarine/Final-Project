@@ -25,40 +25,31 @@ namespace ENG
 		}
 	}
 
-	SoundFile loadSoundFile(const std::string& filename)
+	void Audio::cleanup() { free(data); }
+	Audio loadAudio(const std::string& filename)
 	{
-		SoundFile sound;
-		sound.samples = stb_vorbis_decode_filename(filename.c_str(), &sound.channels, &sound.sample_rate, &sound.data);
-		return sound;
+		Audio audio;
+		audio.samples = stb_vorbis_decode_filename(filename.c_str(), &audio.channels, &audio.sample_rate, &audio.data);
+		return audio;
 	}
 
-	SoundBuffer::SoundBuffer(const std::string& filename)
+	void SoundBuffer::createFromAudio(const Audio& audio)
 	{
-		int channels;
-		int sample_rate;
-		short* data;
-		std::size_t samples = stb_vorbis_decode_filename(filename.c_str(), &channels, &sample_rate, &data);
-
 		ALenum format;
-		ALsizei frequency = sample_rate;
+		ALsizei frequency = audio.sample_rate;
 		std::vector<char> buffer;
-		buffer.resize(sizeof(*data) * channels * samples);
-		memcpy(&buffer.at(0), data, buffer.size());
+		buffer.resize(sizeof(*audio.data) * audio.channels * audio.samples);
+		memcpy(&buffer.at(0), audio.data, buffer.size());
 
-		if (channels == 1) format = AL_FORMAT_MONO16;
+		if (audio.channels == 1) format = AL_FORMAT_MONO16;
 		else format = AL_FORMAT_STEREO16;
 
 		alGenBuffers(1, &id);
 		alBufferData(id, format, &buffer.at(0), static_cast<ALsizei>(buffer.size()), frequency);
-
-		free(data);
 	}
 
-	SoundSource::SoundSource(SoundBuffer* buffer) : buffer(buffer)
-	{
-		alGenSources(1, &id);
-	}
-
+	SoundSource::SoundSource() { alGenSources(1, &id); }
+	void SoundSource::setBuffer(SoundBuffer* buffer) { this->buffer = buffer; }
 	void SoundSource::play()
 	{
 		alSource3f(id, AL_POSITION, 0.0f, 0.0f, 0.0f);

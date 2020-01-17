@@ -1,2 +1,7 @@
+title=Game Engine
 height=1080
 width=1920
+meshes=Resources/meshes.txt
+textures=Resources/textures.txt
+sounds=Resources/sounds.txt
+skybox=Resources/skybox.txt

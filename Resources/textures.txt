@@ -1,0 +1,3 @@
+Resources/Textures/lorry.jpg
+Resources/Textures/rock.png
+Resources/Textures/skull.jpg
