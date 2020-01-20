@@ -1,13 +1,10 @@
 #pragma once
 
 #include "Window.h"
-#include "Entities.h"
 #include "Resources.h"
 #include "Settings.h"
-#include "Shader.h"
-#include "Components.h"
 #include "CubeMap.h"
-#include <glm/gtc/matrix_transform.hpp>
+#include "Components.h"
 
 namespace ENG
 {
@@ -23,10 +20,6 @@ namespace ENG
 		* Run main game loop.
 		*/
 		void run();
-
-		void scriptStart();
-		void scriptUpdate();
-		void scriptEnd();
 		void setView(const glm::mat4& view) { this->view = view; }
 
 		Window& getWindow() { return window; }

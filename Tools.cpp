@@ -52,25 +52,25 @@ namespace ENG
 			std::vector<std::string> split = splitText(line, ' ');
 			if (split.at(0) == "v") // Vertex pos
 			{
-				positions.push_back(glm::vec3(
+				positions.emplace_back(
 					atof(split.at(1).c_str()),
 					atof(split.at(2).c_str()),
-					atof(split.at(3).c_str()))
+					atof(split.at(3).c_str())
 				);
 			}
 			else if (split.at(0) == "vt") // Tex coords
 			{
-				uvs.push_back(glm::vec2(
+				uvs.emplace_back(
 					atof(split.at(1).c_str()),
-					atof(split.at(2).c_str()))
+					atof(split.at(2).c_str())
 				);
 			}
 			else if (split.at(0) == "vn") // Normals
 			{
-				normals.push_back(glm::vec3(
+				normals.emplace_back(
 					atof(split.at(1).c_str()),
 					atof(split.at(2).c_str()),
-					atof(split.at(3).c_str()))
+					atof(split.at(3).c_str())
 				);
 			}
 			else if (split.at(0) == "f") // Faces
@@ -84,11 +84,25 @@ namespace ENG
 					glm::vec2 uv = uvs.at(atoi(indices.at(1).c_str()) - 1);
 					glm::vec3 normal = normals.at(atoi(indices.at(2).c_str()) - 1);
 
-					vertices.push_back({ position, uv, normal });
+					vertices.emplace_back(position, uv, normal);
 				}
 			}
 		}
 
 		return vertices;
+	}
+
+	float randomFloat(const float from, const float to)
+	{
+		static std::default_random_engine engine(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
+		std::uniform_real_distribution<float> dist(from, to);
+		return dist(engine);
+	}
+
+	int randomInt(const int from, const int to)
+	{
+		static std::default_random_engine engine(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
+		std::uniform_int_distribution<int> dist(from, to);
+		return dist(engine);
 	}
 }

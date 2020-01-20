@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Entities.h"
+
 namespace ENG
 {
 	class Application;
@@ -26,4 +28,21 @@ namespace ENG
 
 		EntityID id;
 	};
+
+	namespace CS
+	{
+		/**
+		* Script component, used for adding scripts to entities.
+		*/
+		struct Script : ENG::ECSComponent<Script>
+		{
+			// Because the entity manager stores components by value, we have to use one level of
+			// indirection and store a pointer to the script.
+			std::unique_ptr<ENG::Script> script;
+		};
+	}
+
+	void scriptStart(ENG::Entities& entities, Application& app);
+	void scriptUpdate(ENG::Entities& entities, Application& app);
+	void scriptEnd(ENG::Entities& entities, Application& app);
 }

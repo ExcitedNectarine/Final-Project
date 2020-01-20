@@ -2,18 +2,25 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "Entities.h"
 
 namespace ENG
 {
-	struct Transform
+	namespace CS
 	{
-		Transform();
-		glm::mat4 get();
-		glm::vec3 forward();
-		glm::vec3 right();
+		/**
+		* Transform component, represents a transform in the world.
+		*/
+		struct Transform : ENG::ECSComponent<Transform>
+		{
+			Transform();
+			glm::mat4 get();
+			glm::vec3 forward();
+			glm::vec3 right();
 
-		glm::vec3 position;
-		glm::vec3 rotation;
-		glm::vec3 scale;
-	};
+			glm::vec3 position;
+			glm::vec3 rotation;
+			glm::vec3 scale;
+		};
+	}
 }

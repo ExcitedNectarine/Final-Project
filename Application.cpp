@@ -28,7 +28,7 @@ namespace ENG
 
 	void Application::run()
 	{
-		scriptStart();
+		scriptStart(entities, *this);
 
 		double current = 0.0, last = 0.0;
 		while (!window.shouldClose())
@@ -39,7 +39,7 @@ namespace ENG
 
 			setLights(entities, def_shader);
 			AABBCollision(entities);
-			scriptUpdate();
+			scriptUpdate(entities, *this);
 
 			def_shader.setUniform("view", glm::inverse(view));
 			skybox_shader.setUniform("view", glm::mat4(glm::mat3(glm::inverse(view))));
@@ -58,33 +58,6 @@ namespace ENG
 			glfwPollEvents();
 		}
 
-		scriptEnd();
-	}
-
-	void Application::scriptStart()
-	{
-		auto& scripts = entities.getPool<CS::Script>();
-
-		for (ENG::EntityID id : entities.entitiesWith<CS::Script>())
-		{
-			scripts[id].script->id = id;
-			scripts[id].script->start(*this);
-		}
-	}
-
-	void Application::scriptUpdate()
-	{
-		auto& scripts = entities.getPool<CS::Script>();
-
-		for (ENG::EntityID id : entities.entitiesWith<CS::Script>())
-			scripts[id].script->update(*this);
-	}
-
-	void Application::scriptEnd()
-	{
-		auto& scripts = entities.getPool<CS::Script>();
-
-		for (ENG::EntityID id : entities.entitiesWith<CS::Script>())
-			scripts[id].script->end(*this);
+		scriptEnd(entities, *this);
 	}
 }
