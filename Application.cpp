@@ -23,7 +23,7 @@ namespace ENG
 		resources.loadSounds(splitText(readTextFile(settings.get("sounds")), '\n'));
 		skybox.create(splitText(readTextFile(settings.get("skybox")), '\n'));
 
-		entities.addComponentPools<CS::Transform, CS::Model, CS::Light, CS::Script, CS::AABB>();
+		entities.addComponentPools<CS::Transform, CS::Model, CS::Light, CS::Script, CS::SphereCollider, CS::BoxCollider>();
 	}
 
 	void Application::run()
@@ -38,7 +38,7 @@ namespace ENG
 			last = current;
 
 			setLights(entities, def_shader);
-			AABBCollision(entities);
+			testCollisions(entities, *this);
 			scriptUpdate(entities, *this);
 
 			def_shader.setUniform("view", glm::inverse(view));

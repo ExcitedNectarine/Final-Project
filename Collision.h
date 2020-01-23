@@ -1,25 +1,34 @@
 #pragma once
 
 #include "Transform.h"
+#include "Script.h"
 
 namespace ENG
 {
 	namespace CS
 	{
-		struct AABB : ENG::ECSComponent<AABB>
+		namespace
 		{
-			AABB() : size(1.0f, 1.0f, 1.0f) {}
+			struct BaseCollider
+			{
+				bool solid = true;
+				glm::vec3 prev_position;
+			};
+		}
 
-			glm::vec3 size;
-			bool hit = false;
-			ENG::EntityID hit_id;
-			bool solid = true;
+		struct SphereCollider : BaseCollider, ENG::ECSComponent<SphereCollider>
+		{
+			float radius = 1.0f;
 		};
 
-		struct Collider : ENG::ECSComponent<Collider>
+		struct BoxCollider : BaseCollider, ENG::ECSComponent<BoxCollider>
 		{
+			BoxCollider() : size(1.0f, 1.0f, 1.0f) {}
+
+			glm::vec3 size;
 		};
 	}
 
-	void AABBCollision(ENG::Entities& entities);
+	void testCollisions(ENG::Entities& entities, ENG::Application& app);
+	bool AABBcollision(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& b_pos, const glm::vec3& b_size);
 }

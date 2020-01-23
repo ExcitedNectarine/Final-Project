@@ -26,6 +26,11 @@ namespace ENG
 		*/
 		virtual void end(Application& app) {}
 
+		/**
+		* Called if entity collides with another entity
+		*/
+		virtual void onCollision(Application& app, EntityID hit_id) {}
+
 		EntityID id;
 	};
 
