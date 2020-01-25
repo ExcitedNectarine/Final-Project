@@ -12,10 +12,7 @@ namespace ENG
 		{
 			struct BaseCollider
 			{
-				BaseCollider() : velocity(0.0f) {}
-
 				bool solid = true;
-				glm::vec3 velocity;
 			};
 		}
 
@@ -30,8 +27,14 @@ namespace ENG
 
 			glm::vec3 size;
 		};
+
+		struct Controller : ECSComponent<Controller>
+		{
+			glm::vec3 velocity;
+		};
 	}
 
+	void moveControllers(Entities& entities);
 	void testCollisions(Entities& entities, Application& app);
 	bool OBBcollision(CS::Transform& a, const glm::vec3& a_size, CS::Transform& b, const glm::vec3& b_size);
 }

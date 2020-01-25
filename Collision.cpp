@@ -58,28 +58,6 @@ namespace ENG
 
 				if (OBBcollision(transforms[a], boxes[a].size, transforms[b], boxes[b].size))
 				{
-					if (boxes[a].solid && boxes[b].solid)
-					{
-						float amount = 0.1f;
-						float step = 0.1f;
-						glm::vec3 position(0.0f);
-						CS::Transform adjusted = transforms[a];
-
-						while (true)
-						{
-							if (!OBBcollision(adjusted, boxes[a].size, transforms[b], boxes[b].size)) break;
-							adjusted.position.x += amount;
-							if (!OBBcollision(adjusted, boxes[a].size, transforms[b], boxes[b].size)) break;
-							adjusted.position.x -= amount;
-							adjusted.position.x -= amount;
-							if (!OBBcollision(adjusted, boxes[a].size, transforms[b], boxes[b].size)) break;
-							adjusted.position.x += amount;
-							adjusted.position.z += amount;
-							if (!OBBcollision(adjusted, boxes[a].size, transforms[b], boxes[b].size)) break;
-							adjusted.position.z -= amount;
-							adjusted.position.z -= amount;
-						}
-					}
 					if (entities.hasComponent<CS::Script>(a))
 						scripts[a].script->onCollision(app, b);
 				}
@@ -109,5 +87,24 @@ namespace ENG
 		vec3 dist = b.position - a.position;
 
 		return !CASE_1 && !CASE_2 && !CASE_3 && !CASE_4 && !CASE_5 && !CASE_6 && !CASE_7 && !CASE_8 && !CASE_9 && !CASE_10 && !CASE_11 && !CASE_12 && !CASE_13 && !CASE_14 && !CASE_15;
+	}
+
+	void moveControllers(Entities& entities)
+	{
+		auto& transforms = entities.getPool<CS::Transform>();
+		auto& controllers = entities.getPool<CS::Controller>();
+		auto& boxes = entities.getPool<CS::BoxCollider>();
+
+		for (EntityID a : entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
+		{
+			transforms[a].position += controllers[a].velocity; // move forward
+			for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+			{
+				if (a == b) continue;
+
+				if (OBBcollision(transforms[a], boxes[a].size, transforms[b], boxes[b].size))
+					transforms[a].position -= controllers[a].velocity; // move back
+			}
+		}
 	}
 }

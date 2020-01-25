@@ -5,12 +5,12 @@ namespace ENG
 	/**
 	* Draws model components.
 	*/
-	void drawModels(ENG::Entities& entities)
+	void drawModels(Entities& entities)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& models = entities.getPool<CS::Model>();
 
-		for (ENG::EntityID entity : entities.entitiesWith<CS::Transform, CS::Model>())
+		for (EntityID entity : entities.entitiesWith<CS::Transform, CS::Model>())
 		{
 			CS::Model& m = models[entity];
 

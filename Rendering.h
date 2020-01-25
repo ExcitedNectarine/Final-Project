@@ -9,7 +9,7 @@ namespace ENG
 {
 	namespace CS
 	{
-		struct Model : ENG::ECSComponent<Model>
+		struct Model : ECSComponent<Model>
 		{
 			Mesh* mesh;
 			Texture* texture;
