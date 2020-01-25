@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include "Transform.h"
 #include "Script.h"
 
@@ -11,24 +12,26 @@ namespace ENG
 		{
 			struct BaseCollider
 			{
+				BaseCollider() : velocity(0.0f) {}
+
 				bool solid = true;
-				glm::vec3 prev_position;
+				glm::vec3 velocity;
 			};
 		}
 
-		struct SphereCollider : BaseCollider, ENG::ECSComponent<SphereCollider>
+		struct SphereCollider : BaseCollider, ECSComponent<SphereCollider>
 		{
 			float radius = 1.0f;
 		};
 
-		struct BoxCollider : BaseCollider, ENG::ECSComponent<BoxCollider>
+		struct BoxCollider : BaseCollider, ECSComponent<BoxCollider>
 		{
-			BoxCollider() : size(1.0f, 1.0f, 1.0f) {}
+			BoxCollider() : size(1.0f) {}
 
 			glm::vec3 size;
 		};
 	}
 
-	void testCollisions(ENG::Entities& entities, ENG::Application& app);
-	bool AABBcollision(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& b_pos, const glm::vec3& b_size);
+	void testCollisions(Entities& entities, Application& app);
+	bool OBBcollision(CS::Transform& a, const glm::vec3& a_size, CS::Transform& b, const glm::vec3& b_size);
 }

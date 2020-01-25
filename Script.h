@@ -39,7 +39,7 @@ namespace ENG
 		/**
 		* Script component, used for adding scripts to entities.
 		*/
-		struct Script : ENG::ECSComponent<Script>
+		struct Script : ECSComponent<Script>
 		{
 			// Because the entity manager stores components by value, we have to use one level of
 			// indirection and store a pointer to the script.
@@ -47,7 +47,7 @@ namespace ENG
 		};
 	}
 
-	void scriptStart(ENG::Entities& entities, Application& app);
-	void scriptUpdate(ENG::Entities& entities, Application& app);
-	void scriptEnd(ENG::Entities& entities, Application& app);
+	void scriptStart(Entities& entities, Application& app);
+	void scriptUpdate(Entities& entities, Application& app);
+	void scriptEnd(Entities& entities, Application& app);
 }

@@ -7,14 +7,14 @@ namespace ENG
 	*/
 	void drawModels(ENG::Entities& entities)
 	{
-		auto& ts = entities.getPool<CS::Transform>();
-		auto& ms = entities.getPool<CS::Model>();
+		auto& transforms = entities.getPool<CS::Transform>();
+		auto& models = entities.getPool<CS::Model>();
 
 		for (ENG::EntityID entity : entities.entitiesWith<CS::Transform, CS::Model>())
 		{
-			CS::Model& m = ms[entity];
+			CS::Model& m = models[entity];
 
-			m.shader->setUniform("transform", ts[entity].get());
+			m.shader->setUniform("transform", transforms[entity].get());
 			m.shader->bind();
 			m.mesh->bind();
 			m.texture->bind();

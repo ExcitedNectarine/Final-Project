@@ -2,4 +2,3 @@ Resources/Meshes/cube.obj
 Resources/Meshes/cube2.obj
 Resources/Meshes/lorry.obj
 Resources/Meshes/car.obj
-Resources/Meshes/skull.obj

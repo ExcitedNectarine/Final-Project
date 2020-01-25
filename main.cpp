@@ -4,47 +4,35 @@ struct PlayerScript : ENG::Script
 {
 	ENG::CS::Transform* t;
 	glm::vec3 velocity;
-	glm::vec3 direction;
 	float speed = 5.0f;
-	ENG::SoundSource s;
-	int score = 0;
 
 	void start(ENG::Application& app)
 	{
-		t = &app.getEntities().getComponent<ENG::CS::Transform>(id); // get components
-		app.getEntities().getComponent<ENG::CS::Light>(id).colour *= 30.0f;  // intensify light
-		s.setBuffer(&app.getResources().sound("gunfire.ogg"));
+		t = &app.getEntities().getComponent<ENG::CS::Transform>(id);
+		t->position.z = -5.0f;
+		t->rotation = { ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f) };
+		t->scale *= 0.5f;
+
+		ENG::CS::Model& m = app.getEntities().getComponent<ENG::CS::Model>(id);
+		m.mesh = &app.getResources().mesh("cube2.obj");
+		m.texture = &app.getResources().texture("rock.png");
+		m.shader = &app.getShader();
 	}
 
 	void update(ENG::Application& app)
 	{
-		 // movement
-		direction = { 0.0f, 0.0f, 0.0f };
-		if (app.getWindow().isKeyPressed(GLFW_KEY_W)) direction -= t->forward();
-		if (app.getWindow().isKeyPressed(GLFW_KEY_S)) direction += t->forward();
-		if (app.getWindow().isKeyPressed(GLFW_KEY_A)) direction -= t->right();
-		if (app.getWindow().isKeyPressed(GLFW_KEY_D)) direction += t->right();
-
-		if (direction != glm::vec3(0.0f, 0.0f, 0.0f))
-			direction = glm::normalize(direction);
-
-		velocity.x = direction.x * speed;
-		velocity.z = direction.z * speed;
+		velocity = { 0.0f, 0.0f, 0.0f };
+		if (app.getWindow().isKeyPressed(GLFW_KEY_UP)) velocity.y = speed;
+		if (app.getWindow().isKeyPressed(GLFW_KEY_DOWN)) velocity.y = -speed;
+		if (app.getWindow().isKeyPressed(GLFW_KEY_LEFT)) velocity.x = -speed;
+		if (app.getWindow().isKeyPressed(GLFW_KEY_RIGHT)) velocity.x = speed;
 
 		t->position += velocity * app.getDeltaTime();
-
-		// rotation
-		if (app.getWindow().isKeyPressed(GLFW_KEY_LEFT)) t->rotation.y += 90.0f * app.getDeltaTime();
-		if (app.getWindow().isKeyPressed(GLFW_KEY_RIGHT)) t->rotation.y -= 90.0f * app.getDeltaTime();
-
-		// update app's view
-		app.setView(t->get());
-		app.getShader().setUniform("view_pos", t->position);
 	}
 
 	void onCollision(ENG::Application& app, ENG::EntityID hit_id)
 	{
-		OUTPUT("Collision with " << hit_id);
+		OUTPUT("Collision with " << hit_id << " " << app.getDeltaTime());
 	}
 };
 
@@ -55,7 +43,7 @@ void createPickup(ENG::Application& app)
 	ENG::EntityID pickup = app.getEntities().addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider>();
 
 	// Set the position of the pickup.
-	app.getEntities().getComponent<ENG::CS::Transform>(pickup).position = { ENG::randomFloat(-20.0f, 20.0f), 0.0f, ENG::randomFloat(-20.0f, 20.0f) };
+	app.getEntities().getComponent<ENG::CS::Transform>(pickup).position = { ENG::randomFloat(-5.0f, 5.0f), ENG::randomFloat(-5.0f, 5.0f), -5.0f };
 	
 	// Set the mesh, texture and shader the pickup will use for drawing.
 	ENG::CS::Model& m = app.getEntities().getComponent<ENG::CS::Model>(pickup);
@@ -64,6 +52,7 @@ void createPickup(ENG::Application& app)
 	m.shader = &app.getShader();
 
 	app.getEntities().getComponent<ENG::CS::Transform>(pickup).scale *= 0.5f; // lower skull scale
+	app.getEntities().getComponent<ENG::CS::Transform>(pickup).rotation = { ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f) };
 }
 
 int main()
@@ -71,13 +60,13 @@ int main()
 	ENG::Application app("Resources/settings.set");
 	app.getShader().setUniform("ambient", { 0.1f, 0.1f, 0.1f });
 
-	for (int i = 0; i < 4; i++)
-		createPickup(app);
+	for (int i = 0; i < 4; i++) createPickup(app);
 
 	// CREATE PLAYER ENTITY
-	ENG::EntityID player = app.getEntities().addEntity<ENG::CS::Transform, ENG::CS::Script, ENG::CS::BoxCollider, ENG::CS::Light>();
+	ENG::EntityID player = app.getEntities().addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Script, ENG::CS::BoxCollider, ENG::CS::Light>();
 	app.getEntities().getComponent<ENG::CS::Script>(player).script = std::make_unique<PlayerScript>(); // attach player script.
 
+	app.setView(glm::mat4(1.0f));
 	app.run();
 
 	return 0;

@@ -11,11 +11,11 @@ namespace ENG
 	{
 		struct Model : ENG::ECSComponent<Model>
 		{
-			ENG::Mesh* mesh;
-			ENG::Texture* texture;
-			ENG::Shader* shader;
+			Mesh* mesh;
+			Texture* texture;
+			Shader* shader;
 		};
 	}
 
-	void drawModels(ENG::Entities& entities);
+	void drawModels(Entities& entities);
 }

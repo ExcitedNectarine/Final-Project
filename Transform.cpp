@@ -5,9 +5,9 @@ namespace ENG
 	namespace CS
 	{
 		Transform::Transform()
-			: position(0.0f, 0.0f, 0.0f),
-			rotation(0.0f, 0.0f, 0.0f),
-			scale(1.0f, 1.0f, 1.0f) {}
+			: position(0.0f),
+			rotation(0.0f),
+			scale(1.0f) {}
 
 		glm::mat4 Transform::get()
 		{
