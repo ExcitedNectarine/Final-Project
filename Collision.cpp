@@ -18,7 +18,7 @@
 
 namespace ENG
 {
-	void testCollisions(Entities& entities, Application& app)
+	void testCollisions(Entities& entities, Core& core)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& spheres = entities.getPool<CS::SphereCollider>();
@@ -44,7 +44,7 @@ namespace ENG
 					if (spheres[a].solid && spheres[b].solid)
 						transforms[a].position = transforms[b].position + (radii_sum * distance / length);
 					else if (entities.hasComponent<CS::Script>(a))
-						scripts[a].script->onCollision(app, b);
+						scripts[a].script->onCollision(core, b);
 				}
 			}
 		}
@@ -59,7 +59,7 @@ namespace ENG
 				if (OBBcollision(transforms[a], boxes[a].size, transforms[b], boxes[b].size))
 				{
 					if (entities.hasComponent<CS::Script>(a))
-						scripts[a].script->onCollision(app, b);
+						scripts[a].script->onCollision(core, b);
 				}
 			}
 		}

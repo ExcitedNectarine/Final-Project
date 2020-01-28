@@ -17,8 +17,8 @@ namespace ENG
 	{
 	public:
 		Shader();
-		Shader(const std::string& vertex_file, const std::string& fragment_file);
-		void create(const std::string& vertex_file, const std::string& fragment_file);
+		Shader(const std::string& vertex, const std::string& fragment);
+		void create(const std::string& vertex, const std::string& fragment);
 		void setUniform(const std::string& name, const glm::mat4& value);
 		void setUniform(const std::string& name, const glm::vec3& value);
 		void setUniform(const std::string& name, const float value);

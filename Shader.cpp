@@ -3,18 +3,12 @@
 namespace ENG
 {
 	Shader::Shader() {}
-	Shader::Shader(const std::string& vertex_file, const std::string& fragment_file) { create(vertex_file, fragment_file); }
+	Shader::Shader(const std::string& vertex, const std::string& fragment) { create(vertex, fragment); }
 
-	void Shader::create(const std::string& vertex_file, const std::string& fragment_file)
+	void Shader::create(const std::string& vertex, const std::string& fragment)
 	{
-		OUTPUT("Loading and compiling shaders '" + vertex_file + "', '" + fragment_file + "'.");
-
-		// Put strings into char arrays.
-		std::string vertex_str = readTextFile(vertex_file);
-		std::string fragment_str = readTextFile(fragment_file);
-
-		const GLchar* cvertex = vertex_str.c_str();
-		const GLchar* cfragment = fragment_str.c_str();
+		const GLchar* cvertex = vertex.c_str();
+		const GLchar* cfragment = fragment.c_str();
 
 		// Create vertex shader.
 		GLuint vertex_id = glCreateShader(GL_VERTEX_SHADER);

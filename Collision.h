@@ -35,6 +35,6 @@ namespace ENG
 	}
 
 	void moveControllers(Entities& entities);
-	void testCollisions(Entities& entities, Application& app);
+	void testCollisions(Entities& entities, Core& core);
 	bool OBBcollision(CS::Transform& a, const glm::vec3& a_size, CS::Transform& b, const glm::vec3& b_size);
 }

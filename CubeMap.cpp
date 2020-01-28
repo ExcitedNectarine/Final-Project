@@ -25,6 +25,24 @@ namespace ENG
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	}
 
+	//void CubeMap::create(std::vector<Image>& images)
+	//{
+	//	glGenTextures(1, &id);
+	//	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+
+	//	for (GLuint i = 0; i < 6; i++)
+	//	{
+	//		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, images[i].size.x, images[i].size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, images[i].pixels);
+	//		images[i].cleanup();
+	//	}
+
+	//	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	//}
+
 	void CubeMap::bind() { glBindTexture(GL_TEXTURE_CUBE_MAP, id); }
 	void CubeMap::unbind() { glBindTexture(GL_TEXTURE_CUBE_MAP, id); }
 	void CubeMap::cleanup() { glDeleteTextures(1, &id); }

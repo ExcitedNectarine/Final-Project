@@ -4,7 +4,7 @@
 
 namespace ENG
 {
-	class Application;
+	struct Core;
 
 	/**
 	* Base script class that all scripts must inherit from.
@@ -14,22 +14,22 @@ namespace ENG
 		/**
 		* Called just before the main game loop.
 		*/
-		virtual void start(Application& app) {}
+		virtual void start(Core& app) {}
 
 		/**
 		* Called every frame.
 		*/
-		virtual void update(Application& app) {}
+		virtual void update(Core& app) {}
 
 		/**
 		* Called after the game loop has ended.
 		*/
-		virtual void end(Application& app) {}
+		virtual void end(Core& app) {}
 
 		/**
 		* Called if entity collides with another entity
 		*/
-		virtual void onCollision(Application& app, EntityID hit_id) {}
+		virtual void onCollision(Core& app, EntityID hit_id) {}
 
 		EntityID id;
 	};
@@ -47,7 +47,7 @@ namespace ENG
 		};
 	}
 
-	void scriptStart(Entities& entities, Application& app);
-	void scriptUpdate(Entities& entities, Application& app);
-	void scriptEnd(Entities& entities, Application& app);
+	void scriptStart(Entities& entities, Core& core);
+	void scriptUpdate(Entities& entities, Core& core);
+	void scriptEnd(Entities& entities, Core& core);
 }

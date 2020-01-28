@@ -78,7 +78,56 @@ namespace ENG
 		}
 	}
 
+	void Resources::loadShaders(const std::vector<std::string>& files)
+	{
+		for (const std::string& shader : files)
+		{
+			OUTPUT("Loading and compiling shader '" << shader << "'");
+
+			std::string file = splitText(shader, '/').back();
+			std::string shader_text = ENG::readTextFile(shader);
+			std::string vertex;
+			std::string fragment;
+			std::string line;
+			std::string* write_to = &vertex;
+
+			std::stringstream ss(shader_text);
+			while (std::getline(ss, line))
+			{
+				if (line == "[VERTEX]")
+				{
+					write_to = &vertex;
+					continue;
+				}
+				else if (line == "[FRAGMENT]")
+				{
+					write_to = &fragment;
+					continue;
+				}
+
+				*write_to += line + '\n';
+			}
+
+			shaders.insert({ file, Shader(vertex, fragment) });
+		}
+	}
+
+	//void Resources::loadCubeMaps(const std::vector<std::vector<std::string>> files)
+	//{
+	//	for (const std::vector<std::string>& cubemap : files)
+	//	{
+	//		std::vector<Image> images;
+	//		for (const std::string& file : cubemap)
+	//		{
+	//			images.push_back(loadImage(file));
+	//		}
+
+	//		//cubemaps.insert({ file, CubeMap(images) });
+	//	}
+	//}
+
 	Mesh& Resources::mesh(const std::string& file) { return meshes.at(file); }
 	Texture& Resources::texture(const std::string& file) { return textures.at(file); }
 	SoundBuffer& Resources::sound(const std::string& file) { return sounds.at(file); }
+	Shader& Resources::shader(const std::string& file) { return shaders.at(file); }
 }
