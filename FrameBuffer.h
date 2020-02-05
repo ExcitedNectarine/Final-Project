@@ -3,7 +3,6 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include "Texture.h"
-#include "Output.h"
 
 namespace ENG
 {
@@ -13,6 +12,7 @@ namespace ENG
 	class FrameBuffer
 	{
 	public:
+		FrameBuffer();
 		FrameBuffer(const glm::ivec2& size);
 		void create(const glm::ivec2& size);
 		void bind();

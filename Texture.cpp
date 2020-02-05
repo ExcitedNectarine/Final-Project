@@ -2,7 +2,7 @@
 
 namespace ENG
 {
-	void Texture::createEmpty(const glm::ivec2& size)
+	void Texture::create(const glm::ivec2& size)
 	{
 		glGenTextures(1, &id);
 		

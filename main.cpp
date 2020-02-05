@@ -2,79 +2,98 @@
 
 struct PlayerScript : ENG::Script
 {
-	ENG::CS::Controller* c;
-	ENG::CS::Transform* t;
+	ENG::CS::Transform* transform;
+	ENG::CS::Controller* controller;
+	glm::vec3 direction;
 	glm::vec3 velocity;
-	float speed = 5.0f;
+	float speed = 15.0f;
+
+	glm::dvec2 last_mouse;
+	glm::dvec2 mouse_offset;
+	float sensitivity = 0.1f;
 
 	void start(ENG::Core& core)
 	{
-		c = &core.entities.getComponent<ENG::CS::Controller>(id);
+		transform = &core.entities.getComponent<ENG::CS::Transform>(id);
+		controller = &core.entities.getComponent<ENG::CS::Controller>(id);
+	}
 
-		t = &core.entities.getComponent<ENG::CS::Transform>(id);
-		t->position.z = -5.0f;
-		t->rotation = { ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f) };
+	void mouselook(ENG::Core& core)
+	{
+		mouse_offset = last_mouse - core.window.getMousePos();
+		last_mouse = core.window.getMousePos();
+		transform->rotation += glm::vec3(mouse_offset.y, mouse_offset.x, 0.0f) * sensitivity;
 
-		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(id);
-		m.mesh = &core.resources.mesh("cube2.obj");
-		m.texture = &core.resources.texture("rock.png");
-		m.shader = &core.resources.shader("default.shader");
+		if (transform->rotation.x <= -89.0f)
+			transform->rotation.x = -89.0f;
+		else if (transform->rotation.x >= 89.0f)
+			transform->rotation.x = 89.0f;
+	}
 
-		core.entities.getComponent<ENG::CS::BoxCollider>(id).size *= 2.0f;
+	void movement(ENG::Core& core)
+	{
+		direction = glm::vec3(0.0f);
+		if (core.window.isKeyPressed(GLFW_KEY_W)) direction -= transform->forward();
+		else if (core.window.isKeyPressed(GLFW_KEY_S)) direction += transform->forward();
+		if (core.window.isKeyPressed(GLFW_KEY_A)) direction -= transform->right();
+		else if (core.window.isKeyPressed(GLFW_KEY_D)) direction += transform->right();
+
+		if (direction != glm::vec3(0.0f))
+			direction = glm::normalize(direction);
+
+		velocity.x = direction.x * speed;
+		velocity.z = direction.z * speed;
+
+		controller->velocity = velocity * core.delta;
 	}
 
 	void update(ENG::Core& core)
 	{
-		if (core.window.isKeyPressed(GLFW_KEY_SPACE))
-			t->rotation = { ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f), ENG::randomFloat(0.0f, 180.0f) };
+		if (core.window.isKeyPressed(GLFW_KEY_ESCAPE))
+			core.window.close();
 
-		velocity = { 0.0f, 0.0f, 0.0f };
-		if (core.window.isKeyPressed(GLFW_KEY_UP)) velocity.y = speed;
-		if (core.window.isKeyPressed(GLFW_KEY_DOWN)) velocity.y = -speed;
-		if (core.window.isKeyPressed(GLFW_KEY_LEFT)) velocity.x = -speed;
-		if (core.window.isKeyPressed(GLFW_KEY_RIGHT)) velocity.x = speed;
-
-		c->velocity = velocity * core.delta;
-	}
-
-	void onCollision(ENG::Core& core, ENG::EntityID hit_id)
-	{
-		OUTPUT("Collision with " << hit_id << " " << core.delta);
+		mouselook(core);
+		movement(core);
+		core.view = *transform;
 	}
 };
-
-void createPickup(ENG::Core& core)
-{
-	// Create the pickup entity.
-	// The entity has a transform, a model and an AABB bounding box.
-	ENG::EntityID pickup = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider, ENG::CS::Light>();
-
-	// Set the position of the pickup.
-	core.entities.getComponent<ENG::CS::Transform>(pickup).position = { ENG::randomFloat(-5.0f, 5.0f), ENG::randomFloat(-5.0f, 5.0f), -5.0f };
-	
-	// Set the mesh, texture and shader the pickup will use for drawing.
-	ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(pickup);
-	m.mesh = &core.resources.mesh("cube2.obj");
-	m.texture = &core.resources.texture("skull.jpg");
-	m.shader = &core.resources.shader("default.shader");
-
-	core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size *= 2.0f;
-}
 
 int main()
 {
 	try
 	{
 		ENG::Core core("Resources/settings.set");
-		core.resources.shader("default.shader").setUniform("ambient", { 0.1f, 0.1f, 0.1f });
+		core.resources.shader("default.shader").setUniform("ambient", { 0.4f, 0.4f, 0.4f });
 
-		createPickup(core);
+		core.window.lockMouse(true);
 
-		// CREATE PLAYER ENTITY
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Script, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Light>();
-		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_unique<PlayerScript>(); // attach player script.
+		// Create player
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller>();
+		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_unique<PlayerScript>();
 
-		core.view = glm::mat4(1.0f);
+		// Create portals
+		ENG::EntityID portal = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer>();
+		ENG::EntityID portal2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer>();
+
+		core.entities.getComponent<ENG::CS::FrameBuffer>(portal).create({ 1280, 720 });
+		core.entities.getComponent<ENG::CS::FrameBuffer>(portal2).create({ 1280, 720 });
+
+		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(portal);
+		m.mesh = &core.resources.mesh("quad.obj");
+		m.texture = &core.entities.getComponent<ENG::CS::FrameBuffer>(portal2).getTexture();
+		m.shader = &core.resources.shader("default.shader");
+
+		ENG::CS::Model& m2 = core.entities.getComponent<ENG::CS::Model>(portal2);
+		m2.mesh = &core.resources.mesh("quad.obj");
+		m2.texture = &core.entities.getComponent<ENG::CS::FrameBuffer>(portal).getTexture();
+		m2.shader = &core.resources.shader("default.shader");
+
+		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(portal);
+		t.position.x = -10;
+
+		ENG::CS::Transform& t2 = core.entities.getComponent<ENG::CS::Transform>(portal2);
+		t2.position.z = -10;
+
 		core.run();
 	}
 	catch (const std::exception& e)

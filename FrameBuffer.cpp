@@ -2,11 +2,12 @@
 
 namespace ENG
 {
+	FrameBuffer::FrameBuffer() {}
 	FrameBuffer::FrameBuffer(const glm::ivec2& size) { create(size); }
 
 	void FrameBuffer::create(const glm::ivec2& size)
 	{
-		texture.createEmpty(size);
+		texture.create(size);
 
 		glGenFramebuffers(1, &id);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id);

@@ -9,7 +9,8 @@ namespace ENG
 		settings.load(setting_file);
 
 		glm::ivec2 window_size(settings.geti("width"), settings.geti("height"));
-		glm::mat4 projection = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
+		perspective = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
+		orthographic = glm::ortho(0.0f, static_cast<float>(window_size.x), static_cast<float>(window_size.y), 0.0f);
 		window.create(window_size, settings.get("title"));
 
 		resources.loadMeshes(splitText(readTextFile(settings.get("meshes")), '\n'));
@@ -18,11 +19,22 @@ namespace ENG
 		resources.loadShaders(splitText(readTextFile(settings.get("shaders")), '\n'));
 
 		skybox.create(splitText(readTextFile(settings.get("skybox")), '\n'));
+		skybox.bind();
 
-		resources.shader("default.shader").setUniform("projection", projection);
-		resources.shader("skybox.shader").setUniform("projection", projection);
+		resources.shader("default.shader").setUniform("projection", perspective);
+		resources.shader("skybox.shader").setUniform("projection", perspective);
 
-		entities.addComponentPools<CS::Transform, CS::Model, CS::Light, CS::Script, CS::SphereCollider, CS::BoxCollider, CS::Controller>();
+		entities.addComponentPools<
+			CS::Transform,
+			CS::Model,
+			CS::Light,
+			CS::Script,
+			CS::SphereCollider,
+			CS::BoxCollider,
+			CS::Controller,
+			CS::Sprite,
+			CS::FrameBuffer
+		>();
 	}
 
 	void Core::run()
@@ -41,19 +53,21 @@ namespace ENG
 			moveControllers(entities);
 			scriptUpdate(entities, *this);
 
-			resources.shader("default.shader").setUniform("view", glm::inverse(view));
-			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view))));
-
 			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
+			drawFrameBuffers(entities, resources);
+
+			resources.shader("default.shader").setUniform("view", glm::inverse(view.get()));
+			resources.shader("default.shader").setUniform("view_pos", view.position);
+			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view.get()))));
+
 			glDepthMask(GL_FALSE);
-			skybox.bind();
 			resources.shader("skybox.shader").bind();
 			resources.mesh("cube.obj").bind();
 			glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
 			glDepthMask(GL_TRUE);
-
 			drawModels(entities);
+
 			window.display();
 			glfwPollEvents();
 		}
