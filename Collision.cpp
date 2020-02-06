@@ -18,53 +18,6 @@
 
 namespace ENG
 {
-	void testCollisions(Entities& entities, Core& core)
-	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& spheres = entities.getPool<CS::SphereCollider>();
-		auto& boxes = entities.getPool<CS::BoxCollider>();
-		auto& scripts = entities.getPool<CS::Script>();
-
-		std::vector<EntityID> sphere_entities = entities.entitiesWith<CS::Transform, CS::SphereCollider>();
-		std::vector<EntityID> box_entities = entities.entitiesWith<CS::Transform, CS::BoxCollider>();
-
-		// Test spheres against spheres
-		for (EntityID a : sphere_entities)
-		{
-			for (EntityID b : sphere_entities) // test spheres against other spheres
-			{
-				if (a == b) continue;
-
-				glm::vec3 distance = transforms[a].position - transforms[b].position;
-				float length = glm::length(distance);
-				float radii_sum = spheres[a].radius + spheres[b].radius;
-
-				if (length <= radii_sum) // collision
-				{
-					if (spheres[a].solid && spheres[b].solid)
-						transforms[a].position = transforms[b].position + (radii_sum * distance / length);
-					else if (entities.hasComponent<CS::Script>(a))
-						scripts[a].script->onCollision(core, b);
-				}
-			}
-		}
-
-		// Test boxes against boxes.
-		for (EntityID a : box_entities)
-		{
-			for (EntityID b : box_entities)
-			{
-				if (a == b) continue;
-
-				if (OBBcollision(transforms[a], boxes[a].size, transforms[b], boxes[b].size))
-				{
-					if (entities.hasComponent<CS::Script>(a))
-						scripts[a].script->onCollision(core, b);
-				}
-			}
-		}
-	}
-
 	/**
 	* Checks if two oriented bounding boxes are colliding using seperated axis theorem (SAT)
 	*/
@@ -89,11 +42,12 @@ namespace ENG
 		return !CASE_1 && !CASE_2 && !CASE_3 && !CASE_4 && !CASE_5 && !CASE_6 && !CASE_7 && !CASE_8 && !CASE_9 && !CASE_10 && !CASE_11 && !CASE_12 && !CASE_13 && !CASE_14 && !CASE_15;
 	}
 
-	void moveControllers(Entities& entities)
+	void testCollisions(Entities& entities, Core& core)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& controllers = entities.getPool<CS::Controller>();
 		auto& boxes = entities.getPool<CS::BoxCollider>();
+		auto& scripts = entities.getPool<CS::Script>();
 
 		for (EntityID a : entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
@@ -103,7 +57,13 @@ namespace ENG
 				if (a == b) continue;
 
 				if (OBBcollision(transforms[a], boxes[a].size, transforms[b], boxes[b].size))
-					transforms[a].position -= controllers[a].velocity; // move back
+				{
+					if (boxes[a].solid && boxes[b].solid)
+						transforms[a].position -= controllers[a].velocity; // move back
+
+					else if (entities.hasComponent<CS::Script>(a))
+						scripts[a].script->onCollision(core, b);
+				}
 			}
 		}
 	}

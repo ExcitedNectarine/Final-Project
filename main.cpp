@@ -1,5 +1,18 @@
 #include "Core.h"
 
+struct PortalScript : ENG::Script
+{
+	ENG::EntityID other;
+	ENG::CS::Transform* other_t;
+
+	PortalScript(ENG::EntityID other) : other(other) {}
+
+	void start(ENG::Core& core)
+	{
+		other_t = &core.entities.getComponent<ENG::CS::Transform>(other);
+	}
+};
+
 struct PlayerScript : ENG::Script
 {
 	ENG::CS::Transform* transform;
@@ -56,6 +69,11 @@ struct PlayerScript : ENG::Script
 		movement(core);
 		core.view = *transform;
 	}
+
+	void onCollision(ENG::Core& core, ENG::EntityID hit_id)
+	{
+		transform->position = std::dynamic_pointer_cast<PortalScript>(core.entities.getComponent<ENG::CS::Script>(hit_id).script)->other_t->position;
+	}
 };
 
 int main()
@@ -69,11 +87,11 @@ int main()
 
 		// Create player
 		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller>();
-		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_unique<PlayerScript>();
+		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
 
 		// Create portals
-		ENG::EntityID portal = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer>();
-		ENG::EntityID portal2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer>();
+		ENG::EntityID portal = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer, ENG::CS::Script, ENG::CS::BoxCollider>();
+		ENG::EntityID portal2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer, ENG::CS::Script, ENG::CS::BoxCollider>();
 
 		core.entities.getComponent<ENG::CS::FrameBuffer>(portal).create({ 1280, 720 });
 		core.entities.getComponent<ENG::CS::FrameBuffer>(portal2).create({ 1280, 720 });
@@ -90,9 +108,16 @@ int main()
 
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(portal);
 		t.position.x = -10;
-
 		ENG::CS::Transform& t2 = core.entities.getComponent<ENG::CS::Transform>(portal2);
 		t2.position.z = -10;
+
+		ENG::CS::Script& ps = core.entities.getComponent<ENG::CS::Script>(portal);
+		ps.script = std::make_shared<PortalScript>(portal2);
+		ENG::CS::Script& ps2 = core.entities.getComponent<ENG::CS::Script>(portal2);
+		ps2.script = std::make_shared<PortalScript>(portal);
+
+		core.entities.getComponent<ENG::CS::BoxCollider>(portal).solid = false;
+		core.entities.getComponent<ENG::CS::BoxCollider>(portal2).solid = false;
 
 		core.run();
 	}

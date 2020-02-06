@@ -29,7 +29,6 @@ namespace ENG
 			CS::Model,
 			CS::Light,
 			CS::Script,
-			CS::SphereCollider,
 			CS::BoxCollider,
 			CS::Controller,
 			CS::Sprite,
@@ -50,7 +49,6 @@ namespace ENG
 
 			setLights(entities, resources.shader("default.shader"));
 			testCollisions(entities, *this);
-			moveControllers(entities);
 			scriptUpdate(entities, *this);
 
 			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });

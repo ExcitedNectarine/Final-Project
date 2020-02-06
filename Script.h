@@ -14,22 +14,22 @@ namespace ENG
 		/**
 		* Called just before the main game loop.
 		*/
-		virtual void start(Core& app) {}
+		virtual void start(Core& core) {}
 
 		/**
 		* Called every frame.
 		*/
-		virtual void update(Core& app) {}
+		virtual void update(Core& core) {}
 
 		/**
 		* Called after the game loop has ended.
 		*/
-		virtual void end(Core& app) {}
+		virtual void end(Core& core) {}
 
 		/**
 		* Called if entity collides with another entity
 		*/
-		virtual void onCollision(Core& app, EntityID hit_id) {}
+		virtual void onCollision(Core& core, EntityID hit_id) {}
 
 		EntityID id;
 	};
@@ -43,7 +43,7 @@ namespace ENG
 		{
 			// Because the entity manager stores components by value, we have to use one level of
 			// indirection and store a pointer to the script.
-			std::unique_ptr<ENG::Script> script;
+			std::shared_ptr<ENG::Script> script;
 		};
 	}
 

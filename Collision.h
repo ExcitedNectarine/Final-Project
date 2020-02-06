@@ -8,24 +8,12 @@ namespace ENG
 {
 	namespace CS
 	{
-		namespace
-		{
-			struct BaseCollider
-			{
-				bool solid = true;
-			};
-		}
-
-		struct SphereCollider : BaseCollider, ECSComponent<SphereCollider>
-		{
-			float radius = 1.0f;
-		};
-
-		struct BoxCollider : BaseCollider, ECSComponent<BoxCollider>
+		struct BoxCollider : ECSComponent<BoxCollider>
 		{
 			BoxCollider() : size(1.0f) {}
 
 			glm::vec3 size;
+			bool solid = true;
 		};
 
 		struct Controller : ECSComponent<Controller>
@@ -34,7 +22,6 @@ namespace ENG
 		};
 	}
 
-	void moveControllers(Entities& entities);
 	void testCollisions(Entities& entities, Core& core);
 	bool OBBcollision(CS::Transform& a, const glm::vec3& a_size, CS::Transform& b, const glm::vec3& b_size);
 }
