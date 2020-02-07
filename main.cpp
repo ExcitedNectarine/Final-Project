@@ -73,6 +73,7 @@ struct PlayerScript : ENG::Script
 	void onCollision(ENG::Core& core, ENG::EntityID hit_id)
 	{
 		transform->position = std::dynamic_pointer_cast<PortalScript>(core.entities.getComponent<ENG::CS::Script>(hit_id).script)->other_t->position;
+		OUTPUT("done");
 	}
 };
 
@@ -86,25 +87,25 @@ int main()
 		core.window.lockMouse(true);
 
 		// Create player
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller>();
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Light>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
 
 		// Create portals
-		ENG::EntityID portal = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer, ENG::CS::Script, ENG::CS::BoxCollider>();
-		ENG::EntityID portal2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::FrameBuffer, ENG::CS::Script, ENG::CS::BoxCollider>();
+		ENG::EntityID portal = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Screen, ENG::CS::FrameBuffer, ENG::CS::Script, ENG::CS::BoxCollider>();
+		ENG::EntityID portal2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Screen, ENG::CS::FrameBuffer, ENG::CS::Script, ENG::CS::BoxCollider>();
 
 		core.entities.getComponent<ENG::CS::FrameBuffer>(portal).create({ 1280, 720 });
 		core.entities.getComponent<ENG::CS::FrameBuffer>(portal2).create({ 1280, 720 });
 
-		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(portal);
-		m.mesh = &core.resources.mesh("quad.obj");
-		m.texture = &core.entities.getComponent<ENG::CS::FrameBuffer>(portal2).getTexture();
-		m.shader = &core.resources.shader("default.shader");
+		ENG::CS::Screen& m = core.entities.getComponent<ENG::CS::Screen>(portal);
+		m.mesh = "quad.obj";
+		m.framebuffer_id = portal2;
+		m.shader = "default.shader";
 
-		ENG::CS::Model& m2 = core.entities.getComponent<ENG::CS::Model>(portal2);
-		m2.mesh = &core.resources.mesh("quad.obj");
-		m2.texture = &core.entities.getComponent<ENG::CS::FrameBuffer>(portal).getTexture();
-		m2.shader = &core.resources.shader("default.shader");
+		ENG::CS::Screen& m2 = core.entities.getComponent<ENG::CS::Screen>(portal2);
+		m2.mesh = "quad.obj";
+		m2.framebuffer_id = portal;
+		m2.shader = "default.shader";
 
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(portal);
 		t.position.x = -10;
@@ -118,6 +119,16 @@ int main()
 
 		core.entities.getComponent<ENG::CS::BoxCollider>(portal).solid = false;
 		core.entities.getComponent<ENG::CS::BoxCollider>(portal2).solid = false;
+
+		// Create platform
+		ENG::EntityID platform = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider>();
+		ENG::CS::Model& pm = core.entities.getComponent<ENG::CS::Model>(platform);
+		pm.mesh = "cube2.obj";
+		pm.texture = "rock.png";
+		pm.shader = "default.shader";
+
+		core.entities.getComponent<ENG::CS::Transform>(platform).scale = { 25.0f, 1.0f, 25.0f };
+		core.entities.getComponent<ENG::CS::Transform>(platform).position.y = -2;
 
 		core.run();
 	}

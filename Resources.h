@@ -25,7 +25,6 @@ namespace ENG
 		void loadTextures(const std::vector<std::string>& files);
 		void loadSounds(const std::vector<std::string>& files);
 		void loadShaders(const std::vector<std::string>& files);
-		//void loadCubeMaps(const std::vector<std::vector<std::string>> files);
 
 		Mesh& mesh(const std::string& file);
 		Texture& texture(const std::string& file);
@@ -37,6 +36,5 @@ namespace ENG
 		std::map<std::string, Texture> textures;
 		std::map<std::string, SoundBuffer> sounds;
 		std::map<std::string, Shader> shaders;
-		//std::map<std::string, CubeMap> cubemaps;
 	};
 }

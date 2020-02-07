@@ -19,6 +19,7 @@ namespace ENG
 		struct Controller : ECSComponent<Controller>
 		{
 			glm::vec3 velocity;
+			bool collided = false;
 		};
 	}
 

@@ -112,20 +112,6 @@ namespace ENG
 		}
 	}
 
-	//void Resources::loadCubeMaps(const std::vector<std::vector<std::string>> files)
-	//{
-	//	for (const std::vector<std::string>& cubemap : files)
-	//	{
-	//		std::vector<Image> images;
-	//		for (const std::string& file : cubemap)
-	//		{
-	//			images.push_back(loadImage(file));
-	//		}
-
-	//		//cubemaps.insert({ file, CubeMap(images) });
-	//	}
-	//}
-
 	Mesh& Resources::mesh(const std::string& file) { return meshes.at(file); }
 	Texture& Resources::texture(const std::string& file) { return textures.at(file); }
 	SoundBuffer& Resources::sound(const std::string& file) { return sounds.at(file); }

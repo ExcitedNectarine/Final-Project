@@ -12,23 +12,23 @@ namespace ENG
 	{
 		struct Model : ECSComponent<Model>
 		{
-			Mesh* mesh;
-			Texture* texture;
-			Shader* shader;
+			std::string mesh, texture, shader;
 		};
 
-		struct Sprite : ECSComponent<Sprite>
+		/**
+		* Screen component is designed to display a mesh that uses a framebuffer as a texture,
+		* rather than a texture loaded in.
+		*/
+		struct Screen : ECSComponent<Screen>
 		{
-			Texture* texture;
-			Shader* shader;
-			bool billboard = false;
-			bool animated = false;
+			std::string mesh, shader;
+			ENG::EntityID framebuffer_id;
 		};
 
 		struct FrameBuffer : ECSComponent<FrameBuffer>, ENG::FrameBuffer {};
 	}
 
-	void drawModels(Entities& entities);
-	void drawSprites(Entities& entities, CS::Transform& view);
-	void drawFrameBuffers(Entities& entities, Resources& resources);
+	void drawModels(Entities& entities, Resources& resources);
+	void drawScreens(Entities& entities, Resources& resources);
+	void drawToFrameBuffers(Entities& entities, Resources& resources);
 }

@@ -62,7 +62,17 @@ namespace ENG
 						transforms[a].position -= controllers[a].velocity; // move back
 
 					else if (entities.hasComponent<CS::Script>(a))
-						scripts[a].script->onCollision(core, b);
+					{
+						if (!controllers[a].collided)
+							scripts[a].script->onCollision(core, b);
+						controllers[a].collided = true;
+						break;
+					}
+				}
+				else if (controllers[a].collided)
+				{
+					controllers[a].collided = false;
+					break;
 				}
 			}
 		}

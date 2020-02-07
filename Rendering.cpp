@@ -2,11 +2,10 @@
 
 namespace ENG
 {
-
 	/**
 	* Draws model components.
 	*/
-	void drawModels(Entities& entities)
+	void drawModels(Entities& entities, Resources& resources)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& models = entities.getPool<CS::Model>();
@@ -15,36 +14,35 @@ namespace ENG
 		{
 			CS::Model& m = models[id];
 
-			m.shader->setUniform("transform", transforms[id].get());
-			m.shader->bind();
-			m.mesh->bind();
-			m.texture->bind();
-			glDrawArrays(GL_TRIANGLES, 0, m.mesh->vertexCount());
+			resources.shader(m.shader).setUniform("transform", transforms[id].get());
+			resources.shader(m.shader).bind();
+			resources.mesh(m.mesh).bind();
+			resources.texture(m.texture).bind();
+
+			glDrawArrays(GL_TRIANGLES, 0, resources.mesh(m.mesh).vertexCount());
 		}
 	}
 
-	void drawSprites(Entities& entities, CS::Transform& view)
+	void drawScreens(Entities& entities, Resources& resources)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
-		auto& sprites = entities.getPool<CS::Sprite>();
+		auto& screens = entities.getPool<CS::Screen>();
+		auto& framebuffers = entities.getPool<CS::FrameBuffer>();
 
-		CS::Transform scalar;
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Sprite>())
+		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Screen>())
 		{
-			CS::Sprite& sprite = sprites[id];
+			CS::Screen& s = screens[id];
 
-			scalar.scale = glm::vec3(sprite.texture->getSize(), 1.0f);
+			resources.shader(s.shader).setUniform("transform", transforms[id].get());
+			resources.shader(s.shader).bind();
+			resources.mesh(s.mesh).bind();
+			framebuffers[s.framebuffer_id].getTexture().bind();
 
-			if (sprite.billboard)
-				transforms[id].rotation.y = view.rotation.y;
-
-			sprite.shader->setUniform("transform", transforms[id].get() * scalar.get());
-			sprite.texture->bind();
-			//glDrawArrays(GL_TRIANGLES, 0, quad.vertexCount());
+			glDrawArrays(GL_TRIANGLES, 0, resources.mesh(s.mesh).vertexCount());
 		}
 	}
 
-	void drawFrameBuffers(Entities& entities, Resources& resources)
+	void drawToFrameBuffers(Entities& entities, Resources& resources)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& framebuffers = entities.getPool<CS::FrameBuffer>();
@@ -64,7 +62,7 @@ namespace ENG
 			glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
 			glDepthMask(GL_TRUE);
 
-			drawModels(entities);
+			drawModels(entities, resources);
 
 			framebuffers[id].unbind();
 		}

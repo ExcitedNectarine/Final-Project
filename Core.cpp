@@ -27,11 +27,11 @@ namespace ENG
 		entities.addComponentPools<
 			CS::Transform,
 			CS::Model,
+			CS::Screen,
 			CS::Light,
 			CS::Script,
 			CS::BoxCollider,
 			CS::Controller,
-			CS::Sprite,
 			CS::FrameBuffer
 		>();
 	}
@@ -47,13 +47,13 @@ namespace ENG
 			delta = static_cast<float>(current - last);
 			last = current;
 
-			setLights(entities, resources.shader("default.shader"));
-			testCollisions(entities, *this);
 			scriptUpdate(entities, *this);
+			testCollisions(entities, *this);
+			setLights(entities, resources.shader("default.shader"));
 
 			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
-			drawFrameBuffers(entities, resources);
+			drawToFrameBuffers(entities, resources);
 
 			resources.shader("default.shader").setUniform("view", glm::inverse(view.get()));
 			resources.shader("default.shader").setUniform("view_pos", view.position);
@@ -64,7 +64,9 @@ namespace ENG
 			resources.mesh("cube.obj").bind();
 			glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
 			glDepthMask(GL_TRUE);
-			drawModels(entities);
+
+			drawModels(entities, resources);
+			drawScreens(entities, resources);
 
 			window.display();
 			glfwPollEvents();
