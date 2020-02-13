@@ -7,6 +7,8 @@ namespace ENG
 
 	void Window::create(const glm::ivec2& size, const std::string& title)
 	{
+		this->size = size;
+
 		glfwInit();
 
 		window = glfwCreateWindow(size.x, size.y, title.c_str(), NULL, NULL);
@@ -43,4 +45,5 @@ namespace ENG
 	bool Window::shouldClose() { return static_cast<bool>(glfwWindowShouldClose(window)); }
 	void Window::close() { glfwSetWindowShouldClose(window, true); }
 	bool Window::isKeyPressed(int key) { return glfwGetKey(window, key); }
+	glm::ivec2 Window::getSize() { return size; }
 }

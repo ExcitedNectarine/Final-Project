@@ -50,9 +50,9 @@ namespace ENG
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::FrameBuffer>())
 		{
 			framebuffers[id].bind();
-			resources.shader("default.shader").setUniform("view", transforms[id].get());
+			resources.shader("default.shader").setUniform("view", glm::inverse(transforms[id].get()));
 			resources.shader("default.shader").setUniform("view_pos", transforms[id].position);
-			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(transforms[id].get())));
+			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(transforms[id].get()))));
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

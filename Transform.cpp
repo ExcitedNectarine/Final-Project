@@ -32,4 +32,20 @@ namespace ENG
 			return { transform[0].x, transform[0].y, transform[0].z };
 		}
 	}
+
+	CS::Transform worldTransform(ComponentMap<CS::Transform>& transforms, EntityID id)
+	{
+		EntityID parent = transforms[id].parent;
+
+		if (parent == -1)
+			return transforms[id];
+
+		CS::Transform transform;
+
+		transform.position = transforms[parent].position + transforms[id].position;
+		transform.rotation = transforms[parent].rotation + transforms[id].rotation;
+		transform.scale = transforms[parent].scale + transforms[id].scale;
+
+		return transform;
+	}
 }

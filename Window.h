@@ -23,9 +23,11 @@ namespace ENG
 		bool shouldClose();
 		void close();
 		bool isKeyPressed(int key);
+		glm::ivec2 getSize();
 
 	private:
 		GLFWwindow* window;
 		glm::dvec2 mouse_pos;
+		glm::ivec2 size;
 	};
 }

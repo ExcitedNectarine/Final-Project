@@ -1,10 +1,7 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/matrix_transform_2d.hpp>
 #include "Entities.h"
 
 namespace ENG
@@ -24,6 +21,10 @@ namespace ENG
 			glm::vec3 position;
 			glm::vec3 rotation;
 			glm::vec3 scale;
+
+			EntityID parent = -1;
 		};
 	}
+
+	CS::Transform worldTransform(ComponentMap<CS::Transform>& transforms, EntityID id);
 }
