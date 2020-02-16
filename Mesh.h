@@ -17,6 +17,7 @@ namespace ENG
 	{
 	public:
 		void setVertices(const std::vector<Vertex>& new_vertices);
+		std::vector<Vertex>& getVertices();
 		std::size_t vertexCount();
 		void bind();
 		void unbind();

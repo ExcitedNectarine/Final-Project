@@ -13,9 +13,11 @@ namespace ENG
 
 		window = glfwCreateWindow(size.x, size.y, title.c_str(), NULL, NULL);
 		glfwMakeContextCurrent(window);
+		glfwWindowHint(GLFW_SAMPLES, 4);
 
 		glewInit();
 
+		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);

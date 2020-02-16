@@ -27,12 +27,11 @@ namespace ENG
 		entities.addComponentPools<
 			CS::Transform,
 			CS::Model,
-			CS::Screen,
 			CS::Light,
 			CS::Script,
 			CS::BoxCollider,
 			CS::Controller,
-			CS::FrameBuffer
+			CS::Portal
 		>();
 	}
 
@@ -48,12 +47,14 @@ namespace ENG
 			last = current;
 
 			scriptUpdate(entities, *this);
+			updatePortals(entities);
+
 			testCollisions(entities, *this);
 			setLights(entities, resources.shader("default.shader"));
 
 			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
-			drawToFrameBuffers(entities, resources);
+			drawToPortals(entities, resources);
 
 			resources.shader("default.shader").setUniform("view", glm::inverse(view.get()));
 			resources.shader("default.shader").setUniform("view_pos", view.position);
@@ -66,7 +67,7 @@ namespace ENG
 			glDepthMask(GL_TRUE);
 
 			drawModels(entities, resources);
-			drawScreens(entities, resources);
+			drawPortals(entities, resources);
 
 			window.display();
 			glfwPollEvents();

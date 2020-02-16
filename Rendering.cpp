@@ -23,36 +23,32 @@ namespace ENG
 		}
 	}
 
-	void drawScreens(Entities& entities, Resources& resources)
+	void updatePortals(Entities& entities)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
-		auto& screens = entities.getPool<CS::Screen>();
-		auto& framebuffers = entities.getPool<CS::FrameBuffer>();
+		auto& portals = entities.getPool<CS::Portal>();
+		glm::vec3 player_offset;
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Screen>())
+		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			CS::Screen& s = screens[id];
-
-			resources.shader(s.shader).setUniform("transform", transforms[id].get());
-			resources.shader(s.shader).bind();
-			resources.mesh(s.mesh).bind();
-			framebuffers[s.framebuffer_id].getTexture().bind();
-
-			glDrawArrays(GL_TRIANGLES, 0, resources.mesh(s.mesh).vertexCount());
+			player_offset = transforms[portals[id].player].position - transforms[portals[id].other].position;
+			portals[id].camera.position = transforms[id].position + player_offset;
+			portals[id].camera.rotation = transforms[portals[id].player].rotation;
 		}
 	}
 
-	void drawToFrameBuffers(Entities& entities, Resources& resources)
+	void drawToPortals(Entities& entities, Resources& resources)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
-		auto& framebuffers = entities.getPool<CS::FrameBuffer>();
+		auto& portals = entities.getPool<CS::Portal>();
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::FrameBuffer>())
+		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			framebuffers[id].bind();
-			resources.shader("default.shader").setUniform("view", glm::inverse(transforms[id].get()));
-			resources.shader("default.shader").setUniform("view_pos", transforms[id].position);
-			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(transforms[id].get()))));
+			portals[id].framebuffer.bind();
+
+			resources.shader("default.shader").setUniform("view", glm::inverse(portals[portals[id].other].camera.get()));
+			resources.shader("default.shader").setUniform("view_pos", portals[portals[id].other].camera.position);
+			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(portals[portals[id].other].camera.get()))));
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -64,7 +60,23 @@ namespace ENG
 
 			drawModels(entities, resources);
 
-			framebuffers[id].unbind();
+			portals[id].framebuffer.unbind();
+		}
+	}
+
+	void drawPortals(Entities& entities, Resources& resources)
+	{
+		auto& transforms = entities.getPool<CS::Transform>();
+		auto& portals = entities.getPool<CS::Portal>();
+
+		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
+		{
+			resources.shader("default.shader").setUniform("transform", transforms[id].get());
+			resources.shader("default.shader").bind();
+			resources.mesh("quad.obj").bind();
+			portals[id].framebuffer.getTexture().bind();
+
+			glDrawArrays(GL_TRIANGLES, 0, resources.mesh("quad.obj").vertexCount());
 		}
 	}
 }

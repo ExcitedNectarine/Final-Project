@@ -76,6 +76,7 @@ namespace ENG
 		glBindVertexArray(NULL);
 	}
 
+	std::vector<Vertex>& Mesh::getVertices() { return vertices; }
 	std::size_t Mesh::vertexCount() { return vertices.size(); }
 	void Mesh::bind() { glBindVertexArray(id); }
 	void Mesh::unbind() { glBindVertexArray(NULL); }

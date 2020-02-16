@@ -15,20 +15,17 @@ namespace ENG
 			std::string mesh, texture, shader;
 		};
 
-		/**
-		* Screen component is designed to display a mesh that uses a framebuffer as a texture,
-		* rather than a texture loaded in.
-		*/
-		struct Screen : ECSComponent<Screen>
+		struct Portal : ECSComponent<Portal>
 		{
-			std::string mesh, shader;
-			ENG::EntityID framebuffer_id;
+			EntityID other;
+			EntityID player;
+			Transform camera;
+			FrameBuffer framebuffer;
 		};
-
-		struct FrameBuffer : ECSComponent<FrameBuffer>, ENG::FrameBuffer {};
 	}
 
 	void drawModels(Entities& entities, Resources& resources);
-	void drawScreens(Entities& entities, Resources& resources);
-	void drawToFrameBuffers(Entities& entities, Resources& resources);
+	void updatePortals(Entities& entities);
+	void drawToPortals(Entities& entities, Resources& resources);
+	void drawPortals(Entities& entities, Resources& resources);
 }
