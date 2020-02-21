@@ -27,5 +27,5 @@ namespace ENG
 	void drawModels(Entities& entities, Resources& resources);
 	void updatePortals(Entities& entities);
 	void drawToPortals(Entities& entities, Resources& resources);
-	void drawPortals(Entities& entities, Resources& resources);
+	void drawPortals(Entities& entities, Resources& resources, glm::mat4 perspective, glm::mat4 view);
 }

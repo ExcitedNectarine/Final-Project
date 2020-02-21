@@ -1,49 +1,6 @@
 #include "Core.h"
-#include <glm/gtx/vector_angle.hpp>
-#include <glm/gtc/quaternion.hpp>
-
-//struct PortalScript : ENG::Script
-//{
-//	ENG::EntityID other;
-//	ENG::CS::Transform* other_t;
-//
-//	PortalScript(ENG::EntityID other) : other(other) {}
-//
-//	void start(ENG::Core& core)
-//	{
-//		other_t = &core.entities.getComponent<ENG::CS::Transform>(other);
-//	}
-//};
-//
-//struct PortalCamScript : ENG::Script
-//{
-//	ENG::EntityID player;
-//	ENG::EntityID portal_a;
-//	ENG::EntityID portal_b;
-//
-//	ENG::CS::Transform* player_t;
-//	ENG::CS::Transform* portal_a_t;
-//	ENG::CS::Transform* portal_b_t;
-//	ENG::CS::Transform* transform;
-//
-//	PortalCamScript(ENG::EntityID player, ENG::EntityID portal_a, ENG::EntityID portal_b) : player(player), portal_a(portal_a), portal_b(portal_b) {}
-//
-//	void start(ENG::Core& core)
-//	{
-//		player_t = &core.entities.getComponent<ENG::CS::Transform>(player);
-//		portal_a_t = &core.entities.getComponent<ENG::CS::Transform>(portal_a);
-//		portal_b_t = &core.entities.getComponent<ENG::CS::Transform>(portal_b);
-//		transform = &core.entities.getComponent<ENG::CS::Transform>(id);
-//	}
-//
-//	void update(ENG::Core& core)
-//	{
-//		glm::vec3 player_offset = player_t->position - portal_b_t->position;
-//		transform->position = portal_a_t->position + player_offset;
-//
-//		transform->rotation = player_t->rotation;
-//	}
-//};
+#include <algorithm>
+#include <glm/gtx/string_cast.hpp>
 
 struct PlayerScript : ENG::Script
 {
@@ -51,7 +8,7 @@ struct PlayerScript : ENG::Script
 	ENG::CS::Controller* controller;
 	glm::vec3 direction;
 	glm::vec3 velocity;
-	float speed = 15.0f;
+	float speed = 5.0f;
 
 	glm::dvec2 last_mouse;
 	glm::dvec2 mouse_offset;
@@ -69,10 +26,9 @@ struct PlayerScript : ENG::Script
 		last_mouse = core.window.getMousePos();
 		transform->rotation += glm::vec3(mouse_offset.y, mouse_offset.x, 0.0f) * sensitivity;
 
-		if (transform->rotation.x <= -89.0f)
-			transform->rotation.x = -89.0f;
-		else if (transform->rotation.x >= 89.0f)
-			transform->rotation.x = 89.0f;
+		//glm::vec3 rot = glm::degrees(glm::eulerAngles(transform->rotation));
+		//rot += glm::vec3(mouse_offset.y, mouse_offset.x, 0.0f) * sensitivity;
+		//transform->rotation = glm::quat(glm::radians(rot));
 	}
 
 	void movement(ENG::Core& core)
@@ -136,10 +92,11 @@ int main()
 
 		ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
 		ENG::CS::Model& prop_m = core.entities.getComponent<ENG::CS::Model>(prop);
-		prop_m.mesh = "cube2.obj";
+		prop_m.mesh = "skull.obj";
 		prop_m.shader = "default.shader";
 		prop_m.texture = "skull.jpg";
 		core.entities.getComponent<ENG::CS::Transform>(prop).position = { -15.0f, 0.0f, -5.0f };
+		core.entities.getComponent<ENG::CS::Transform>(prop).scale *= 0.1f;
 
 		ENG::EntityID platform = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
 		ENG::CS::Model& platform_m = core.entities.getComponent<ENG::CS::Model>(platform);

@@ -67,7 +67,7 @@ namespace ENG
 			glDepthMask(GL_TRUE);
 
 			drawModels(entities, resources);
-			drawPortals(entities, resources);
+			drawPortals(entities, resources, perspective, glm::inverse(view.get()));
 
 			window.display();
 			glfwPollEvents();

@@ -17,17 +17,17 @@ namespace ENG
 	{
 	public:
 		void setVertices(const std::vector<Vertex>& new_vertices);
-		std::vector<Vertex>& getVertices();
+		void create();
+		void update();
+		void cleanup();
+		Vertex& operator[](const int index);
 		std::size_t vertexCount();
 		void bind();
 		void unbind();
-		void cleanup();
 
 	private:
-		void create(const std::vector<GLfloat>& positions, const std::vector<GLfloat>& uvs, const std::vector<GLfloat>& normals);
-
-	private:
-		GLuint id;
+		GLuint id, position_id, uv_id, normal_id;
+		bool dirty = false;
 		std::vector<Vertex> vertices;
 	};
 }

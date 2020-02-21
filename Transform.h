@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include "Entities.h"
 
 namespace ENG
@@ -11,7 +12,7 @@ namespace ENG
 		/**
 		* Transform component, represents a transform in the world.
 		*/
-		struct Transform : ENG::ECSComponent<Transform>
+		struct Transform : ECSComponent<Transform>
 		{
 			Transform();
 			glm::mat4 get();
@@ -21,10 +22,6 @@ namespace ENG
 			glm::vec3 position;
 			glm::vec3 rotation;
 			glm::vec3 scale;
-
-			EntityID parent = -1;
 		};
 	}
-
-	CS::Transform worldTransform(ComponentMap<CS::Transform>& transforms, EntityID id);
 }
