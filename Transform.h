@@ -15,6 +15,7 @@ namespace ENG
 		struct Transform : ECSComponent<Transform>
 		{
 			Transform();
+			
 			glm::mat4 get();
 			glm::vec3 forward();
 			glm::vec3 right();

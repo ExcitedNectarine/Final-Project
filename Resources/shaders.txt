@@ -1,3 +1,4 @@
 Resources/Shaders/default.shader
 Resources/Shaders/skybox.shader
 Resources/Shaders/framebuffer.shader
+Resources/Shaders/portals.shader

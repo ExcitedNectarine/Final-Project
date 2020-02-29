@@ -134,6 +134,7 @@
     <ClCompile Include="Lighting.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Portal.cpp" />
     <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="Resources.cpp" />
     <ClCompile Include="Script.cpp" />
@@ -142,8 +143,6 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Tools.cpp" />
     <ClCompile Include="Transform.cpp" />
-    <ClCompile Include="VertexArray.cpp" />
-    <ClCompile Include="VertexBuffer.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +157,7 @@
     <ClInclude Include="Lighting.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Output.h" />
+    <ClInclude Include="Portal.h" />
     <ClInclude Include="Rendering.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Script.h" />
@@ -167,8 +167,6 @@
     <ClInclude Include="Tools.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vertex.h" />
-    <ClInclude Include="VertexArray.h" />
-    <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,6 +1,4 @@
 #include "Core.h"
-#include <algorithm>
-#include <glm/gtx/string_cast.hpp>
 
 struct PlayerScript : ENG::Script
 {
@@ -25,10 +23,6 @@ struct PlayerScript : ENG::Script
 		mouse_offset = last_mouse - core.window.getMousePos();
 		last_mouse = core.window.getMousePos();
 		transform->rotation += glm::vec3(mouse_offset.y, mouse_offset.x, 0.0f) * sensitivity;
-
-		//glm::vec3 rot = glm::degrees(glm::eulerAngles(transform->rotation));
-		//rot += glm::vec3(mouse_offset.y, mouse_offset.x, 0.0f) * sensitivity;
-		//transform->rotation = glm::quat(glm::radians(rot));
 	}
 
 	void movement(ENG::Core& core)
@@ -59,12 +53,23 @@ struct PlayerScript : ENG::Script
 	}
 };
 
+void createProp(ENG::Core& core, glm::vec3 pos)
+{
+	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+	ENG::CS::Model& prop_m = core.entities.getComponent<ENG::CS::Model>(prop);
+	prop_m.mesh = "skull.obj";
+	prop_m.shader = "default.shader";
+	prop_m.texture = "skull.jpg";
+	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
+	core.entities.getComponent<ENG::CS::Transform>(prop).scale *= 0.1f;
+}
+
 int main()
 {
 	try
 	{
 		ENG::Core core("Resources/settings.set");
-		core.resources.shader("default.shader").setUniform("ambient", glm::vec3(1.0f) * 0.5f);
+		core.resources.shader("default.shader").setUniform("ambient", glm::vec3(0.5f));
 
 		core.window.lockMouse(true);
 
@@ -87,16 +92,16 @@ int main()
 		pb.other = portal_a;
 
 		// Position portals
-		core.entities.getComponent<ENG::CS::Transform>(portal_a).position = { -15.0f, 0.0f, -2.0f };
-		core.entities.getComponent<ENG::CS::Transform>(portal_b).position = { 15.0f, 0.0f, -2.0f };
+		ENG::CS::Transform& ta = core.entities.getComponent <ENG::CS::Transform>(portal_a);
+		ta.position = { -15.0f, 0.0f, -2.0f };
+		ta.rotation.y = 45.0f;
 
-		ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		ENG::CS::Model& prop_m = core.entities.getComponent<ENG::CS::Model>(prop);
-		prop_m.mesh = "skull.obj";
-		prop_m.shader = "default.shader";
-		prop_m.texture = "skull.jpg";
-		core.entities.getComponent<ENG::CS::Transform>(prop).position = { -15.0f, 0.0f, -5.0f };
-		core.entities.getComponent<ENG::CS::Transform>(prop).scale *= 0.1f;
+		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
+		tb.position = { 15.0f, 0.0f, -2.0f };
+		tb.rotation.y = -45.0f;
+
+		createProp(core, { -15.0f, 0.0f, -10.0f });
+		createProp(core, { -5.0f, 2.0f, 10.0f });
 
 		ENG::EntityID platform = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
 		ENG::CS::Model& platform_m = core.entities.getComponent<ENG::CS::Model>(platform);
