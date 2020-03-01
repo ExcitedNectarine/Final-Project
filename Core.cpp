@@ -9,8 +9,12 @@ namespace ENG
 		settings.load(setting_file);
 
 		glm::ivec2 window_size(settings.geti("width"), settings.geti("height"));
-		perspective = glm::perspective(90.0f, static_cast<float>(window_size.x) / window_size.y, 0.1f, 500.0f);
-		orthographic = glm::ortho(0.0f, static_cast<float>(window_size.x), static_cast<float>(window_size.y), 0.0f);
+
+		camera.fov = 90.0f;
+		camera.aspect = static_cast<float>(window_size.x) / window_size.y;
+		camera.near = 0.1f;
+		camera.far = 500.0f;
+
 		window.create(window_size, settings.get("title"));
 
 		resources.loadMeshes(splitText(readTextFile(settings.get("meshes")), '\n'));
@@ -21,8 +25,8 @@ namespace ENG
 		skybox.create(splitText(readTextFile(settings.get("skybox")), '\n'));
 		skybox.bind();
 
-		resources.shader("default.shader").setUniform("projection", perspective);
-		resources.shader("skybox.shader").setUniform("projection", perspective);
+		resources.shader("default.shader").setUniform("projection", camera.get());
+		resources.shader("skybox.shader").setUniform("projection", camera.get());
 
 		entities.addComponentPools<
 			CS::Transform,
@@ -38,6 +42,7 @@ namespace ENG
 	void Core::run()
 	{
 		scriptStart(entities, *this);
+		startPortals(entities);
 
 		double current = 0.0, last = 0.0;
 		while (!window.shouldClose())
@@ -67,7 +72,7 @@ namespace ENG
 			glDepthMask(GL_TRUE);
 
 			drawModels(entities, resources);
-			drawPortals(entities, resources, perspective, glm::inverse(view.get()));
+			drawPortals(entities, resources, camera.get(), glm::inverse(view.get()));
 
 			window.display();
 			glfwPollEvents();

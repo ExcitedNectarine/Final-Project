@@ -4,6 +4,7 @@
 #include "Collision.h"
 #include "Rendering.h"
 #include "FrameBuffer.h"
+#include "Camera.h"
 
 namespace ENG
 {
@@ -20,6 +21,7 @@ namespace ENG
 		};
 	}
 
+	void startPortals(Entities& entities);
 	void updatePortals(Entities& entities);
 	void drawToPortals(Entities& entities, Resources& resources);
 	void drawPortals(Entities& entities, Resources& resources, glm::mat4 perspective, glm::mat4 view);

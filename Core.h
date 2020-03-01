@@ -26,9 +26,8 @@ namespace ENG
 		Settings settings;
 		CubeMap skybox;
 
+		CS::Camera camera;
 		CS::Transform view;
-		glm::mat4 perspective;
-		glm::mat4 orthographic;
 
 		float delta;
 	};
