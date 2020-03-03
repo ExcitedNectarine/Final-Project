@@ -6,7 +6,7 @@ struct PlayerScript : ENG::Script
 	ENG::CS::Controller* controller;
 	glm::vec3 direction;
 	glm::vec3 velocity;
-	float speed = 5.0f;
+	float speed = 10.0f;
 
 	glm::dvec2 last_mouse;
 	glm::dvec2 mouse_offset;
@@ -16,6 +16,10 @@ struct PlayerScript : ENG::Script
 	{
 		transform = &core.entities.getComponent<ENG::CS::Transform>(id);
 		controller = &core.entities.getComponent<ENG::CS::Controller>(id);
+		transform->position.y = 20.0f;
+
+		core.entities.getComponent<ENG::CS::BoxCollider>(id).size.y = 2.0f;
+		core.entities.getComponent<ENG::CS::Light>(id).colour = { 50.0f, 50.0f, 25.0f };
 	}
 
 	void mouselook(ENG::Core& core)
@@ -23,23 +27,36 @@ struct PlayerScript : ENG::Script
 		mouse_offset = last_mouse - core.window.getMousePos();
 		last_mouse = core.window.getMousePos();
 		transform->rotation += glm::vec3(mouse_offset.y, mouse_offset.x, 0.0f) * sensitivity;
+
+		if (transform->rotation.x > 89.0f) transform->rotation.x = 89.0f;
+		else if (transform->rotation.x < -89.0f) transform->rotation.x = -89.0f;
 	}
 
 	void movement(ENG::Core& core)
 	{
 		direction = glm::vec3(0.0f);
+
 		if (core.window.isKeyPressed(GLFW_KEY_W)) direction -= transform->forward();
 		else if (core.window.isKeyPressed(GLFW_KEY_S)) direction += transform->forward();
 		if (core.window.isKeyPressed(GLFW_KEY_A)) direction -= transform->right();
 		else if (core.window.isKeyPressed(GLFW_KEY_D)) direction += transform->right();
+
+		if (core.window.isKeyPressed(GLFW_KEY_SPACE))
+		{
+			velocity.y = 5.0f;
+			controller->on_floor = false;
+		}
 
 		if (direction != glm::vec3(0.0f))
 			direction = glm::normalize(direction);
 
 		velocity.x = direction.x * speed;
 		velocity.z = direction.z * speed;
+		
+		if (!controller->on_floor)
+			velocity.y -= 9.1f * core.delta;
 
-		controller->velocity = velocity * core.delta;
+		controller->velocity = velocity;
 	}
 
 	void update(ENG::Core& core)
@@ -49,6 +66,7 @@ struct PlayerScript : ENG::Script
 
 		mouselook(core);
 		movement(core);
+
 		core.view = *transform;
 	}
 };
@@ -64,6 +82,19 @@ void createProp(ENG::Core& core, glm::vec3 pos)
 	core.entities.getComponent<ENG::CS::Transform>(prop).scale *= 0.1f;
 }
 
+void createBarrier(ENG::Core& core, glm::vec3 pos)
+{
+	ENG::EntityID platform = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider>();
+	ENG::CS::Model& platform_m = core.entities.getComponent<ENG::CS::Model>(platform);
+	platform_m.mesh = "cube2.obj";
+	platform_m.shader = "default.shader";
+	platform_m.texture = "rock.png";
+
+	core.entities.getComponent<ENG::CS::Transform>(platform).position = pos;
+	core.entities.getComponent<ENG::CS::Transform>(platform).scale = { 20.0f, 1.0f, 20.0f };
+	core.entities.getComponent<ENG::CS::BoxCollider>(platform).size = { 2.0f, 2.0f, 2.0f };
+}
+
 int main()
 {
 	try
@@ -74,8 +105,13 @@ int main()
 		core.window.lockMouse(true);
 
 		// Create player
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Light>();
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Light, ENG::CS::Model>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
+
+		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(player);
+		m.mesh = "cube2.obj";
+		m.texture = "rock.png";
+		m.shader = "default.shader";
 
 		// Create portals
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
@@ -94,22 +130,16 @@ int main()
 		// Position portals
 		ENG::CS::Transform& ta = core.entities.getComponent <ENG::CS::Transform>(portal_a);
 		ta.position = { -15.0f, 0.0f, -2.0f };
-		ta.rotation.y = 45.0f;
 
 		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
-		tb.position = { 15.0f, 0.0f, -2.0f };
-		tb.rotation.y = -45.0f;
+		tb.position = { 15.0f, 32.0f, -2.0f };
 
+		// Environment
 		createProp(core, { -15.0f, 0.0f, -10.0f });
 		createProp(core, { -5.0f, 2.0f, 10.0f });
 
-		ENG::EntityID platform = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		ENG::CS::Model& platform_m = core.entities.getComponent<ENG::CS::Model>(platform);
-		platform_m.mesh = "cube2.obj";
-		platform_m.shader = "default.shader";
-		platform_m.texture = "rock.png";
-		core.entities.getComponent<ENG::CS::Transform>(platform).position.y = -2.0f;
-		core.entities.getComponent<ENG::CS::Transform>(platform).scale = { 20.0f, 1.0f, 20.0f };
+		createBarrier(core, { 0.0f, -2.0f, 0.0f });
+		createBarrier(core, { 0.0f, 30.0f, 0.0f });
 
 		core.run();
 	}

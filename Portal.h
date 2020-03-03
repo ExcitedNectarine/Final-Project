@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/closest_point.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include "Collision.h"
 #include "Rendering.h"
 #include "FrameBuffer.h"

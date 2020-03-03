@@ -1,4 +1,5 @@
 #include "Collision.h"
+#include "Core.h"
 
 #define CASE_1 (abs(dot(dist, a_x_axis)) > a_half_size.x + abs(b_half_size.x * dot(a_x_axis, b_x_axis)) + abs(b_half_size.y * dot(a_x_axis, b_y_axis)) + abs(b_half_size.z * dot(a_x_axis, b_z_axis)))
 #define CASE_2 (abs(dot(dist, a_y_axis)) > a_half_size.y + abs(b_half_size.x * dot(a_y_axis, b_x_axis)) + abs(b_half_size.y * dot(a_y_axis, b_y_axis)) + abs(b_half_size.z * dot(a_y_axis, b_z_axis)))
@@ -42,6 +43,22 @@ namespace ENG
 		return !CASE_1 && !CASE_2 && !CASE_3 && !CASE_4 && !CASE_5 && !CASE_6 && !CASE_7 && !CASE_8 && !CASE_9 && !CASE_10 && !CASE_11 && !CASE_12 && !CASE_13 && !CASE_14 && !CASE_15;
 	}
 
+	/**
+	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
+	*/
+	bool AABBcollision(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 b_pos, const glm::vec3& b_size)
+	{
+		a_pos -= a_size / 2.0f;
+		b_pos -= b_size / 2.0f;
+
+		return (a_pos.x < b_pos.x + b_size.x &&
+				a_pos.x + a_size.x > b_pos.x &&
+				a_pos.y < b_pos.y + b_size.y &&
+				a_pos.y + a_size.y > b_pos.y &&
+				a_pos.z < b_pos.z + b_size.z &&
+				a_pos.z + a_size.z > b_pos.z);
+	}
+
 	void testCollisions(Entities& entities, Core& core)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
@@ -51,30 +68,53 @@ namespace ENG
 
 		for (EntityID a : entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
-			transforms[a].position += controllers[a].velocity; // move forward
+			glm::vec3 new_pos = transforms[a].position;
+			glm::vec3 a_size = boxes[a].size * transforms[a].scale;
+
+			new_pos.x += controllers[a].velocity.x * core.delta;
 			for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 			{
 				if (a == b) continue;
 
-				if (OBBcollision(transforms[a], boxes[a].size, transforms[b], boxes[b].size))
+				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
+				if (AABBcollision(new_pos, a_size, transforms[b].position, b_size))
 				{
-					if (boxes[a].solid && boxes[b].solid)
-						transforms[a].position -= controllers[a].velocity; // move back
-
-					else if (entities.hasComponent<CS::Script>(a))
-					{
-						if (!controllers[a].collided)
-							scripts[a].script->onCollision(core, b);
-						controllers[a].collided = true;
-						break;
-					}
-				}
-				else if (controllers[a].collided)
-				{
-					controllers[a].collided = false;
-					break;
+					if (controllers[a].velocity.x > 0.0f) new_pos.x = (transforms[b].position.x - (b_size.x / 2.0f)) - (a_size.x / 2.0f);
+					if (controllers[a].velocity.x < 0.0f) new_pos.x = (transforms[b].position.x + (b_size.x / 2.0f)) + (a_size.x / 2.0f);
 				}
 			}
+
+			new_pos.y += controllers[a].velocity.y * core.delta;
+			for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+			{
+				if (a == b) continue;
+
+				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
+				if (AABBcollision(new_pos, a_size, transforms[b].position, b_size))
+				{
+					if (controllers[a].velocity.y > 0.0f) new_pos.y = (transforms[b].position.y - (b_size.y / 2.0f)) - (a_size.y / 2.0f);
+					if (controllers[a].velocity.y < 0.0f)
+					{
+						new_pos.y = (transforms[b].position.y + (b_size.y / 2.0f)) + (a_size.y / 2.0f);
+						controllers[a].on_floor = true;
+					}
+				}
+			}
+
+			new_pos.z += controllers[a].velocity.z * core.delta;
+			for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+			{
+				if (a == b) continue;
+
+				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
+				if (AABBcollision(new_pos, a_size, transforms[b].position, b_size))
+				{
+					if (controllers[a].velocity.z > 0.0f) new_pos.z = (transforms[b].position.z - (b_size.z / 2.0f)) - (a_size.z / 2.0f);
+					if (controllers[a].velocity.z < 0.0f) new_pos.z = (transforms[b].position.z + (b_size.z / 2.0f)) + (a_size.z / 2.0f);
+				}
+			}
+
+			transforms[a].position = new_pos;
 		}
 	}
 }

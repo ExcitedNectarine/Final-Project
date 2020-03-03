@@ -36,9 +36,7 @@ namespace ENG
 				if (glm::sign(angle) != glm::sign(portals[id].prev_angle))
 				{
 					glm::mat4 m = transforms[portals[id].other].get() * glm::inverse(transforms[id].get()) * transforms[portals[id].player].get();
-					transforms[portals[id].player].position = m[3];
-
-					OUTPUT(glm::to_string(m[3]));
+					transforms[portals[id].player].position = m[3]; // Teleporting to left/right slightly. Could be a floating point error that adds up
 
 					// Make sure player faces proper direction when entering portal.
 					glm::vec3 new_rot(0.0f);
@@ -49,6 +47,8 @@ namespace ENG
 					// Prevents double teleporting
 					portals[portals[id].other].active = false;
 					portals[portals[id].other].prev_angle = angle;
+
+					OUTPUT("Teleported! " << id << " -> " << portals[id].other);
 
 					return;
 				}
@@ -97,6 +97,12 @@ namespace ENG
 		Mesh& quad = resources.mesh("quad.obj");
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
+			CS::Transform t = transforms[id];
+
+			// Find if player is within 0.1f of portal plane
+			// Then push portal back to be 0.11f in front of the player
+			// Once portal is crossed, dont draw other portal
+
 			resources.shader("portals.shader").setUniform("transform", transforms[id].get());
 			resources.shader("portals.shader").setUniform("view", view);
 			resources.shader("portals.shader").setUniform("projection", perspective);
