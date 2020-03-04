@@ -19,7 +19,6 @@ struct PlayerScript : ENG::Script
 		transform->position.y = 20.0f;
 
 		core.entities.getComponent<ENG::CS::BoxCollider>(id).size.y = 2.0f;
-		core.entities.getComponent<ENG::CS::Light>(id).colour = { 50.0f, 0.0f, 50.0f };
 	}
 
 	void mouselook(ENG::Core& core)
@@ -67,7 +66,7 @@ struct PlayerScript : ENG::Script
 		mouselook(core);
 		movement(core);
 
-		core.view = *transform;
+		core.view = transform;
 	}
 };
 
@@ -105,7 +104,7 @@ int main()
 		core.window.lockMouse(true);
 
 		// Create player
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Light, ENG::CS::Model>();
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Model>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
 
 		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(player);

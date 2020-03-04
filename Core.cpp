@@ -61,9 +61,9 @@ namespace ENG
 
 			drawToPortals(entities, resources);
 
-			resources.shader("default.shader").setUniform("view", glm::inverse(view.get()));
-			resources.shader("default.shader").setUniform("view_pos", view.position);
-			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view.get()))));
+			resources.shader("default.shader").setUniform("view", glm::inverse(view->get()));
+			resources.shader("default.shader").setUniform("view_pos", view->position);
+			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view->get()))));
 
 			glDepthMask(GL_FALSE);
 			resources.shader("skybox.shader").bind();
@@ -72,7 +72,7 @@ namespace ENG
 			glDepthMask(GL_TRUE);
 
 			drawModels(entities, resources);
-			drawPortals(entities, resources, camera.get(), glm::inverse(view.get()));
+			drawPortals(entities, resources, camera.get(), glm::inverse(view->get()));
 
 			window.display();
 			glfwPollEvents();

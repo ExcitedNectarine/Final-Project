@@ -27,7 +27,7 @@ namespace ENG
 		CubeMap skybox;
 
 		CS::Camera camera;
-		CS::Transform view;
+		CS::Transform* view;
 
 		float delta;
 	};

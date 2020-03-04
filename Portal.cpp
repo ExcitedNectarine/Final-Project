@@ -48,8 +48,6 @@ namespace ENG
 					portals[portals[id].other].active = false;
 					portals[portals[id].other].prev_side = side;
 
-					OUTPUT("Teleported! " << id << " -> " << portals[id].other);
-
 					return;
 				}
 			}

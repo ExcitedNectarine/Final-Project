@@ -33,13 +33,13 @@ namespace ENG
 		}
 	}
 
-	glm::mat4 getWorld(Entities& entities, EntityID id)
+	glm::mat4 getWorldT(Entities& entities, EntityID id)
 	{
 		static auto& pool = entities.getPool<CS::Transform>();
 
 		if (pool[id].parent == 0) // Root transform
 			return pool[id].get();
 
-		return getWorld(entities, pool[id].parent) * pool[id].get();
+		return getWorldT(entities, pool[id].parent) * pool[id].get();
 	}
 }

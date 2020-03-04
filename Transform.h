@@ -27,5 +27,5 @@ namespace ENG
 		};
 	}
 
-	glm::mat4 getWorld(Entities& entities, EntityID id);
+	glm::mat4 getWorldT(Entities& entities, EntityID id);
 }
