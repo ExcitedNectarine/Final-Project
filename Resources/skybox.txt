@@ -1,6 +1,6 @@
-Resources/Textures/right.png
-Resources/Textures/left.png
-Resources/Textures/up.png
-Resources/Textures/down.png
-Resources/Textures/back.png
-Resources/Textures/front.png
+Resources/Textures/bkg1_right1.png
+Resources/Textures/bkg1_left2.png
+Resources/Textures/bkg1_bottom4.png
+Resources/Textures/bkg1_top3.png
+Resources/Textures/bkg1_front5.png
+Resources/Textures/bkg1_back6.png

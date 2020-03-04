@@ -19,7 +19,7 @@ struct PlayerScript : ENG::Script
 		transform->position.y = 20.0f;
 
 		core.entities.getComponent<ENG::CS::BoxCollider>(id).size.y = 2.0f;
-		core.entities.getComponent<ENG::CS::Light>(id).colour = { 50.0f, 50.0f, 25.0f };
+		core.entities.getComponent<ENG::CS::Light>(id).colour = { 50.0f, 0.0f, 50.0f };
 	}
 
 	void mouselook(ENG::Core& core)
@@ -41,7 +41,7 @@ struct PlayerScript : ENG::Script
 		if (core.window.isKeyPressed(GLFW_KEY_A)) direction -= transform->right();
 		else if (core.window.isKeyPressed(GLFW_KEY_D)) direction += transform->right();
 
-		if (core.window.isKeyPressed(GLFW_KEY_SPACE))
+		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
 		{
 			velocity.y = 5.0f;
 			controller->on_floor = false;
@@ -113,6 +113,14 @@ int main()
 		m.texture = "rock.png";
 		m.shader = "default.shader";
 
+		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+		core.entities.getComponent<ENG::CS::Model>(gun) = m;
+
+		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
+		t.parent = player;
+		t.position = { 0.5f, -0.5f, -0.5f };
+		t.scale = { 0.05f, 0.05f, 0.2f };
+
 		// Create portals
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
 		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
@@ -129,10 +137,11 @@ int main()
 
 		// Position portals
 		ENG::CS::Transform& ta = core.entities.getComponent <ENG::CS::Transform>(portal_a);
-		ta.position = { -15.0f, 0.0f, -2.0f };
+		ta.position = { 0.0f, 0.0f, -15.0f };
 
 		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
-		tb.position = { 15.0f, 32.0f, -2.0f };
+		tb.position = { 0.0f, 32.0f, 15.0f };
+		tb.rotation.y = 180;
 
 		// Environment
 		createProp(core, { -15.0f, 0.0f, -10.0f });

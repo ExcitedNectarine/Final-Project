@@ -11,7 +11,7 @@ namespace ENG
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
 			glm::vec3 offset = transforms[portals[id].player].position - transforms[id].position;
-			portals[id].prev_angle = glm::dot(offset, transforms[id].forward());
+			portals[id].prev_side = static_cast<int>(glm::sign(glm::dot(offset, transforms[id].forward())));
 		}
 	}
 
@@ -25,15 +25,15 @@ namespace ENG
 			// Transform camera match players transform relative to the portal.
 			portals[id].camera = transforms[id].get() * glm::inverse(transforms[portals[id].other].get()) * transforms[portals[id].player].get();
 
+			glm::vec3 offset = transforms[portals[id].player].position - transforms[id].position;
+			int side = static_cast<int>(glm::sign(glm::dot(offset, transforms[id].forward())));
+
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			bool colliding = OBBcollision(transforms[id], { 2.0f, 2.0f, 0.2f }, transforms[portals[id].player], { 0.5f, 0.5f, 0.2f });
+			bool colliding = AABBcollision(transforms[id].position, { 2.0f, 2.0f, 2.0f }, transforms[portals[id].player].position, { 1.0f, 1.0f, 1.0f });
 			if (portals[id].active && colliding)
 			{
-				glm::vec3 offset = transforms[portals[id].player].position - transforms[id].position;
-				float angle = glm::dot(offset, transforms[id].forward());
-
 				// If the player moves from one side of the portal to the other, teleport them.
-				if (glm::sign(angle) != glm::sign(portals[id].prev_angle))
+				if (side != portals[id].prev_side)
 				{
 					glm::mat4 m = transforms[portals[id].other].get() * glm::inverse(transforms[id].get()) * transforms[portals[id].player].get();
 					transforms[portals[id].player].position = m[3]; // Teleporting to left/right slightly. Could be a floating point error that adds up
@@ -46,17 +46,17 @@ namespace ENG
 					
 					// Prevents double teleporting
 					portals[portals[id].other].active = false;
-					portals[portals[id].other].prev_angle = angle;
+					portals[portals[id].other].prev_side = side;
 
 					OUTPUT("Teleported! " << id << " -> " << portals[id].other);
 
 					return;
 				}
-
-				portals[id].prev_angle = angle;
 			}
 			else if (!colliding) // not colliding, so reactive portal
 				portals[id].active = true;
+
+			portals[id].prev_side = side;
 		}
 	}
 
@@ -97,8 +97,6 @@ namespace ENG
 		Mesh& quad = resources.mesh("quad.obj");
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			CS::Transform t = transforms[id];
-
 			// Find if player is within 0.1f of portal plane
 			// Then push portal back to be 0.11f in front of the player
 			// Once portal is crossed, dont draw other portal

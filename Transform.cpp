@@ -32,4 +32,14 @@ namespace ENG
 			return { transform[0].x, transform[0].y, transform[0].z };
 		}
 	}
+
+	glm::mat4 getWorld(Entities& entities, EntityID id)
+	{
+		static auto& pool = entities.getPool<CS::Transform>();
+
+		if (pool[id].parent == 0) // Root transform
+			return pool[id].get();
+
+		return getWorld(entities, pool[id].parent) * pool[id].get();
+	}
 }

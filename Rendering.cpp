@@ -14,7 +14,8 @@ namespace ENG
 		{
 			CS::Model& m = models[id];
 
-			resources.shader(m.shader).setUniform("transform", transforms[id].get());
+			//resources.shader(m.shader).setUniform("transform", transforms[id].get());
+			resources.shader(m.shader).setUniform("transform", getWorld(entities, id));
 			resources.shader(m.shader).bind();
 			resources.mesh(m.mesh).bind();
 			resources.texture(m.texture).bind();

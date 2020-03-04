@@ -18,7 +18,7 @@ namespace ENG
 			EntityID player;
 			glm::mat4 camera;
 			FrameBuffer framebuffer;
-			float prev_angle = 0;
+			int prev_side = 0;
 			bool active = true;
 		};
 	}

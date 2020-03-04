@@ -22,6 +22,10 @@ namespace ENG
 			glm::vec3 position;
 			glm::vec3 rotation;
 			glm::vec3 scale;
+
+			EntityID parent = 0;
 		};
 	}
+
+	glm::mat4 getWorld(Entities& entities, EntityID id);
 }
