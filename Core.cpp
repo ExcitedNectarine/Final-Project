@@ -50,13 +50,13 @@ namespace ENG
 			last = current;
 
 			scriptUpdate(entities, *this);
-			updatePortals(entities);
 			testCollisions(entities, *this);
 			setLights(entities, resources.shader("default.shdr"));
 
-			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
+			updatePortals(entities);
+			drawToPortals(entities, resources);
 
-			drawToPortals(entities, resources, camera);
+			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
 			resources.shader("default.shdr").setUniform("view", glm::inverse(view->get()));
 			resources.shader("default.shdr").setUniform("view_pos", view->position);

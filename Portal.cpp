@@ -36,12 +36,9 @@ namespace ENG
 			glm::vec3 offset = transforms[portal].position - transforms[player].position;
 			int side = static_cast<int>(glm::sign(glm::dot(transforms[portal].forward(), offset)));
 
-			// Check if player facing portal
-			//bool facing = glm::dot(transforms[player].forward(), glm::normalize(transforms[portal].position - transforms[player].position)) < 0;
-
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
 			bool colliding = OBBcollision(transforms[portal], { 2.0f, 2.0f, 0.5f }, transforms[player], { 0.5f, 0.5f, 0.5f });
-			if (portals[portal].active && colliding)
+			if (colliding)
 			{
 				// If the player moves from one side of the portal to the other, teleport them.
 				if (side != portals[portal].prev_side)
@@ -49,23 +46,18 @@ namespace ENG
 					glm::mat4 m = transforms[other].get() * glm::inverse(transforms[portal].get()) * transforms[player].get();
 					transforms[player] = ENG::decompose(m);
 
+					portals[portal].camera = transforms[portal].get() * glm::inverse(transforms[other].get()) * transforms[player].get();
+
 					// Prevents double teleporting
-					portals[other].active = false;
 					portals[other].prev_side = side;
-
-					OUTPUT("Teleported " << portal << " to " << other);
-
-					return;
 				}
 			}
-			else if (!colliding) // not colliding, so reactive portal
-				portals[portal].active = true;
 
 			portals[portal].prev_side = side;
 		}
 	}
 
-	void drawToPortals(Entities& entities, Resources& resources, CS::Camera cam)
+	void drawToPortals(Entities& entities, Resources& resources)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& portals = entities.getPool<CS::Portal>();
@@ -119,8 +111,6 @@ namespace ENG
 
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			if (!portals[id].active) continue;
-
 			resources.shader("portals.shdr").setUniform("transform", preventNearClipping(cam, transforms[id], transforms[portals[id].player]).get());
 			resources.shader("portals.shdr").bind();
 			portals[id].framebuffer.getTexture().bind();

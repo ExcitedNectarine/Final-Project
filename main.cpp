@@ -108,7 +108,7 @@ int main()
 		core.window.lockMouse(true);
 
 		// Create player
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller>();
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Model>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
 
 		//ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
