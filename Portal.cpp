@@ -3,7 +3,7 @@
 
 namespace ENG
 {
-	void startPortals(Entities& entities)
+	void startPortals(Entities& entities, const glm::ivec2& size)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& portals = entities.getPool<CS::Portal>();
@@ -12,6 +12,8 @@ namespace ENG
 		{
 			glm::vec3 offset = transforms[portals[id].player].position - transforms[id].position;
 			portals[id].prev_side = static_cast<int>(glm::sign(glm::dot(offset, transforms[id].forward())));
+
+			portals[id].framebuffer.create(size);
 		}
 	}
 
@@ -20,45 +22,50 @@ namespace ENG
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& portals = entities.getPool<CS::Portal>();
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
-		{
-			// Transform camera match players transform relative to the portal.
-			portals[id].camera = transforms[id].get() * glm::inverse(transforms[portals[id].other].get()) * transforms[portals[id].player].get();
+		EntityID player;
+		EntityID other;
 
-			glm::vec3 offset = transforms[portals[id].player].position - transforms[id].position;
-			int side = static_cast<int>(glm::sign(glm::dot(offset, transforms[id].forward())));
+		for (EntityID portal : entities.entitiesWith<CS::Transform, CS::Portal>())
+		{
+			player = portals[portal].player;
+			other = portals[portal].other;
+
+			// Transform camera match players transform relative to the portal.
+			portals[portal].camera = transforms[portal].get() * glm::inverse(transforms[other].get()) * transforms[player].get();
+
+			glm::vec3 offset = transforms[portal].position - transforms[player].position;
+			int side = static_cast<int>(glm::sign(glm::dot(transforms[portal].forward(), offset)));
+
+			// Check if player facing portal
+			//bool facing = glm::dot(transforms[player].forward(), glm::normalize(transforms[portal].position - transforms[player].position)) < 0;
 
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			bool colliding = AABBcollision(transforms[id].position, { 2.0f, 2.0f, 2.0f }, transforms[portals[id].player].position, { 1.0f, 1.0f, 1.0f });
-			if (portals[id].active && colliding)
+			bool colliding = OBBcollision(transforms[portal], { 2.0f, 2.0f, 0.5f }, transforms[player], { 0.5f, 0.5f, 0.5f });
+			if (portals[portal].active && colliding)
 			{
 				// If the player moves from one side of the portal to the other, teleport them.
-				if (side != portals[id].prev_side)
+				if (side != portals[portal].prev_side)
 				{
-					glm::mat4 m = transforms[portals[id].other].get() * glm::inverse(transforms[id].get()) * transforms[portals[id].player].get();
-					transforms[portals[id].player].position = m[3]; // Teleporting to left/right slightly. Could be a floating point error that adds up
+					glm::mat4 m = transforms[other].get() * glm::inverse(transforms[portal].get()) * transforms[player].get();
+					transforms[player] = ENG::decompose(m);
 
-					// Make sure player faces proper direction when entering portal.
-					glm::vec3 new_rot(0.0f);
-					glm::extractEulerAngleYXZ(m, new_rot.y, new_rot.x, new_rot.z);
-					new_rot = glm::degrees(new_rot);
-					transforms[portals[id].player].rotation = new_rot;
-					
 					// Prevents double teleporting
-					portals[portals[id].other].active = false;
-					portals[portals[id].other].prev_side = side;
+					portals[other].active = false;
+					portals[other].prev_side = side;
+
+					OUTPUT("Teleported " << portal << " to " << other);
 
 					return;
 				}
 			}
 			else if (!colliding) // not colliding, so reactive portal
-				portals[id].active = true;
+				portals[portal].active = true;
 
-			portals[id].prev_side = side;
+			portals[portal].prev_side = side;
 		}
 	}
 
-	void drawToPortals(Entities& entities, Resources& resources)
+	void drawToPortals(Entities& entities, Resources& resources, CS::Camera cam)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& portals = entities.getPool<CS::Portal>();
@@ -68,47 +75,59 @@ namespace ENG
 			portals[id].framebuffer.bind();
 			glm::mat4 view = glm::inverse(portals[portals[id].other].camera);
 
-			resources.shader("default.shader").setUniform("view", view);
-			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(view)));
+			resources.shader("default.shdr").setUniform("view", view);
+			resources.shader("default.shdr").setUniform("view_pos", portals[portals[id].other].camera[3]);
+			resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			glDepthMask(GL_FALSE);
-			resources.shader("skybox.shader").bind();
-			resources.mesh("cube.obj").bind();
-			glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
-			glDepthMask(GL_TRUE);
-
-			drawModels(entities, resources);
-
+			drawSkybox(resources);
+			drawModels(entities, resources, view[3]);
 			portals[id].framebuffer.unbind();
 		}
 	}
 
-	void drawPortals(Entities& entities, Resources& resources, glm::mat4 perspective, glm::mat4 view)
+	/**
+	* Move screen position back and scale wall, so that far side is the same as when camera clips
+	* near side.
+	*/
+	CS::Transform preventNearClipping(CS::Camera cam, CS::Transform screen, CS::Transform player)
+	{
+		float half_height = cam.near * glm::tan(cam.fov);
+		float half_width = half_height * cam.aspect;
+		float corner_dist = glm::length(glm::vec3(half_width, half_height, cam.near));
+
+		bool facing = glm::dot(screen.forward(), screen.position - player.position) > 0;
+		screen.scale.z = corner_dist;
+		screen.position += screen.forward() * (facing ? 1.0f : -1.0f);
+
+		return screen;
+	}
+
+	void drawPortals(Entities& entities, Resources& resources, CS::Camera cam, glm::mat4 view)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& portals = entities.getPool<CS::Portal>();
 
+		resources.shader("portals.shdr").setUniform("view", view);
+		resources.shader("portals.shdr").setUniform("projection", cam.get());
+
 		// Disable backface culling for drawing portals, so that portals become 2-way.
 		glDisable(GL_CULL_FACE);
-		Mesh& quad = resources.mesh("quad.obj");
+		
+		Mesh& cube = resources.mesh("cube.obj");
+		cube.bind();
+
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			// Find if player is within 0.1f of portal plane
-			// Then push portal back to be 0.11f in front of the player
-			// Once portal is crossed, dont draw other portal
+			if (!portals[id].active) continue;
 
-			resources.shader("portals.shader").setUniform("transform", transforms[id].get());
-			resources.shader("portals.shader").setUniform("view", view);
-			resources.shader("portals.shader").setUniform("projection", perspective);
-			resources.shader("portals.shader").bind();
-
-			quad.bind();
+			resources.shader("portals.shdr").setUniform("transform", preventNearClipping(cam, transforms[id], transforms[portals[id].player]).get());
+			resources.shader("portals.shdr").bind();
 			portals[id].framebuffer.getTexture().bind();
 
-			glDrawArrays(GL_TRIANGLES, 0, quad.vertexCount());
+			glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
 		}
+		
 		glEnable(GL_CULL_FACE);
 	}
 }

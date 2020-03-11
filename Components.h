@@ -5,4 +5,3 @@
 #include "Lighting.h"
 #include "Script.h"
 #include "Portal.h"
-#include "Camera.h"

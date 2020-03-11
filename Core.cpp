@@ -12,8 +12,6 @@ namespace ENG
 
 		camera.fov = 90.0f;
 		camera.aspect = static_cast<float>(window_size.x) / window_size.y;
-		camera.near = 0.1f;
-		camera.far = 500.0f;
 
 		window.create(window_size, settings.get("title"));
 
@@ -25,8 +23,8 @@ namespace ENG
 		skybox.create(splitText(readTextFile(settings.get("skybox")), '\n'));
 		skybox.bind();
 
-		resources.shader("default.shader").setUniform("projection", camera.get());
-		resources.shader("skybox.shader").setUniform("projection", camera.get());
+		resources.shader("default.shdr").setUniform("projection", camera.get());
+		resources.shader("skybox.shdr").setUniform("projection", camera.get());
 
 		entities.addComponentPools<
 			CS::Transform,
@@ -42,7 +40,7 @@ namespace ENG
 	void Core::run()
 	{
 		scriptStart(entities, *this);
-		startPortals(entities);
+		startPortals(entities, window.getSize());
 
 		double current = 0.0, last = 0.0;
 		while (!window.shouldClose())
@@ -53,26 +51,20 @@ namespace ENG
 
 			scriptUpdate(entities, *this);
 			updatePortals(entities);
-
 			testCollisions(entities, *this);
-			setLights(entities, resources.shader("default.shader"));
+			setLights(entities, resources.shader("default.shdr"));
 
 			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
-			drawToPortals(entities, resources);
+			drawToPortals(entities, resources, camera);
 
-			resources.shader("default.shader").setUniform("view", glm::inverse(view->get()));
-			resources.shader("default.shader").setUniform("view_pos", view->position);
-			resources.shader("skybox.shader").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view->get()))));
+			resources.shader("default.shdr").setUniform("view", glm::inverse(view->get()));
+			resources.shader("default.shdr").setUniform("view_pos", view->position);
+			resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view->get()))));
 
-			glDepthMask(GL_FALSE);
-			resources.shader("skybox.shader").bind();
-			resources.mesh("cube.obj").bind();
-			glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube.obj").vertexCount());
-			glDepthMask(GL_TRUE);
-
-			drawModels(entities, resources);
-			drawPortals(entities, resources, camera.get(), glm::inverse(view->get()));
+			drawSkybox(resources);
+			drawModels(entities, resources, view->position);
+			drawPortals(entities, resources, camera, glm::inverse(view->get()));
 
 			window.display();
 			glfwPollEvents();

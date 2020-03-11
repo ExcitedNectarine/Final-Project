@@ -1,6 +1,6 @@
-title=Game Engine
-height=1080
-width=1920
+title=Non-Euclidean Puzzler
+height=720
+width=1280
 meshes=Resources/meshes.txt
 textures=Resources/textures.txt
 sounds=Resources/sounds.txt

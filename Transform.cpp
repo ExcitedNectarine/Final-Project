@@ -33,6 +33,9 @@ namespace ENG
 		}
 	}
 
+	/**
+	* Returns an entities world transformation.
+	*/
 	glm::mat4 getWorldT(Entities& entities, EntityID id)
 	{
 		static auto& pool = entities.getPool<CS::Transform>();
@@ -41,5 +44,24 @@ namespace ENG
 			return pool[id].get();
 
 		return getWorldT(entities, pool[id].parent) * pool[id].get();
+	}
+
+	/**
+	* Convert transformation matrix into a transform component.
+	*/
+	CS::Transform decompose(const glm::mat4& t)
+	{
+		CS::Transform d;
+
+		d.position = t[3];
+		
+		glm::extractEulerAngleYXZ(t, d.rotation.y, d.rotation.x, d.rotation.z);
+		d.rotation = glm::degrees(d.rotation);
+
+		d.scale.x = glm::length(t[0]);
+		d.scale.y = glm::length(t[1]);
+		d.scale.z = glm::length(t[2]);
+
+		return d;
 	}
 }

@@ -1,12 +1,10 @@
 #pragma once
 
 #include <glm/gtx/euler_angles.hpp>
-#include <glm/gtx/closest_point.hpp>
-#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/vector_angle.hpp>
 #include "Collision.h"
 #include "Rendering.h"
 #include "FrameBuffer.h"
-#include "Camera.h"
 
 namespace ENG
 {
@@ -23,8 +21,8 @@ namespace ENG
 		};
 	}
 
-	void startPortals(Entities& entities);
+	void startPortals(Entities& entities, const glm::ivec2& size);
 	void updatePortals(Entities& entities);
-	void drawToPortals(Entities& entities, Resources& resources);
-	void drawPortals(Entities& entities, Resources& resources, glm::mat4 perspective, glm::mat4 view);
+	void drawToPortals(Entities& entities, Resources& resources, CS::Camera cam);
+	void drawPortals(Entities& entities, Resources& resources, CS::Camera cam, glm::mat4 view);
 }

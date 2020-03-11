@@ -66,13 +66,15 @@ namespace ENG
 		auto& boxes = entities.getPool<CS::BoxCollider>();
 		auto& scripts = entities.getPool<CS::Script>();
 
+		auto box_ents = entities.entitiesWith<CS::Transform, CS::BoxCollider>();
+
 		for (EntityID a : entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
 			glm::vec3 new_pos = transforms[a].position;
 			glm::vec3 a_size = boxes[a].size * transforms[a].scale;
 
 			new_pos.x += controllers[a].velocity.x * core.delta;
-			for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+			for (EntityID b : box_ents)
 			{
 				if (a == b) continue;
 
@@ -85,7 +87,7 @@ namespace ENG
 			}
 
 			new_pos.y += controllers[a].velocity.y * core.delta;
-			for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+			for (EntityID b : box_ents)
 			{
 				if (a == b) continue;
 
@@ -102,7 +104,7 @@ namespace ENG
 			}
 
 			new_pos.z += controllers[a].velocity.z * core.delta;
-			for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+			for (EntityID b : box_ents)
 			{
 				if (a == b) continue;
 

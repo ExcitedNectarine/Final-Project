@@ -1,4 +1,5 @@
 #include "Core.h"
+#include <glm/gtx/string_cast.hpp>
 
 struct PlayerScript : ENG::Script
 {
@@ -6,7 +7,7 @@ struct PlayerScript : ENG::Script
 	ENG::CS::Controller* controller;
 	glm::vec3 direction;
 	glm::vec3 velocity;
-	float speed = 10.0f;
+	float speed = 5.0f;
 
 	glm::dvec2 last_mouse;
 	glm::dvec2 mouse_offset;
@@ -40,6 +41,9 @@ struct PlayerScript : ENG::Script
 		if (core.window.isKeyPressed(GLFW_KEY_A)) direction -= transform->right();
 		else if (core.window.isKeyPressed(GLFW_KEY_D)) direction += transform->right();
 
+		if (core.window.isKeyPressed(GLFW_KEY_Q))
+			transform->position = { 0.0f, 10.0f, 0.0f };
+
 		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
 		{
 			velocity.y = 5.0f;
@@ -72,22 +76,22 @@ struct PlayerScript : ENG::Script
 
 void createProp(ENG::Core& core, glm::vec3 pos)
 {
-	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider, ENG::CS::Light>();
+
 	ENG::CS::Model& prop_m = core.entities.getComponent<ENG::CS::Model>(prop);
 	prop_m.mesh = "skull.obj";
-	prop_m.shader = "default.shader";
 	prop_m.texture = "skull.jpg";
+
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
+	core.entities.getComponent<ENG::CS::Transform>(prop).rotation.x = -90;
 	core.entities.getComponent<ENG::CS::Transform>(prop).scale *= 0.1f;
+	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size = { 20.0f, 20.0f, 20.0f };
+	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 25.0f, 25.0f, 50.0f };
 }
 
 void createBarrier(ENG::Core& core, glm::vec3 pos)
 {
 	ENG::EntityID platform = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider>();
-	ENG::CS::Model& platform_m = core.entities.getComponent<ENG::CS::Model>(platform);
-	platform_m.mesh = "cube2.obj";
-	platform_m.shader = "default.shader";
-	platform_m.texture = "rock.png";
 
 	core.entities.getComponent<ENG::CS::Transform>(platform).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(platform).scale = { 20.0f, 1.0f, 20.0f };
@@ -99,55 +103,70 @@ int main()
 	try
 	{
 		ENG::Core core("Resources/settings.set");
-		core.resources.shader("default.shader").setUniform("ambient", glm::vec3(0.5f));
+		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.2f));
 
 		core.window.lockMouse(true);
 
 		// Create player
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Model>();
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
 
-		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(player);
-		m.mesh = "cube2.obj";
-		m.texture = "rock.png";
-		m.shader = "default.shader";
+		//ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+		//ENG::CS::Model& gm = core.entities.getComponent<ENG::CS::Model>(gun);
+		//gm.mesh = "gun.obj";
+		//gm.texture = "gun.png";
 
-		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		core.entities.getComponent<ENG::CS::Model>(gun) = m;
-
-		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
-		t.parent = player;
-		t.position = { 0.5f, -0.5f, -0.5f };
-		t.scale = { 0.05f, 0.05f, 0.2f };
+		//ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
+		//t.parent = player;
+		//t.position = { 0.5f, -0.5f, -0.5f };
+		//t.scale *= 0.25f;
+		//t.rotation = { 0.0f, 180.0f, 180.0f };
 
 		// Create portals
-		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
-		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+		//ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+		//ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
 
-		ENG::CS::Portal& pa = core.entities.getComponent<ENG::CS::Portal>(portal_a);
-		pa.framebuffer.create(core.window.getSize());
-		pa.player = player;
-		pa.other = portal_b;
+		//ENG::CS::Portal& pa = core.entities.getComponent<ENG::CS::Portal>(portal_a);
+		//pa.player = player;
+		//pa.other = portal_b;
 
-		ENG::CS::Portal& pb = core.entities.getComponent<ENG::CS::Portal>(portal_b);
-		pb.framebuffer.create(core.window.getSize());
-		pb.player = player;
-		pb.other = portal_a;
+		//ENG::CS::Portal& pb = core.entities.getComponent<ENG::CS::Portal>(portal_b);
+		//pb.player = player;
+		//pb.other = portal_a;
 
-		// Position portals
-		ENG::CS::Transform& ta = core.entities.getComponent <ENG::CS::Transform>(portal_a);
-		ta.position = { 0.0f, 0.0f, -15.0f };
+		//ENG::CS::Transform& ta = core.entities.getComponent<ENG::CS::Transform>(portal_a);
+		//ta.position = { 0.0f, 0.05f, -7.5f };
 
-		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
-		tb.position = { 0.0f, 32.0f, 15.0f };
-		tb.rotation.y = 180;
+		//ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
+		//tb.position = { 0.0f, 22.05f, 7.5f };
+		//tb.rotation.y = 180.0f;
+
+		// Create other portals
+		ENG::EntityID portal_c = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+		ENG::EntityID portal_d = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+
+		ENG::CS::Portal& pc = core.entities.getComponent<ENG::CS::Portal>(portal_c);
+		pc.player = player;
+		pc.other = portal_d;
+
+		ENG::CS::Portal& pd = core.entities.getComponent<ENG::CS::Portal>(portal_d);
+		pd.player = player;
+		pd.other = portal_c;
+
+		ENG::CS::Transform& tc = core.entities.getComponent<ENG::CS::Transform>(portal_c);
+		tc.position = { -7.0f, 0.05f, 0.0f };
+		tc.rotation.y = 90.0f;
+
+		ENG::CS::Transform& td = core.entities.getComponent<ENG::CS::Transform>(portal_d);
+		td.position = { 7.0f, 0.05f, 0.0f };
+		td.rotation.y = 90.0f;
 
 		// Environment
-		createProp(core, { -15.0f, 0.0f, -10.0f });
-		createProp(core, { -5.0f, 2.0f, 10.0f });
+		createProp(core, { -15.0f, 0.0f, -7.5f });
+		createProp(core, { -5.0f, 0.0f, 7.5f });
 
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
-		createBarrier(core, { 0.0f, 30.0f, 0.0f });
+		createBarrier(core, { 0.0f, 20.0f, 0.0f });
 
 		core.run();
 	}

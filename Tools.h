@@ -18,6 +18,8 @@ namespace ENG
 	*/
 	std::vector<Vertex> loadOBJ(const std::string& model);
 
+	bool approximate(const double a, const double b, const double eps);
+
 	// simple random float between two values.
 	float randomFloat(const float from, const float to);
 	int randomInt(const int from, const int to);

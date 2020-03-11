@@ -1,3 +1,28 @@
+[VERTEX]
+attribute vec3 in_position;
+attribute vec4 in_uv;
+attribute vec3 in_normal;
+
+uniform mat4 projection;
+uniform mat4 view;
+
+#define MAX_TRANSFORMS 128
+uniform mat4 transforms[MAX_TRANSFORMS];
+
+varying vec3 out_uv;
+varying vec3 out_normal;
+varying vec3 out_frag_pos;
+
+void main()
+{
+	out_uv = in_uv;
+	out_normal = mat3(transpose(inverse(transforms[gl_InstanceID]))) * in_normal;
+	out_frag_pos = vec3(transforms[gl_InstanceID] * vec4(in_position, 1.0));
+	
+	gl_Position = projection * view * vec4(out_frag_pos, 1.0);
+}
+
+[FRAGMENT]
 uniform sampler2D texture;
 
 varying vec3 out_uv;

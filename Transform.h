@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include "Entities.h"
 
 namespace ENG
@@ -27,5 +28,13 @@ namespace ENG
 		};
 	}
 
+	/**
+	* Returns an entities world transformation.
+	*/
 	glm::mat4 getWorldT(Entities& entities, EntityID id);
+
+	/**
+	* Convert transformation matrix into a transform component.
+	*/
+	CS::Transform decompose(const glm::mat4& t);
 }

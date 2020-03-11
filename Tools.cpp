@@ -92,6 +92,11 @@ namespace ENG
 		return vertices;
 	}
 
+	bool approximate(const double a, const double b, const double eps)
+	{
+		return std::abs(a - b) < eps;
+	}
+
 	float randomFloat(const float from, const float to)
 	{
 		static std::default_random_engine engine(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
