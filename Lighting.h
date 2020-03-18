@@ -12,10 +12,10 @@ namespace ENG
 	{
 		struct Light : ECSComponent<Light>
 		{
-			Light() : colour(1.0f), radius(5.0f) {}
+			Light() : colour(1.0f) {}
 
 			glm::vec3 colour;
-			float radius;
+			float radius = 5.0f;
 		};
 	}
 

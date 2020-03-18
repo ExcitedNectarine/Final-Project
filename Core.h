@@ -29,6 +29,8 @@ namespace ENG
 		CS::Camera camera;
 		CS::Transform* view;
 
+		EntityID main_cam;
+
 		float delta;
 	};
 }

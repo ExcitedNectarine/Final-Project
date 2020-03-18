@@ -10,9 +10,7 @@ namespace ENG
 
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			glm::vec3 offset = transforms[portals[id].player].position - transforms[id].position;
-			portals[id].prev_side = static_cast<int>(glm::sign(glm::dot(offset, transforms[id].forward())));
-
+			portals[id].prev_side = static_cast<int>(glm::sign(glm::dot(transforms[id].forward(), transforms[portals[id].player].position - transforms[id].position)));
 			portals[id].framebuffer.create(size);
 		}
 	}
@@ -30,15 +28,11 @@ namespace ENG
 			player = portals[portal].player;
 			other = portals[portal].other;
 
-			// Transform camera match players transform relative to the portal.
-			portals[portal].camera = transforms[portal].get() * glm::inverse(transforms[other].get()) * transforms[player].get();
-
-			glm::vec3 offset = transforms[portal].position - transforms[player].position;
-			int side = static_cast<int>(glm::sign(glm::dot(transforms[portal].forward(), offset)));
+			// Check which side of portal player is on
+			int side = static_cast<int>(glm::sign(glm::dot(transforms[portal].forward(), transforms[portal].position - transforms[player].position)));
 
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			bool colliding = OBBcollision(transforms[portal], { 2.0f, 2.0f, 0.5f }, transforms[player], { 0.5f, 0.5f, 0.5f });
-			if (colliding)
+			if (OBBcollision(transforms[portal], { 2.0f, 2.0f, 0.5f }, transforms[player], { 0.5f, 0.5f, 0.5f }))
 			{
 				// If the player moves from one side of the portal to the other, teleport them.
 				if (side != portals[portal].prev_side)
@@ -46,13 +40,13 @@ namespace ENG
 					glm::mat4 m = transforms[other].get() * glm::inverse(transforms[portal].get()) * transforms[player].get();
 					transforms[player] = ENG::decompose(m);
 
-					portals[portal].camera = transforms[portal].get() * glm::inverse(transforms[other].get()) * transforms[player].get();
-
 					// Prevents double teleporting
 					portals[other].prev_side = side;
 				}
 			}
 
+			// Transform camera match players transform relative to the portal.
+			portals[portal].camera = transforms[portal].get() * glm::inverse(transforms[other].get()) * transforms[player].get();
 			portals[portal].prev_side = side;
 		}
 	}
@@ -114,7 +108,6 @@ namespace ENG
 			resources.shader("portals.shdr").setUniform("transform", preventNearClipping(cam, transforms[id], transforms[portals[id].player]).get());
 			resources.shader("portals.shdr").bind();
 			portals[id].framebuffer.getTexture().bind();
-
 			glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
 		}
 		

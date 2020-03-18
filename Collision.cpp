@@ -59,7 +59,18 @@ namespace ENG
 				a_pos.z + a_size.z > b_pos.z);
 	}
 
-	void testCollisions(Entities& entities, Core& core)
+	/**
+	* Checks if a ray intersects an AABB.
+	*/
+	bool RayAABBcollision(glm::vec3 b_pos, const glm::vec3& b_size, glm::vec3 r_pos, const glm::vec3& r_dir)
+	{
+		b_pos -= b_size / 2.0f;
+		glm::vec3 r_end = r_pos * r_dir + 500.0f;
+
+		return false;
+	}
+
+	void moveControllers(Entities& entities, Core& core)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& controllers = entities.getPool<CS::Controller>();

@@ -17,7 +17,6 @@ namespace ENG
 			glm::mat4 camera;
 			FrameBuffer framebuffer;
 			int prev_side = 0;
-			bool active = true;
 		};
 	}
 

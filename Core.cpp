@@ -33,7 +33,8 @@ namespace ENG
 			CS::Script,
 			CS::BoxCollider,
 			CS::Controller,
-			CS::Portal
+			CS::Portal,
+			CS::Camera
 		>();
 	}
 
@@ -50,23 +51,25 @@ namespace ENG
 			last = current;
 
 			scriptUpdate(entities, *this);
-			testCollisions(entities, *this);
-			setLights(entities, resources.shader("default.shdr"));
+			moveControllers(entities, *this);
 
 			updatePortals(entities);
 			drawToPortals(entities, resources);
 
-			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
-
+			setLights(entities, resources.shader("default.shdr"));
 			resources.shader("default.shdr").setUniform("view", glm::inverse(view->get()));
 			resources.shader("default.shdr").setUniform("view_pos", view->position);
 			resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view->get()))));
 
+			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
+			
 			drawSkybox(resources);
 			drawModels(entities, resources, view->position);
 			drawPortals(entities, resources, camera, glm::inverse(view->get()));
+			drawModelsToHUD(entities, resources, view->position);
 
 			window.display();
+
 			glfwPollEvents();
 		}
 

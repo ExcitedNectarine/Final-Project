@@ -15,48 +15,33 @@ namespace ENG
 		auto& transforms = entities.getPool<CS::Transform>();
 		auto& models = entities.getPool<CS::Model>();
 
-		// Sort objects so that multiple of the same model and texture are drawn in 1 draw call.
-		//std::map<std::string, std::map<std::string, std::vector<EntityID>>> em;
-		//for (EntityID id : entities.entitiesWith<CS::Transform, CS::Model>())
-		//	em[models[id].mesh][models[id].texture].push_back(id);
+		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Model>())
+		{
+			CS::Model& m = models[id];
 
-		//resources.shader("default2.shader").bind();
-		//for (const auto& m : em)
-		//{
-		//	resources.mesh(m.first).bind();
+			if (m.hud) continue;
 
-		//	for (const auto& t : m.second)
-		//	{
-		//		resources.texture(t.first).bind();
+			resources.shader("default.shdr").setUniform("transform", getWorldT(entities, id));
+			resources.shader("default.shdr").bind();
+			resources.mesh(m.mesh).bind();
+			resources.texture(m.texture).bind();
 
-		//		int i = 0;
-		//		for (i; i < t.second.size(); i++)
-		//			resources.shader("default2.shader").setUniform("transforms[" + std::to_string(i) + "]", getWorldT(entities, t.second[i]));
+			glDrawArrays(GL_TRIANGLES, 0, resources.mesh(m.mesh).vertexCount());
+		}
+	}
 
-		//		glDrawArraysInstanced(GL_TRIANGLES, 0, resources.mesh(m.first).vertexCount(), i);
-		//	}
-		//}
+	void drawModelsToHUD(Entities& entities, Resources& resources, const glm::vec3& view_pos)
+	{
+		auto& transforms = entities.getPool<CS::Transform>();
+		auto& models = entities.getPool<CS::Model>();
 
-		// Draw objects from closest to furthest, std::map stores keys ordered by operator<
-		//std::map<float, EntityID> distances;
-		//for (EntityID id : entities.entitiesWith<CS::Transform, CS::Model>())
-		//	distances[glm::distance(view_pos, transforms[id].position)] = id;
-
-		//for (auto& f : distances)
-		//{
-		//	CS::Model& m = models[f.second];
-
-		//	resources.shader("default.shdr").setUniform("transform", getWorldT(entities, f.second));
-		//	resources.shader("default.shdr").bind();
-		//	resources.mesh(m.mesh).bind();
-		//	resources.texture(m.texture).bind();
-
-		//	glDrawArrays(GL_TRIANGLES, 0, resources.mesh(m.mesh).vertexCount());
-		//}
+		glClear(GL_DEPTH_BUFFER_BIT);
 
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Model>())
 		{
 			CS::Model& m = models[id];
+
+			if (!m.hud) continue;
 
 			resources.shader("default.shdr").setUniform("transform", getWorldT(entities, id));
 			resources.shader("default.shdr").bind();
@@ -81,6 +66,7 @@ namespace ENG
 
 			cameras[id].frame.bind();
 
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawSkybox(resources);
 			drawModels(entities, resources, transforms[id].position);
 
