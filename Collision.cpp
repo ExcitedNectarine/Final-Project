@@ -62,12 +62,54 @@ namespace ENG
 	/**
 	* Checks if a ray intersects an AABB.
 	*/
-	bool RayAABBcollision(glm::vec3 b_pos, const glm::vec3& b_size, glm::vec3 r_pos, const glm::vec3& r_dir)
+	bool RayAABBcollision(glm::vec3 b_pos, const glm::vec3& b_size, glm::vec3 r_pos, const glm::vec3& r_dir, float& t)
 	{
-		b_pos -= b_size / 2.0f;
-		glm::vec3 r_end = r_pos * r_dir + 500.0f;
+		glm::vec3 dir_frac = 1.0f / r_dir;
 
-		return false;
+		glm::vec3 b_min = b_pos - (b_size / 2.0f);
+		glm::vec3 b_max = b_pos + (b_size / 2.0f);
+
+		glm::vec3 t1 = (b_min - r_pos) * dir_frac;
+		glm::vec3 t2 = (b_max - r_pos) * dir_frac;
+
+		float tmin = glm::max(glm::max(glm::min(t1.x, t2.x), glm::min(t1.y, t2.y)), glm::min(t1.z, t2.z));
+		float tmax = glm::min(glm::min(glm::max(t1.x, t2.x), glm::max(t1.y, t2.y)), glm::max(t1.z, t2.z));
+
+		if (tmax < 0.0f)
+		{
+			t = tmax;
+			return false;
+		}
+
+		if (tmin > tmax)
+		{
+			t = tmax;
+			return false;
+		}
+
+		t = tmin;
+		return true;
+	}
+
+	/**
+	* Cast a ray into the world, and return the closest intersecting box ID.
+	*/
+	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore)
+	{
+		auto& transforms = entities.getPool<CS::Transform>();
+		auto& boxes = entities.getPool<CS::BoxCollider>();
+
+		float t = 0.0f;
+		std::map<float, EntityID> d;
+		for (EntityID id : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+		{
+			if (id == ignore) continue;
+
+			if (RayAABBcollision(transforms[id].position, boxes[id].size * transforms[id].scale, r_pos, r_dir, t))
+				d[t] = id;
+		}
+
+		return d.size() > 0 ? d.begin()->second : 0;
 	}
 
 	void moveControllers(Entities& entities, Core& core)

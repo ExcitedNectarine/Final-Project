@@ -72,23 +72,6 @@ namespace ENG
 		}
 	}
 
-	/**
-	* Move screen position back and scale wall, so that far side is the same as when camera clips
-	* near side.
-	*/
-	CS::Transform preventNearClipping(CS::Camera cam, CS::Transform screen, CS::Transform player)
-	{
-		float half_height = cam.near * glm::tan(cam.fov);
-		float half_width = half_height * cam.aspect;
-		float corner_dist = glm::length(glm::vec3(half_width, half_height, cam.near));
-
-		bool facing = glm::dot(screen.forward(), screen.position - player.position) > 0;
-		screen.scale.z = corner_dist;
-		screen.position += screen.forward() * (facing ? 1.0f : -1.0f);
-
-		return screen;
-	}
-
 	void drawPortals(Entities& entities, Resources& resources, CS::Camera cam, glm::mat4 view)
 	{
 		auto& transforms = entities.getPool<CS::Transform>();
@@ -112,5 +95,22 @@ namespace ENG
 		}
 		
 		glEnable(GL_CULL_FACE);
+	}
+
+	/**
+	* Move screen position back and scale wall, so that far side is the same as when camera clips
+	* near side.
+	*/
+	CS::Transform preventNearClipping(CS::Camera cam, CS::Transform screen, CS::Transform player)
+	{
+		float half_height = cam.near * glm::tan(cam.fov);
+		float half_width = half_height * cam.aspect;
+		float corner_dist = glm::length(glm::vec3(half_width, half_height, cam.near));
+
+		bool facing = glm::dot(screen.forward(), screen.position - player.position) > 0;
+		screen.scale.z = corner_dist;
+		screen.position += screen.forward() * (facing ? 1.0f : -1.0f);
+
+		return screen;
 	}
 }

@@ -44,6 +44,21 @@ struct PlayerScript : ENG::Script
 		if (core.window.isKeyPressed(GLFW_KEY_Q))
 			transform->position = { 0.0f, 10.0f, 0.0f };
 
+		if (core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
+		{
+			ENG::EntityID pickup = ENG::castRay(core.entities, transform->position, -transform->forward(), id);
+			if (pickup != 0)
+			{
+				if (pickup == 5 || pickup == 6)
+				{
+					core.entities.getComponent<ENG::CS::Transform>(pickup).parent = id;
+					core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -5.0f };
+					core.entities.getComponent<ENG::CS::Model>(pickup).hud = true;
+					core.entities.removeComponent<ENG::CS::BoxCollider>(pickup);
+				}
+			}
+		}
+
 		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
 		{
 			velocity.y = 5.0f;
@@ -76,9 +91,9 @@ struct PlayerScript : ENG::Script
 	}
 };
 
-void createProp(ENG::Core& core, glm::vec3 pos)
+ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
-	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider, ENG::CS::Light>();
+	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider>();
 
 	ENG::CS::Model& prop_m = core.entities.getComponent<ENG::CS::Model>(prop);
 	prop_m.mesh = "skull.obj";
@@ -87,9 +102,11 @@ void createProp(ENG::Core& core, glm::vec3 pos)
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(prop).rotation.x = -90;
 	core.entities.getComponent<ENG::CS::Transform>(prop).scale *= 0.1f;
-	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size = { 20.0f, 20.0f, 20.0f };
+	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size *= 20.0f;
 	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 25.0f, 25.0f, 50.0f };
 	core.entities.getComponent<ENG::CS::Light>(prop).radius = 15.0f;
+
+	return prop;
 }
 
 void createBarrier(ENG::Core& core, glm::vec3 pos)
@@ -167,7 +184,7 @@ int main()
 
 		// Environment
 		createProp(core, { -15.0f, 0.0f, -7.5f });
-		createProp(core, { -5.0f, 0.0f, 7.5f });
+		createProp(core, { 15.0f, 0.0f, -7.5f });
 
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
 		createBarrier(core, { 0.0f, 20.0f, 0.0f });

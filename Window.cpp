@@ -47,5 +47,6 @@ namespace ENG
 	bool Window::shouldClose() { return static_cast<bool>(glfwWindowShouldClose(window)); }
 	void Window::close() { glfwSetWindowShouldClose(window, true); }
 	bool Window::isKeyPressed(int key) { return glfwGetKey(window, key); }
+	bool Window::isMouseButtonPressed(int button) { return glfwGetMouseButton(window, button); }
 	glm::ivec2 Window::getSize() { return size; }
 }

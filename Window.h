@@ -23,6 +23,7 @@ namespace ENG
 		bool shouldClose();
 		void close();
 		bool isKeyPressed(int key);
+		bool isMouseButtonPressed(int button);
 		glm::ivec2 getSize();
 
 	private:
