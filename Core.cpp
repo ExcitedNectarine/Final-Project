@@ -24,6 +24,7 @@ namespace ENG
 		skybox.bind();
 
 		resources.shader("default.shdr").setUniform("projection", camera.get());
+		resources.shader("unshaded.shdr").setUniform("projection", camera.get());
 		resources.shader("skybox.shdr").setUniform("projection", camera.get());
 
 		entities.addComponentPools<
@@ -59,6 +60,7 @@ namespace ENG
 			setLights(entities, resources.shader("default.shdr"));
 			resources.shader("default.shdr").setUniform("view", glm::inverse(view->get()));
 			resources.shader("default.shdr").setUniform("view_pos", view->position);
+			resources.shader("unshaded.shdr").setUniform("view", glm::inverse(view->get()));
 			resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(glm::inverse(view->get()))));
 
 			window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });

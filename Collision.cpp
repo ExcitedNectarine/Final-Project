@@ -1,52 +1,107 @@
 #include "Collision.h"
 #include "Core.h"
 
-#define CASE_1 (abs(dot(dist, a_x_axis)) > a_half_size.x + abs(b_half_size.x * dot(a_x_axis, b_x_axis)) + abs(b_half_size.y * dot(a_x_axis, b_y_axis)) + abs(b_half_size.z * dot(a_x_axis, b_z_axis)))
-#define CASE_2 (abs(dot(dist, a_y_axis)) > a_half_size.y + abs(b_half_size.x * dot(a_y_axis, b_x_axis)) + abs(b_half_size.y * dot(a_y_axis, b_y_axis)) + abs(b_half_size.z * dot(a_y_axis, b_z_axis)))
-#define CASE_3 (abs(dot(dist, a_z_axis)) > a_half_size.z + abs(b_half_size.x * dot(a_z_axis, b_x_axis)) + abs(b_half_size.y * dot(a_z_axis, b_y_axis)) + abs(b_half_size.z * dot(a_z_axis, b_z_axis)))
-#define CASE_4 (abs(dot(dist, b_x_axis)) > abs(a_half_size.x * dot(a_x_axis, b_x_axis)) + abs(a_half_size.y * dot(a_y_axis, b_x_axis)) + abs(a_half_size.z * dot(a_z_axis, b_x_axis) + b_half_size.x))
-#define CASE_5 (abs(dot(dist, b_y_axis)) > abs(a_half_size.x * dot(a_x_axis, b_y_axis)) + abs(a_half_size.y * dot(a_y_axis, b_y_axis)) + abs(a_half_size.z * dot(a_z_axis, b_y_axis) + b_half_size.y))
-#define CASE_6 (abs(dot(dist, b_z_axis)) > abs(a_half_size.x * dot(a_x_axis, b_z_axis)) + abs(a_half_size.y * dot(a_y_axis, b_z_axis)) + abs(a_half_size.z * dot(a_z_axis, b_z_axis) + b_half_size.z))
-#define CASE_7 (abs(dot(dist, a_z_axis) * dot(a_y_axis, b_x_axis) - dot(dist, a_y_axis) * dot(a_z_axis, b_x_axis)) > abs(a_half_size.y * dot(a_z_axis, b_x_axis)) + abs(a_half_size.z * dot(a_y_axis, b_x_axis)) + abs(b_half_size.y * dot(a_x_axis, b_z_axis)) + abs(b_half_size.z * dot(a_x_axis, b_y_axis)))
-#define CASE_8 (abs(dot(dist, a_z_axis) * dot(a_y_axis, b_y_axis) - dot(dist, a_y_axis) * dot(a_z_axis, b_y_axis)) > abs(a_half_size.y * dot(a_z_axis, b_y_axis)) + abs(a_half_size.z * dot(a_y_axis, b_y_axis)) + abs(b_half_size.x * dot(a_x_axis, b_z_axis)) + abs(b_half_size.z * dot(a_x_axis, b_x_axis)))
-#define CASE_9 (abs(dot(dist, a_z_axis) * dot(a_y_axis, b_z_axis) - dot(dist, a_y_axis) * dot(a_z_axis, b_z_axis)) > abs(a_half_size.y * dot(a_z_axis, b_z_axis)) + abs(a_half_size.z * dot(a_y_axis, b_z_axis)) + abs(b_half_size.x * dot(a_x_axis, b_y_axis)) + abs(b_half_size.y * dot(a_x_axis, b_x_axis)))
-#define CASE_10 (abs(dot(dist, a_x_axis) * dot(a_z_axis, b_x_axis) - dot(dist, a_z_axis) * dot(a_x_axis, b_x_axis)) > abs(a_half_size.x * dot(a_z_axis, b_x_axis)) + abs(a_half_size.z * dot(a_x_axis, b_x_axis)) + abs(b_half_size.y * dot(a_z_axis, b_z_axis)) + abs(b_half_size.z * dot(a_y_axis, b_y_axis)))
-#define CASE_11 (abs(dot(dist, a_z_axis) * dot(a_y_axis, b_y_axis) - dot(dist, a_z_axis) * dot(a_z_axis, b_y_axis)) > abs(a_half_size.y * dot(a_z_axis, b_y_axis)) + abs(a_half_size.z * dot(a_y_axis, b_y_axis)) + abs(b_half_size.x * dot(a_x_axis, b_z_axis)) + abs(b_half_size.z * dot(a_x_axis, b_x_axis)))
-#define CASE_12 (abs(dot(dist, a_x_axis) * dot(a_z_axis, b_z_axis) - dot(dist, a_z_axis) * dot(a_x_axis, b_z_axis)) > abs(a_half_size.x * dot(a_z_axis, b_z_axis)) + abs(a_half_size.z * dot(a_x_axis, b_z_axis)) + abs(b_half_size.x * dot(a_y_axis, b_y_axis)) + abs(b_half_size.y * dot(a_y_axis, b_x_axis)))
-#define CASE_13 (abs(dot(dist, a_y_axis) * dot(a_x_axis, b_x_axis) - dot(dist, a_x_axis) * dot(a_y_axis, b_x_axis)) > abs(a_half_size.x * dot(a_y_axis, b_x_axis)) + abs(a_half_size.y * dot(a_x_axis, b_x_axis)) + abs(b_half_size.y * dot(a_z_axis, b_z_axis)) + abs(b_half_size.z * dot(a_z_axis, b_y_axis)))
-#define CASE_14 (abs(dot(dist, a_y_axis) * dot(a_x_axis, b_y_axis) - dot(dist, a_x_axis) * dot(a_y_axis, b_y_axis)) > abs(a_half_size.x * dot(a_y_axis, b_y_axis)) + abs(a_half_size.y * dot(a_x_axis, b_y_axis)) + abs(b_half_size.x * dot(a_z_axis, b_z_axis)) + abs(b_half_size.z * dot(a_z_axis, b_x_axis)))
-#define CASE_15 (abs(dot(dist, a_y_axis) * dot(a_x_axis, b_z_axis) - dot(dist, a_x_axis) * dot(a_y_axis, b_z_axis)) > abs(a_half_size.x * dot(a_y_axis, b_z_axis)) + abs(a_half_size.y * dot(a_x_axis, b_z_axis)) + abs(b_half_size.x * dot(a_z_axis, b_y_axis)) + abs(b_half_size.y * dot(a_z_axis, b_x_axis)))
-
 namespace ENG
 {
 	/**
-	* Checks if two oriented bounding boxes are colliding using seperated axis theorem (SAT)
+	* Move controller components through the world, blocking the movement if they encounter a solid
+	* collider.
 	*/
-	bool OBBcollision(CS::Transform& a, const glm::vec3& a_size, CS::Transform& b, const glm::vec3& b_size)
+	void moveControllers(Entities& entities, Core& core)
 	{
-		using namespace glm;
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::Controller>& controllers = entities.getPool<CS::Controller>();
+		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
+		ComponentMap<CS::Script>& scripts = entities.getPool<CS::Script>();
 
-		mat4 a_mat = mat4(mat3(a.get()));
-		vec3 a_x_axis = normalize(a_mat * vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		vec3 a_y_axis = normalize(a_mat * vec4(0.0f, 1.0f, 0.0f, 1.0f));
-		vec3 a_z_axis = normalize(a_mat * vec4(0.0f, 0.0f, 1.0f, 1.0f));
-		vec3 a_half_size = (a_size / 2.0f) * a.scale;
+		std::vector<EntityID> box_ents = entities.entitiesWith<CS::Transform, CS::BoxCollider>();
 
-		mat4 b_mat = mat4(mat3(b.get()));
-		vec3 b_x_axis = normalize(b_mat * vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		vec3 b_y_axis = normalize(b_mat * vec4(0.0f, 1.0f, 0.0f, 1.0f));
-		vec3 b_z_axis = normalize(b_mat * vec4(0.0f, 0.0f, 1.0f, 1.0f));
-		vec3 b_half_size = (b_size / 2.0f) * b.scale;
+		for (EntityID a : entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
+		{
+			glm::vec3 new_pos = transforms[a].position;
+			glm::vec3 a_size = boxes[a].size * transforms[a].scale;
 
-		vec3 dist = b.position - a.position;
+			// Move and check collision along X axis.
+			new_pos.x += controllers[a].velocity.x * core.delta;
+			for (EntityID b : box_ents)
+			{
+				if (a == b || !boxes[b].solid) continue;
 
-		return !CASE_1 && !CASE_2 && !CASE_3 && !CASE_4 && !CASE_5 && !CASE_6 && !CASE_7 && !CASE_8 && !CASE_9 && !CASE_10 && !CASE_11 && !CASE_12 && !CASE_13 && !CASE_14 && !CASE_15;
+				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
+				if (intersectAABBvAABB(new_pos, a_size, transforms[b].position, b_size))
+				{
+					if (controllers[a].velocity.x > 0.0f) new_pos.x = (transforms[b].position.x - (b_size.x / 2.0f)) - (a_size.x / 2.0f);
+					if (controllers[a].velocity.x < 0.0f) new_pos.x = (transforms[b].position.x + (b_size.x / 2.0f)) + (a_size.x / 2.0f);
+				}
+			}
+
+			// Move and check collision along Y axis.
+			new_pos.y += controllers[a].velocity.y * core.delta;
+			for (EntityID b : box_ents)
+			{
+				if (a == b || !boxes[b].solid) continue;
+
+				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
+				if (intersectAABBvAABB(new_pos, a_size, transforms[b].position, b_size))
+				{
+					if (controllers[a].velocity.y > 0.0f) new_pos.y = (transforms[b].position.y - (b_size.y / 2.0f)) - (a_size.y / 2.0f);
+					if (controllers[a].velocity.y < 0.0f)
+					{
+						new_pos.y = (transforms[b].position.y + (b_size.y / 2.0f)) + (a_size.y / 2.0f);
+						controllers[a].on_floor = true;
+					}
+				}
+			}
+
+			// Move and check collision along Z axis.
+			new_pos.z += controllers[a].velocity.z * core.delta;
+			for (EntityID b : box_ents)
+			{
+				if (a == b || !boxes[b].solid) continue;
+
+				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
+				if (intersectAABBvAABB(new_pos, a_size, transforms[b].position, b_size))
+				{
+					if (controllers[a].velocity.z > 0.0f) new_pos.z = (transforms[b].position.z - (b_size.z / 2.0f)) - (a_size.z / 2.0f);
+					if (controllers[a].velocity.z < 0.0f) new_pos.z = (transforms[b].position.z + (b_size.z / 2.0f)) + (a_size.z / 2.0f);
+				}
+			}
+
+			transforms[a].position = new_pos;
+		}
+	}
+
+	/**
+	* Cast a ray into the world, and return the closest intersecting box ID.
+	*/
+	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore, float& t)
+	{
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
+
+		float t1 = 0.0f;
+		std::map<float, EntityID> d;
+		for (EntityID id : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+		{
+			if (id == ignore || !boxes[id].solid) continue;
+
+			if (intersectAABBvRay(transforms[id].position, boxes[id].size * transforms[id].scale, r_pos, r_dir, t1))
+				d[t1] = id;
+		}
+
+		if (d.size() > 0)
+		{
+			t = d.begin()->first;
+			return d.begin()->second;
+		}
+
+		return 0;
 	}
 
 	/**
 	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
 	*/
-	bool AABBcollision(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 b_pos, const glm::vec3& b_size)
+	bool intersectAABBvAABB(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 b_pos, const glm::vec3& b_size)
 	{
 		a_pos -= a_size / 2.0f;
 		b_pos -= b_size / 2.0f;
@@ -62,7 +117,7 @@ namespace ENG
 	/**
 	* Checks if a ray intersects an AABB.
 	*/
-	bool RayAABBcollision(glm::vec3 b_pos, const glm::vec3& b_size, glm::vec3 r_pos, const glm::vec3& r_dir, float& t)
+	bool intersectAABBvRay(glm::vec3 b_pos, const glm::vec3& b_size, glm::vec3 r_pos, const glm::vec3& r_dir, float& t)
 	{
 		glm::vec3 dir_frac = 1.0f / r_dir;
 
@@ -89,87 +144,5 @@ namespace ENG
 
 		t = tmin;
 		return true;
-	}
-
-	/**
-	* Cast a ray into the world, and return the closest intersecting box ID.
-	*/
-	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore)
-	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& boxes = entities.getPool<CS::BoxCollider>();
-
-		float t = 0.0f;
-		std::map<float, EntityID> d;
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
-		{
-			if (id == ignore) continue;
-
-			if (RayAABBcollision(transforms[id].position, boxes[id].size * transforms[id].scale, r_pos, r_dir, t))
-				d[t] = id;
-		}
-
-		return d.size() > 0 ? d.begin()->second : 0;
-	}
-
-	void moveControllers(Entities& entities, Core& core)
-	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& controllers = entities.getPool<CS::Controller>();
-		auto& boxes = entities.getPool<CS::BoxCollider>();
-		auto& scripts = entities.getPool<CS::Script>();
-
-		auto box_ents = entities.entitiesWith<CS::Transform, CS::BoxCollider>();
-
-		for (EntityID a : entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
-		{
-			glm::vec3 new_pos = transforms[a].position;
-			glm::vec3 a_size = boxes[a].size * transforms[a].scale;
-
-			new_pos.x += controllers[a].velocity.x * core.delta;
-			for (EntityID b : box_ents)
-			{
-				if (a == b) continue;
-
-				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
-				if (AABBcollision(new_pos, a_size, transforms[b].position, b_size))
-				{
-					if (controllers[a].velocity.x > 0.0f) new_pos.x = (transforms[b].position.x - (b_size.x / 2.0f)) - (a_size.x / 2.0f);
-					if (controllers[a].velocity.x < 0.0f) new_pos.x = (transforms[b].position.x + (b_size.x / 2.0f)) + (a_size.x / 2.0f);
-				}
-			}
-
-			new_pos.y += controllers[a].velocity.y * core.delta;
-			for (EntityID b : box_ents)
-			{
-				if (a == b) continue;
-
-				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
-				if (AABBcollision(new_pos, a_size, transforms[b].position, b_size))
-				{
-					if (controllers[a].velocity.y > 0.0f) new_pos.y = (transforms[b].position.y - (b_size.y / 2.0f)) - (a_size.y / 2.0f);
-					if (controllers[a].velocity.y < 0.0f)
-					{
-						new_pos.y = (transforms[b].position.y + (b_size.y / 2.0f)) + (a_size.y / 2.0f);
-						controllers[a].on_floor = true;
-					}
-				}
-			}
-
-			new_pos.z += controllers[a].velocity.z * core.delta;
-			for (EntityID b : box_ents)
-			{
-				if (a == b) continue;
-
-				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
-				if (AABBcollision(new_pos, a_size, transforms[b].position, b_size))
-				{
-					if (controllers[a].velocity.z > 0.0f) new_pos.z = (transforms[b].position.z - (b_size.z / 2.0f)) - (a_size.z / 2.0f);
-					if (controllers[a].velocity.z < 0.0f) new_pos.z = (transforms[b].position.z + (b_size.z / 2.0f)) + (a_size.z / 2.0f);
-				}
-			}
-
-			transforms[a].position = new_pos;
-		}
 	}
 }

@@ -1,0 +1,26 @@
+[VERTEX]
+attribute vec3 in_position;
+attribute vec4 in_uv;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 transform;
+
+varying vec3 out_uv;
+
+void main()
+{
+	gl_Position = projection * view * transform * vec4(in_position, 1.0);
+	out_uv = in_uv;
+}
+
+[FRAGMENT]
+uniform sampler2D texture;
+uniform vec3 ambient;
+
+varying vec3 out_uv;
+
+void main()
+{
+	gl_FragColor = texture2D(texture, out_uv) * vec4(ambient, 1.0);
+}

@@ -1,12 +1,11 @@
 #include "Portal.h"
-#include <glm/gtx/string_cast.hpp>
 
 namespace ENG
 {
 	void startPortals(Entities& entities, const glm::ivec2& size)
 	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& portals = entities.getPool<CS::Portal>();
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
 
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
@@ -17,8 +16,8 @@ namespace ENG
 
 	void updatePortals(Entities& entities)
 	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& portals = entities.getPool<CS::Portal>();
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
 
 		EntityID player;
 		EntityID other;
@@ -32,7 +31,7 @@ namespace ENG
 			int side = static_cast<int>(glm::sign(glm::dot(transforms[portal].forward(), transforms[portal].position - transforms[player].position)));
 
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			if (OBBcollision(transforms[portal], { 2.0f, 2.0f, 0.5f }, transforms[player], { 0.5f, 0.5f, 0.5f }))
+			if (intersectAABBvAABB(transforms[portal].position, { 2.0f, 2.0f, 1.0f }, transforms[player].position, { 0.5f, 0.5f, 0.5f }))
 			{
 				// If the player moves from one side of the portal to the other, teleport them.
 				if (side != portals[portal].prev_side)
@@ -53,8 +52,8 @@ namespace ENG
 
 	void drawToPortals(Entities& entities, Resources& resources)
 	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& portals = entities.getPool<CS::Portal>();
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
 
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
@@ -63,6 +62,7 @@ namespace ENG
 
 			resources.shader("default.shdr").setUniform("view", view);
 			resources.shader("default.shdr").setUniform("view_pos", portals[portals[id].other].camera[3]);
+			resources.shader("unshaded.shdr").setUniform("view", view);
 			resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -74,8 +74,8 @@ namespace ENG
 
 	void drawPortals(Entities& entities, Resources& resources, CS::Camera cam, glm::mat4 view)
 	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& portals = entities.getPool<CS::Portal>();
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
 
 		resources.shader("portals.shdr").setUniform("view", view);
 		resources.shader("portals.shdr").setUniform("projection", cam.get());

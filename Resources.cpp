@@ -94,12 +94,12 @@ namespace ENG
 			std::stringstream ss(shader_text);
 			while (std::getline(ss, line))
 			{
-				if (line == "[VERTEX]")
+				if (line == "[VERTEX]") // read vertex code
 				{
 					write_to = &vertex;
 					continue;
 				}
-				else if (line == "[FRAGMENT]")
+				else if (line == "[FRAGMENT]") // read frag code
 				{
 					write_to = &fragment;
 					continue;

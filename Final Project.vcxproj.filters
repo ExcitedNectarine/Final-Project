@@ -63,9 +63,6 @@
     <ClCompile Include="Rendering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Lighting.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -132,9 +129,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Rendering.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Lighting.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core.h">

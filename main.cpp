@@ -1,6 +1,11 @@
 #include "Core.h"
 #include <glm/gtx/string_cast.hpp>
 
+struct Pickup : ENG::ECSComponent<Pickup>
+{
+	bool active = false;
+};
+
 struct PlayerScript : ENG::Script
 {
 	ENG::CS::Transform* transform;
@@ -12,6 +17,8 @@ struct PlayerScript : ENG::Script
 	glm::dvec2 last_mouse;
 	glm::dvec2 mouse_offset;
 	float sensitivity = 0.1f;
+	float dist;
+	ENG::EntityID pickup = 0;
 
 	void start(ENG::Core& core)
 	{
@@ -44,18 +51,36 @@ struct PlayerScript : ENG::Script
 		if (core.window.isKeyPressed(GLFW_KEY_Q))
 			transform->position = { 0.0f, 10.0f, 0.0f };
 
-		if (core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
+		if (pickup == 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
 		{
-			ENG::EntityID pickup = ENG::castRay(core.entities, transform->position, -transform->forward(), id);
-			if (pickup != 0)
+			pickup = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
+
+			if (pickup != 0 && core.entities.hasComponent<Pickup>(pickup))
 			{
-				if (pickup == 5 || pickup == 6)
-				{
-					core.entities.getComponent<ENG::CS::Transform>(pickup).parent = id;
-					core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -5.0f };
-					core.entities.getComponent<ENG::CS::Model>(pickup).hud = true;
-					core.entities.removeComponent<ENG::CS::BoxCollider>(pickup);
-				}
+				OUTPUT("Pickup up " << pickup);
+
+				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = id;
+				core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -5.0f };
+				core.entities.getComponent<ENG::CS::Model>(pickup).hud = true;
+				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).solid = false;
+			}
+			else pickup = 0;
+		}
+
+		if (pickup != 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
+		{
+			ENG::EntityID floor = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
+			if (floor != 0 && dist < 5.0f)
+			{
+				glm::vec3 new_pos = transform->position + dist * -transform->forward();
+				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size.y / 2.0f;
+
+				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = 0;
+				core.entities.getComponent<ENG::CS::Transform>(pickup).position = new_pos;
+				core.entities.getComponent<ENG::CS::Model>(pickup).hud = false;
+				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).solid = true;
+
+				pickup = 0;
 			}
 		}
 
@@ -93,16 +118,12 @@ struct PlayerScript : ENG::Script
 
 ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
-	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider>();
+	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
 
-	ENG::CS::Model& prop_m = core.entities.getComponent<ENG::CS::Model>(prop);
-	prop_m.mesh = "skull.obj";
-	prop_m.texture = "skull.jpg";
-
+	core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(prop).rotation.x = -90;
-	core.entities.getComponent<ENG::CS::Transform>(prop).scale *= 0.1f;
-	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size *= 20.0f;
+	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size *= 2.0f;
 	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 25.0f, 25.0f, 50.0f };
 	core.entities.getComponent<ENG::CS::Light>(prop).radius = 15.0f;
 
@@ -124,8 +145,11 @@ int main()
 	{
 		ENG::Core core("Resources/settings.set");
 		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.2f));
+		core.resources.shader("unshaded.shdr").setUniform("ambient", glm::vec3(1.0f));
 
 		core.window.lockMouse(true);
+
+		core.entities.addComponentPool<Pickup>();
 
 		// Create player
 		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Camera>();

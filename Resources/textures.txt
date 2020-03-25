@@ -3,3 +3,4 @@ Resources/Textures/lorry.jpg
 Resources/Textures/rock.png
 Resources/Textures/skull.jpg
 Resources/Textures/gun.png
+Resources/Textures/crosshair.png
