@@ -5,6 +5,7 @@
 #include "Collision.h"
 #include "Rendering.h"
 #include "FrameBuffer.h"
+#include "Settings.h"
 
 namespace ENG
 {
@@ -22,12 +23,12 @@ namespace ENG
 
 	void startPortals(Entities& entities, const glm::ivec2& size);
 	void updatePortals(Entities& entities);
-	void drawToPortals(Entities& entities, Resources& resources);
-	void drawPortals(Entities& entities, Resources& resources, CS::Camera cam, glm::mat4 view);
+	void drawToPortals(Core& core);
+	void drawPortals(Entities& entities, Resources& resources, Settings& settings, glm::mat4 perspective, glm::mat4 view);
 
 	/**
 	* Move screen position back and scale wall, so that far side is the same as when camera clips
 	* near side.
 	*/
-	CS::Transform preventNearClipping(CS::Camera cam, CS::Transform screen, CS::Transform player);
+	CS::Transform preventNearClipping(Settings& settings, CS::Transform screen, CS::Transform player);
 }

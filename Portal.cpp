@@ -1,4 +1,5 @@
 #include "Portal.h"
+#include "Core.h"
 
 namespace ENG
 {
@@ -50,35 +51,42 @@ namespace ENG
 		}
 	}
 
-	void drawToPortals(Entities& entities, Resources& resources)
+	void drawToPortals(Core& core)
 	{
-		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Portal>& portals = core.entities.getPool<CS::Portal>();
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
+		CS::Transform view_t;
+		CS::Transform* view_d = core.view;
+
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
 			portals[id].framebuffer.bind();
+			view_t = decompose(portals[portals[id].other].camera);
 			glm::mat4 view = glm::inverse(portals[portals[id].other].camera);
 
-			resources.shader("default.shdr").setUniform("view", view);
-			resources.shader("default.shdr").setUniform("view_pos", portals[portals[id].other].camera[3]);
-			resources.shader("unshaded.shdr").setUniform("view", view);
-			resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
+			core.resources.shader("default.shdr").setUniform("view", view);
+			core.resources.shader("default.shdr").setUniform("view_pos", portals[portals[id].other].camera[3]);
+			core.resources.shader("unshaded.shdr").setUniform("view", view);
+			core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			drawSkybox(resources);
-			drawModels(entities, resources, view[3]);
+			drawSkybox(core.resources);
+			core.view = &view_t;
+			drawModels(core);
 			portals[id].framebuffer.unbind();
 		}
+
+		core.view = view_d;
 	}
 
-	void drawPortals(Entities& entities, Resources& resources, CS::Camera cam, glm::mat4 view)
+	void drawPortals(Entities& entities, Resources& resources, Settings& settings, glm::mat4 perspective, glm::mat4 view)
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
 		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
 
 		resources.shader("portals.shdr").setUniform("view", view);
-		resources.shader("portals.shdr").setUniform("projection", cam.get());
+		resources.shader("portals.shdr").setUniform("projection", perspective);
 
 		// Disable backface culling for drawing portals, so that portals become 2-way.
 		glDisable(GL_CULL_FACE);
@@ -88,7 +96,7 @@ namespace ENG
 
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			resources.shader("portals.shdr").setUniform("transform", preventNearClipping(cam, transforms[id], transforms[portals[id].player]).get());
+			resources.shader("portals.shdr").setUniform("transform", preventNearClipping(settings, transforms[id], transforms[portals[id].player]).get());
 			resources.shader("portals.shdr").bind();
 			portals[id].framebuffer.getTexture().bind();
 			glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
@@ -101,11 +109,14 @@ namespace ENG
 	* Move screen position back and scale wall, so that far side is the same as when camera clips
 	* near side.
 	*/
-	CS::Transform preventNearClipping(CS::Camera cam, CS::Transform screen, CS::Transform player)
+	CS::Transform preventNearClipping(Settings& settings, CS::Transform screen, CS::Transform player)
 	{
-		float half_height = cam.near * glm::tan(cam.fov);
-		float half_width = half_height * cam.aspect;
-		float corner_dist = glm::length(glm::vec3(half_width, half_height, cam.near));
+		float fov = settings.getf("fov");
+		float aspect = settings.getf("width") / settings.getf("height");
+
+		float half_height = 0.1f * glm::tan(fov);
+		float half_width = half_height * aspect;
+		float corner_dist = glm::length(glm::vec3(half_width, half_height, 0.1f));
 
 		bool facing = glm::dot(screen.forward(), screen.position - player.position) > 0;
 		screen.scale.z = corner_dist;

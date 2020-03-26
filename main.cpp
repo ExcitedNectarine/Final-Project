@@ -1,5 +1,83 @@
 #include "Core.h"
-#include <glm/gtx/string_cast.hpp>
+#include "Components.h"
+
+////////////////////////////////////
+void createCore(ENG::Core& core, const std::string& setting_file)
+{
+	ENG::audioInit();
+
+	core.settings.load(setting_file);
+
+	glm::vec2 window_size(core.settings.getf("width"), core.settings.getf("height"));
+
+	core.perspective = glm::perspective(glm::radians(core.settings.getf("fov")), window_size.x / window_size.y, 0.1f, 500.0f);
+	core.orthographic = glm::ortho(0.0f, window_size.x, window_size.y, 0.0f);
+
+	core.window.create(window_size, core.settings.get("title"));
+
+	core.resources.loadMeshes(ENG::splitText(ENG::readTextFile(core.settings.get("meshes")), '\n'));
+	core.resources.loadTextures(ENG::splitText(ENG::readTextFile(core.settings.get("textures")), '\n'));
+	core.resources.loadSounds(ENG::splitText(ENG::readTextFile(core.settings.get("sounds")), '\n'));
+	core.resources.loadShaders(ENG::splitText(ENG::readTextFile(core.settings.get("shaders")), '\n'));
+
+	core.skybox.create(ENG::splitText(ENG::readTextFile(core.settings.get("skybox")), '\n'));
+	core.skybox.bind();
+
+	core.resources.shader("default.shdr").setUniform("projection", core.perspective);
+	core.resources.shader("unshaded.shdr").setUniform("projection", core.perspective);
+	core.resources.shader("skybox.shdr").setUniform("projection", core.perspective);
+
+	core.entities.addComponentPools<
+		ENG::CS::Transform,
+		ENG::CS::Model,
+		ENG::CS::Light,
+		ENG::CS::Script,
+		ENG::CS::BoxCollider,
+		ENG::CS::Controller,
+		ENG::CS::Portal
+	>();
+}
+
+void run(ENG::Core& core)
+{
+	ENG::scriptStart(core);
+	ENG::startPortals(core.entities, core.window.getSize());
+
+	double current = 0.0, last = 0.0;
+	while (!core.window.shouldClose())
+	{
+		current = glfwGetTime();
+		core.delta = static_cast<float>(current - last);
+		last = current;
+
+		ENG::scriptUpdate(core);
+		ENG::moveControllers(core);
+
+		ENG::updatePortals(core.entities);
+		ENG::drawToPortals(core);
+
+		ENG::setLights(core.entities, core.resources.shader("default.shdr"));
+		core.resources.shader("default.shdr").setUniform("view", glm::inverse(core.view->get()));
+		core.resources.shader("default.shdr").setUniform("view_pos", core.view->position);
+		core.resources.shader("unshaded.shdr").setUniform("view", glm::inverse(core.view->get()));
+		core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(glm::inverse(core.view->get()))));
+
+		core.window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
+
+		ENG::drawSkybox(core.resources);
+		ENG::drawPortals(core.entities, core.resources, core.settings, core.perspective, glm::inverse(core.view->get()));
+		ENG::drawModels(core);
+		ENG::drawModelsToHUD(core);
+
+		core.window.display();
+
+		glfwPollEvents();
+	}
+
+	scriptEnd(core);
+}
+
+////////////////////////////////////
 
 struct Pickup : ENG::ECSComponent<Pickup>
 {
@@ -60,7 +138,8 @@ struct PlayerScript : ENG::Script
 				OUTPUT("Pickup up " << pickup);
 
 				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = id;
-				core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -5.0f };
+				core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -3.5f };
+				core.entities.getComponent<ENG::CS::Transform>(pickup).rotation = glm::vec3(0.0f);
 				core.entities.getComponent<ENG::CS::Model>(pickup).hud = true;
 				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).solid = false;
 			}
@@ -120,7 +199,12 @@ ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
 	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
 
-	core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
+	ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(prop);
+	m.mesh = "quad.obj";
+	m.texture = "crosshair.png";
+	m.billboard = true;
+	m.transparent = true;
+
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(prop).rotation.x = -90;
 	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size *= 2.0f;
@@ -143,16 +227,15 @@ int main()
 {
 	try
 	{
-		ENG::Core core("Resources/settings.set");
+		ENG::Core core;
+		createCore(core, "Resources/settings.set");
 		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.2f));
 		core.resources.shader("unshaded.shdr").setUniform("ambient", glm::vec3(1.0f));
-
 		core.window.lockMouse(true);
-
 		core.entities.addComponentPool<Pickup>();
 
 		// Create player
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Camera>();
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
 
 		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
@@ -187,24 +270,24 @@ int main()
 		tb.rotation.y = 180.0f;
 
 		// Create other portals
-		//ENG::EntityID portal_c = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
-		//ENG::EntityID portal_d = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+		ENG::EntityID portal_c = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+		ENG::EntityID portal_d = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
 
-		//ENG::CS::Portal& pc = core.entities.getComponent<ENG::CS::Portal>(portal_c);
-		//pc.player = player;
-		//pc.other = portal_d;
+		ENG::CS::Portal& pc = core.entities.getComponent<ENG::CS::Portal>(portal_c);
+		pc.player = player;
+		pc.other = portal_d;
 
-		//ENG::CS::Portal& pd = core.entities.getComponent<ENG::CS::Portal>(portal_d);
-		//pd.player = player;
-		//pd.other = portal_c;
+		ENG::CS::Portal& pd = core.entities.getComponent<ENG::CS::Portal>(portal_d);
+		pd.player = player;
+		pd.other = portal_c;
 
-		//ENG::CS::Transform& tc = core.entities.getComponent<ENG::CS::Transform>(portal_c);
-		//tc.position = { -15.0f, 0.05f, 0.0f };
-		//tc.rotation.y = 90.0f;
+		ENG::CS::Transform& tc = core.entities.getComponent<ENG::CS::Transform>(portal_c);
+		tc.position = { -15.0f, 0.05f, 0.0f };
+		tc.rotation.y = 90.0f;
 
-		//ENG::CS::Transform& td = core.entities.getComponent<ENG::CS::Transform>(portal_d);
-		//td.position = { 15.0f, 0.05f, 0.0f };
-		//td.rotation.y = 90.0f;
+		ENG::CS::Transform& td = core.entities.getComponent<ENG::CS::Transform>(portal_d);
+		td.position = { 15.0f, 0.05f, 0.0f };
+		td.rotation.y = 90.0f;
 
 		// Environment
 		createProp(core, { -15.0f, 0.0f, -7.5f });
@@ -213,7 +296,7 @@ int main()
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
 		createBarrier(core, { 0.0f, 20.0f, 0.0f });
 
-		core.run();
+		run(core);
 	}
 	catch (const std::exception& e)
 	{

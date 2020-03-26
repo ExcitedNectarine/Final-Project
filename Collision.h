@@ -28,7 +28,7 @@ namespace ENG
 	* Move controller components through the world, blocking the movement if they encounter a solid
 	* collider.
 	*/
-	void moveControllers(Entities& entities, Core& core);
+	void moveControllers(Core& core);
 
 	/**
 	* Cast a ray into the world, and return the closest intersecting box ID.

@@ -47,7 +47,7 @@ namespace ENG
 		};
 	}
 
-	void scriptStart(Entities& entities, Core& core);
-	void scriptUpdate(Entities& entities, Core& core);
-	void scriptEnd(Entities& entities, Core& core);
+	void scriptStart(Core& core);
+	void scriptUpdate(Core& core);
+	void scriptEnd(Core& core);
 }

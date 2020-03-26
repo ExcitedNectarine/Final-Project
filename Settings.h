@@ -16,6 +16,7 @@ namespace ENG
 		void write(const std::string& filename);
 		std::string get(const std::string& key);
 		int geti(const std::string& key);
+		float getf(const std::string& key);
 		void set(const std::string& key, const std::string& value);
 
 	private:

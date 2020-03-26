@@ -1,72 +1,94 @@
 #include "Rendering.h"
+#include "Core.h"
 
 namespace ENG
 {
-	namespace CS
-	{
-		glm::mat4 Camera::get() { return glm::perspective(glm::radians(fov), aspect, near, far); }
-	}
-
 	/**
 	* Draws model components.
 	*/
-	void drawModels(Entities& entities, Resources& resources, const glm::vec3& view_pos)
+	void drawModels(Core& core)
 	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& models = entities.getPool<CS::Model>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Model>())
+		std::map<float, EntityID> distances;
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
+			distances[glm::distance(core.view->position, transforms[id].position)] = id;
+
+		for (auto& p : distances)
 		{
-			CS::Model& m = models[id];
+			CS::Model& m = models[p.second];
 
-			if (m.hud) continue;
-
+			if (m.hud || m.transparent) continue;
+			if (m.billboard) transforms[p.second].rotation = core.view->rotation;
 			if (m.shaded)
 			{
-				resources.shader("default.shdr").setUniform("transform", getWorldT(entities, id));
-				resources.shader("default.shdr").bind();
+				core.resources.shader("default.shdr").setUniform("transform", getWorldT(core.entities, p.second));
+				core.resources.shader("default.shdr").bind();
 			}
 			else
 			{
-				resources.shader("unshaded.shdr").setUniform("transform", getWorldT(entities, id));
-				resources.shader("unshaded.shdr").bind();
+				core.resources.shader("unshaded.shdr").setUniform("transform", getWorldT(core.entities, p.second));
+				core.resources.shader("unshaded.shdr").bind();
 			}
 
-			resources.mesh(m.mesh).bind();
-			resources.texture(m.texture).bind();
+			core.resources.mesh(m.mesh).bind();
+			core.resources.texture(m.texture).bind();
 
-			glDrawArrays(GL_TRIANGLES, 0, resources.mesh(m.mesh).vertexCount());
+			glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
+		}
+
+		for (std::map<float, EntityID>::reverse_iterator it = distances.rbegin(); it != distances.rend(); ++it)
+		{
+			CS::Model& m = models[it->second];
+
+			if (m.hud || !m.transparent) continue;
+			if (m.billboard) transforms[it->second].rotation = core.view->rotation;
+			if (m.shaded)
+			{
+				core.resources.shader("default.shdr").setUniform("transform", getWorldT(core.entities, it->second));
+				core.resources.shader("default.shdr").bind();
+			}
+			else
+			{
+				core.resources.shader("unshaded.shdr").setUniform("transform", getWorldT(core.entities, it->second));
+				core.resources.shader("unshaded.shdr").bind();
+			}
+
+			core.resources.mesh(m.mesh).bind();
+			core.resources.texture(m.texture).bind();
+
+			glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
 		}
 	}
 
-	void drawModelsToHUD(Entities& entities, Resources& resources, const glm::vec3& view_pos)
+	void drawModelsToHUD(Core& core)
 	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& models = entities.getPool<CS::Model>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Model>())
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
 		{
 			CS::Model& m = models[id];
 
 			if (!m.hud) continue;
-
 			if (m.shaded)
 			{
-				resources.shader("default.shdr").setUniform("transform", getWorldT(entities, id));
-				resources.shader("default.shdr").bind();
+				core.resources.shader("default.shdr").setUniform("transform", getWorldT(core.entities, id));
+				core.resources.shader("default.shdr").bind();
 			}
 			else
 			{
-				resources.shader("unshaded.shdr").setUniform("transform", getWorldT(entities, id));
-				resources.shader("unshaded.shdr").bind();
+				core.resources.shader("unshaded.shdr").setUniform("transform", getWorldT(core.entities, id));
+				core.resources.shader("unshaded.shdr").bind();
 			}
 
-			resources.mesh(m.mesh).bind();
-			resources.texture(m.texture).bind();
+			core.resources.mesh(m.mesh).bind();
+			core.resources.texture(m.texture).bind();
 
-			glDrawArrays(GL_TRIANGLES, 0, resources.mesh(m.mesh).vertexCount());
+			glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
 		}
 	}
 
@@ -84,8 +106,8 @@ namespace ENG
 	*/
 	void setLights(Entities& entities, Shader& shader)
 	{
-		auto& transforms = entities.getPool<CS::Transform>();
-		auto& lights = entities.getPool<CS::Light>();
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::Light>& lights = entities.getPool<CS::Light>();
 
 		std::vector<EntityID> ents = entities.entitiesWith<CS::Transform, CS::Light>();
 		for (std::size_t i = 0; i < ents.size(); i++)

@@ -7,16 +7,16 @@ namespace ENG
 	* Move controller components through the world, blocking the movement if they encounter a solid
 	* collider.
 	*/
-	void moveControllers(Entities& entities, Core& core)
+	void moveControllers(Core& core)
 	{
-		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::Controller>& controllers = entities.getPool<CS::Controller>();
-		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
-		ComponentMap<CS::Script>& scripts = entities.getPool<CS::Script>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Controller>& controllers = core.entities.getPool<CS::Controller>();
+		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
+		ComponentMap<CS::Script>& scripts = core.entities.getPool<CS::Script>();
 
-		std::vector<EntityID> box_ents = entities.entitiesWith<CS::Transform, CS::BoxCollider>();
+		std::vector<EntityID> box_ents = core.entities.entitiesWith<CS::Transform, CS::BoxCollider>();
 
-		for (EntityID a : entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
+		for (EntityID a : core.entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
 			glm::vec3 new_pos = transforms[a].position;
 			glm::vec3 a_size = boxes[a].size * transforms[a].scale;
@@ -79,20 +79,20 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
 		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
 
-		float t1 = 0.0f;
-		std::map<float, EntityID> d;
+		float distance = 0.0f;
+		std::map<float, EntityID> distances;
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 		{
 			if (id == ignore || !boxes[id].solid) continue;
 
-			if (intersectAABBvRay(transforms[id].position, boxes[id].size * transforms[id].scale, r_pos, r_dir, t1))
-				d[t1] = id;
+			if (intersectAABBvRay(transforms[id].position, boxes[id].size * transforms[id].scale, r_pos, r_dir, distance))
+				distances[distance] = id;
 		}
 
-		if (d.size() > 0)
+		if (distances.size() > 0)
 		{
-			t = d.begin()->first;
-			return d.begin()->second;
+			t = distances.begin()->first;
+			return distances.begin()->second;
 		}
 
 		return 0;

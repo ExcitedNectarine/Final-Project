@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Window.h"
+#include "Entities.h"
 #include "Resources.h"
 #include "Settings.h"
 #include "CubeMap.h"
-#include "Components.h"
+#include "Transform.h"
 
 namespace ENG
 {
@@ -13,23 +14,16 @@ namespace ENG
 	*/
 	struct Core
 	{
-		Core(const std::string& setting_file);
-
-		/**
-		* Run main game loop.
-		*/
-		void run();
-
 		Window window;
 		Entities entities;
 		Resources resources;
 		Settings settings;
 		CubeMap skybox;
 
-		CS::Camera camera;
 		CS::Transform* view;
 
-		EntityID main_cam;
+		glm::mat4 perspective;
+		glm::mat4 orthographic;
 
 		float delta;
 	};
