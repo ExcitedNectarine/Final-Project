@@ -6,7 +6,7 @@ namespace ENG
 	{
 		Transform::Transform()
 			: position(0.0f),
-			rotation(glm::vec3(0.0f)),
+			rotation(0.0f),
 			scale(1.0f) {}
 
 		glm::mat4 Transform::get()
@@ -30,6 +30,22 @@ namespace ENG
 		{
 			glm::mat4 transform = get();
 			return { transform[0].x, transform[0].y, transform[0].z };
+		}
+
+		Transform2D::Transform2D()
+			: position(0.0f),
+			origin(0.0f),
+			scale(1.0f) {}
+
+		glm::mat4 Transform2D::get()
+		{
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(position - origin, 0.0f));
+
+			transform = glm::translate(transform, glm::vec3(-origin, 0.0f));
+			transform = glm::rotate(transform, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+			transform = glm::translate(transform, glm::vec3(origin, 0.0f));
+
+			return glm::scale(transform, glm::vec3(scale, 1.0f));
 		}
 	}
 

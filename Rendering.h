@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <algorithm>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "Transform.h"
@@ -31,11 +31,20 @@ namespace ENG
 			glm::vec3 colour;
 			float radius = 5.0f;
 		};
+
+		struct Sprite : ECSComponent<Sprite>
+		{
+			std::string texture = "notexture.png";
+		};
 	}
 
+	void updateModels(Core& core);
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);
+
+	void spriteStart();
+	void drawSprites(Core& core);
 
 	/**
 	* Uploads lighting information to shader.

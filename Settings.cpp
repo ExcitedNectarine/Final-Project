@@ -39,6 +39,6 @@ namespace ENG
 	
 	std::string Settings::get(const std::string& key) { return settings.at(key); }
 	int Settings::geti(const std::string& key) { return atoi(settings.at(key).c_str()); }
-	float Settings::getf(const std::string& key) { return atof(settings.at(key).c_str()); }
+	float Settings::getf(const std::string& key) { return static_cast<float>(atof(settings.at(key).c_str())); }
 	void Settings::set(const std::string& key, const std::string& value) { settings[key] = value; }
 }

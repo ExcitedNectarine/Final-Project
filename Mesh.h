@@ -30,4 +30,22 @@ namespace ENG
 		bool dirty = false;
 		std::vector<Vertex> vertices;
 	};
+
+	class Mesh2D
+	{
+	public:
+		void setVertices(const std::vector<Vertex2D>& new_vertices);
+		void create();
+		void update();
+		void cleanup();
+		Vertex2D operator[](const int index);
+		std::size_t vertexCount();
+		void bind();
+		void unbind();
+
+	private:
+		GLuint id, position_id, uv_id;
+		bool dirty = false;
+		std::vector<Vertex2D> vertices;
+	};
 }

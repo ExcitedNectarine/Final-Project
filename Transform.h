@@ -26,6 +26,17 @@ namespace ENG
 
 			EntityID parent = 0;
 		};
+
+		struct Transform2D : ECSComponent<Transform2D>
+		{
+			Transform2D();
+			glm::mat4 get();
+
+			glm::vec2 position;
+			glm::vec2 origin;
+			glm::vec2 scale;
+			float rotation = 0.0f;
+		};
 	}
 
 	/**

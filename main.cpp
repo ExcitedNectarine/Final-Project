@@ -26,10 +26,13 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 	core.resources.shader("default.shdr").setUniform("projection", core.perspective);
 	core.resources.shader("unshaded.shdr").setUniform("projection", core.perspective);
 	core.resources.shader("skybox.shdr").setUniform("projection", core.perspective);
+	core.resources.shader("sprite.shdr").setUniform("projection", core.orthographic);
 
 	core.entities.addComponentPools<
 		ENG::CS::Transform,
+		ENG::CS::Transform2D,
 		ENG::CS::Model,
+		ENG::CS::Sprite,
 		ENG::CS::Light,
 		ENG::CS::Script,
 		ENG::CS::BoxCollider,
@@ -42,6 +45,7 @@ void run(ENG::Core& core)
 {
 	ENG::scriptStart(core);
 	ENG::startPortals(core.entities, core.window.getSize());
+	ENG::spriteStart();
 
 	double current = 0.0, last = 0.0;
 	while (!core.window.shouldClose())
@@ -56,6 +60,8 @@ void run(ENG::Core& core)
 		ENG::updatePortals(core.entities);
 		ENG::drawToPortals(core);
 
+		ENG::updateModels(core);
+
 		ENG::setLights(core.entities, core.resources.shader("default.shdr"));
 		core.resources.shader("default.shdr").setUniform("view", glm::inverse(core.view->get()));
 		core.resources.shader("default.shdr").setUniform("view_pos", core.view->position);
@@ -68,6 +74,7 @@ void run(ENG::Core& core)
 		ENG::drawPortals(core.entities, core.resources, core.settings, core.perspective, glm::inverse(core.view->get()));
 		ENG::drawModels(core);
 		ENG::drawModelsToHUD(core);
+		ENG::drawSprites(core);
 
 		core.window.display();
 
@@ -199,12 +206,7 @@ ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
 	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
 
-	ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(prop);
-	m.mesh = "quad.obj";
-	m.texture = "crosshair.png";
-	m.billboard = true;
-	m.transparent = true;
-
+	core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(prop).rotation.x = -90;
 	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size *= 2.0f;
@@ -249,6 +251,14 @@ int main()
 		t.position = { 0.5f, -0.5f, -0.5f };
 		t.scale *= 0.25f;
 		t.rotation = { 0.0f, 180.0f, 180.0f };
+
+		// Crosshair
+		ENG::EntityID ch = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
+		ENG::CS::Sprite& sp = core.entities.getComponent<ENG::CS::Sprite>(ch);
+		sp.texture = "crosshair.png";
+		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(ch);
+		t2d.position = glm::vec2(core.window.getSize()) / 2.0f;
+		t2d.origin = glm::vec2(core.resources.texture(sp.texture).getSize()) / 2.0f;
 
 		// Create portals
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
