@@ -1,6 +1,6 @@
 Resources/Textures/notexture.png
 Resources/Textures/lorry.jpg
 Resources/Textures/rock.png
-Resources/Textures/skull.jpg
+Resources/Textures/Space3.jpg
 Resources/Textures/gun.png
 Resources/Textures/crosshair.png

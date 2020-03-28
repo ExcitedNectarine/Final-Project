@@ -13,6 +13,8 @@ namespace ENG
 	
 	struct Renderer
 	{
+		Mesh quad_3d;
+		Mesh2D quad_2d;
 	};
 
 	namespace CS

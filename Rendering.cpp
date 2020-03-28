@@ -86,10 +86,11 @@ namespace ENG
 		glDepthMask(GL_TRUE);
 	}
 
-	Mesh2D quad;
+	Mesh2D quad_2d;
+	Mesh quad_3d;
 	void spriteStart()
 	{
-		std::vector<Vertex2D> verts = {
+		std::vector<Vertex2D> verts_2d = {
 			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
 			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f }),
 			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 0.0f }),
@@ -97,7 +98,18 @@ namespace ENG
 			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 1.0f }),
 			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f })
 		};
-		quad.setVertices(verts);
+
+		std::vector<Vertex> verts_3d = {
+			Vertex({ -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f }),
+			Vertex({ 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }),
+			Vertex({ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }),
+			Vertex({ -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f }),
+			Vertex({ 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, -1.0f }),
+			Vertex({ 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f })
+		};
+
+		quad_2d.setVertices(verts_2d);
+		quad_3d.setVertices(verts_3d);
 	}
 
 	void updateSprites(Core& core)
@@ -155,19 +167,19 @@ namespace ENG
 				huv = frame_size * glm::vec2(s.frame);
 				luv = huv - frame_size;
 
-				quad[0].uv = { luv.x, huv.y };
-				quad[1].uv = { huv.x, luv.y };
-				quad[2].uv = luv;
-				quad[3].uv = { luv.x, huv.y };
-				quad[4].uv = huv;
-				quad[5].uv = { huv.x, luv.y };
+				quad_2d[0].uv = { luv.x, huv.y };
+				quad_2d[1].uv = { huv.x, luv.y };
+				quad_2d[2].uv = luv;
+				quad_2d[3].uv = { luv.x, huv.y };
+				quad_2d[4].uv = huv;
+				quad_2d[5].uv = { huv.x, luv.y };
 			}
 
 			t = transforms[id];
 			t.scale *= size;
 			core.resources.shader("sprite.shdr").setUniform("transform", t.get());
 
-			quad.bind();
+			quad_2d.bind();
 			core.resources.shader("sprite.shdr").bind();
 			core.resources.texture(s.texture).bind();
 
@@ -178,22 +190,48 @@ namespace ENG
 	void drawSprites3D(Core& core)
 	{
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		ComponentMap<CS::Sprite>& sprite = core.entities.getPool<CS::Sprite>();
+		ComponentMap<CS::Sprite>& sprites = core.entities.getPool<CS::Sprite>();
 
 		std::vector<std::pair<float, EntityID>> distances;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
 			distances.emplace_back(glm::distance(core.view->position, transforms[id].position), id);
 		std::sort(distances.begin(), distances.end());
 
+		glm::vec2 frame_size;
+		glm::vec2 size;
+		glm::vec2 huv;
+		glm::vec2 luv;
+
 		glDisable(GL_CULL_FACE);
 
 		CS::Transform t;
 		for (std::vector<std::pair<float, EntityID>>::reverse_iterator it = distances.rbegin(); it != distances.rend(); ++it)
 		{
-			t = transforms[it->second];
-			t.scale *= glm::vec3(core.resources.texture(sprite[it->second].texture).getSize() / 100, 1.0f);
+			CS::Sprite& s = sprites[it->second];
 
-			if (sprite[it->second].shaded)
+			size = core.resources.texture(s.texture).getSize() / 100;
+			if (s.animated)
+			{
+				size /= s.frames;
+
+				frame_size.x = 1.0f / s.frames.x;
+				frame_size.y = 1.0f / s.frames.y;
+
+				huv = frame_size * glm::vec2(s.frame);
+				luv = huv - frame_size;
+
+				quad_3d[0].uv = { luv.x, huv.y };
+				quad_3d[1].uv = { huv.x, luv.y };
+				quad_3d[2].uv = luv;
+				quad_3d[3].uv = { luv.x, huv.y };
+				quad_3d[4].uv = huv;
+				quad_3d[5].uv = { huv.x, luv.y };
+			}
+
+			t = transforms[it->second];
+			t.scale *= glm::vec3(size, 1.0f);
+
+			if (s.shaded)
 			{
 				core.resources.shader("default.shdr").setUniform("transform", t.get());
 				core.resources.shader("default.shdr").bind();
@@ -204,8 +242,8 @@ namespace ENG
 				core.resources.shader("unshaded.shdr").bind();
 			}
 
-			core.resources.mesh("quad.obj").bind();
-			core.resources.texture(sprite[it->second].texture).bind();
+			quad_3d.bind();
+			core.resources.texture(s.texture).bind();
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}

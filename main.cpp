@@ -254,21 +254,24 @@ int main()
 		t.rotation = { 0.0f, 180.0f, 180.0f };
 
 		ENG::EntityID spr = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Sprite>();
-		core.entities.getComponent<ENG::CS::Sprite>(spr).shaded = false;
+		ENG::CS::Sprite& s = core.entities.getComponent<ENG::CS::Sprite>(spr);
+		s.texture = "Space3.jpg";
+		s.shaded = false;
+		s.animated = true;
+		s.frames = { 4, 2 };
+		s.frame_time = 0.5f;
+		core.entities.getComponent<ENG::CS::Transform>(spr).scale *= 0.5f;
+		core.entities.getComponent<ENG::CS::Transform>(spr).position.y = 5.0f;
 
 		// Crosshair
 		ENG::EntityID ch = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
 
 		ENG::CS::Sprite& sp = core.entities.getComponent<ENG::CS::Sprite>(ch);
 		sp.texture = "crosshair.png";
-		sp.animated = true;
-		sp.frames = { 2, 1 };
-		sp.frame_time = 0.25f;
 
 		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(ch);
 		t2d.position = glm::vec2(core.window.getSize()) / 2.0f;
 		t2d.origin = glm::vec2(core.resources.texture(sp.texture).getSize()) / 2.0f;
-		t2d.rotation = 45.0f;
 
 		// Create portals
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
