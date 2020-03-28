@@ -66,7 +66,7 @@ namespace ENG
 			glm::mat4 view = glm::inverse(portals[portals[id].other].camera);
 
 			core.view = &view_t;
-			updateModels(core);
+			updateSprites(core);
 
 			core.resources.shader("default.shdr").setUniform("view", view);
 			core.resources.shader("default.shdr").setUniform("view_pos", portals[portals[id].other].camera[3]);
@@ -76,6 +76,7 @@ namespace ENG
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawSkybox(core.resources);
 			drawModels(core);
+			drawSprites3D(core);
 			portals[id].framebuffer.unbind();
 		}
 

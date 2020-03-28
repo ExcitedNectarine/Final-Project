@@ -4,14 +4,11 @@
 
 namespace ENG
 {
-	void updateModels(Core& core)
+	namespace CS
 	{
-		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
-
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
-			if (models[id].billboard)
-				transforms[id].rotation = core.view->rotation;
+		Sprite::Sprite()
+			: frame(1),
+			frames(1) {}
 	}
 
 	void drawModel(Core& core, CS::Model& m, glm::mat4 t)
@@ -81,9 +78,11 @@ namespace ENG
 	void drawSkybox(Resources& resources)
 	{
 		glDepthMask(GL_FALSE);
+		
 		resources.shader("skybox.shdr").bind();
 		resources.mesh("cube_inverted.obj").bind();
 		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube_inverted.obj").vertexCount());
+
 		glDepthMask(GL_TRUE);
 	}
 
@@ -91,34 +90,127 @@ namespace ENG
 	void spriteStart()
 	{
 		std::vector<Vertex2D> verts = {
-			Vertex2D({0.0f, 1.0f}, {0.0f, 0.0f}),
-			Vertex2D({1.0f, 0.0f}, {1.0f, 1.0f}),
-			Vertex2D({0.0f, 0.0f}, {0.0f, 1.0f}),
-			Vertex2D({0.0f, 1.0f}, {0.0f, 0.0f}),
-			Vertex2D({1.0f, 1.0f}, {1.0f, 0.0f}),
-			Vertex2D({1.0f, 0.0f}, {1.0f, 1.0f})
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f }),
+			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 0.0f }),
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
+			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 1.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f })
 		};
 		quad.setVertices(verts);
+	}
+
+	void updateSprites(Core& core)
+	{
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Sprite>& sprites = core.entities.getPool<CS::Sprite>();
+
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
+			if (sprites[id].billboard)
+				transforms[id].rotation = core.view->rotation;
+
+		for (EntityID id : core.entities.entitiesWith<CS::Sprite>())
+		{
+			CS::Sprite& s = sprites[id];
+			if (s.animated)
+			{
+				s.timer += core.delta;
+				if (s.timer >= s.frame_time)
+				{
+					s.timer = 0.0f;
+					if (++s.frame.x > s.frames.x)
+					{
+						s.frame.x = 1;
+						if (++s.frame.y > s.frames.y)
+							s.frame.y = 1;
+					}
+				}
+			}
+		}
 	}
 
 	void drawSprites(Core& core)
 	{
 		ComponentMap<CS::Transform2D>& transforms = core.entities.getPool<CS::Transform2D>();
-		ComponentMap<CS::Sprite>& sprite = core.entities.getPool<CS::Sprite>();
+		ComponentMap<CS::Sprite>& sprites = core.entities.getPool<CS::Sprite>();
+
+		glm::vec2 frame_size;
+		glm::vec2 size;
+		glm::vec2 huv;
+		glm::vec2 luv;
 
 		CS::Transform2D t;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform2D, CS::Sprite>())
-		{
+		{	
+			CS::Sprite& s = sprites[id];
+
+			size = core.resources.texture(s.texture).getSize();
+			if (s.animated)
+			{
+				size /= s.frames;
+
+				frame_size.x = 1.0f / s.frames.x;
+				frame_size.y = 1.0f / s.frames.y;
+
+				huv = frame_size * glm::vec2(s.frame);
+				luv = huv - frame_size;
+
+				quad[0].uv = { luv.x, huv.y };
+				quad[1].uv = { huv.x, luv.y };
+				quad[2].uv = luv;
+				quad[3].uv = { luv.x, huv.y };
+				quad[4].uv = huv;
+				quad[5].uv = { huv.x, luv.y };
+			}
+
 			t = transforms[id];
-			t.scale *= core.resources.texture(sprite[id].texture).getSize();
+			t.scale *= size;
 			core.resources.shader("sprite.shdr").setUniform("transform", t.get());
 
-			core.resources.shader("sprite.shdr").bind();
 			quad.bind();
-			core.resources.texture(sprite[id].texture).bind();
+			core.resources.shader("sprite.shdr").bind();
+			core.resources.texture(s.texture).bind();
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
+	}
+
+	void drawSprites3D(Core& core)
+	{
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Sprite>& sprite = core.entities.getPool<CS::Sprite>();
+
+		std::vector<std::pair<float, EntityID>> distances;
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
+			distances.emplace_back(glm::distance(core.view->position, transforms[id].position), id);
+		std::sort(distances.begin(), distances.end());
+
+		glDisable(GL_CULL_FACE);
+
+		CS::Transform t;
+		for (std::vector<std::pair<float, EntityID>>::reverse_iterator it = distances.rbegin(); it != distances.rend(); ++it)
+		{
+			t = transforms[it->second];
+			t.scale *= glm::vec3(core.resources.texture(sprite[it->second].texture).getSize() / 100, 1.0f);
+
+			if (sprite[it->second].shaded)
+			{
+				core.resources.shader("default.shdr").setUniform("transform", t.get());
+				core.resources.shader("default.shdr").bind();
+			}
+			else
+			{
+				core.resources.shader("unshaded.shdr").setUniform("transform", t.get());
+				core.resources.shader("unshaded.shdr").bind();
+			}
+
+			core.resources.mesh("quad.obj").bind();
+			core.resources.texture(sprite[it->second].texture).bind();
+
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+
+		glEnable(GL_CULL_FACE);
 	}
 
 	/**

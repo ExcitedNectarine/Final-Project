@@ -60,7 +60,7 @@ void run(ENG::Core& core)
 		ENG::updatePortals(core.entities);
 		ENG::drawToPortals(core);
 
-		ENG::updateModels(core);
+		ENG::updateSprites(core);
 
 		ENG::setLights(core.entities, core.resources.shader("default.shdr"));
 		core.resources.shader("default.shdr").setUniform("view", glm::inverse(core.view->get()));
@@ -73,6 +73,7 @@ void run(ENG::Core& core)
 		ENG::drawSkybox(core.resources);
 		ENG::drawPortals(core.entities, core.resources, core.settings, core.perspective, glm::inverse(core.view->get()));
 		ENG::drawModels(core);
+		ENG::drawSprites3D(core);
 		ENG::drawModelsToHUD(core);
 		ENG::drawSprites(core);
 
@@ -101,7 +102,7 @@ struct PlayerScript : ENG::Script
 
 	glm::dvec2 last_mouse;
 	glm::dvec2 mouse_offset;
-	float sensitivity = 0.1f;
+	float sensitivity = 0.05f;
 	float dist;
 	ENG::EntityID pickup = 0;
 
@@ -252,13 +253,22 @@ int main()
 		t.scale *= 0.25f;
 		t.rotation = { 0.0f, 180.0f, 180.0f };
 
+		ENG::EntityID spr = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Sprite>();
+		core.entities.getComponent<ENG::CS::Sprite>(spr).shaded = false;
+
 		// Crosshair
 		ENG::EntityID ch = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
+
 		ENG::CS::Sprite& sp = core.entities.getComponent<ENG::CS::Sprite>(ch);
 		sp.texture = "crosshair.png";
+		sp.animated = true;
+		sp.frames = { 2, 1 };
+		sp.frame_time = 0.25f;
+
 		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(ch);
 		t2d.position = glm::vec2(core.window.getSize()) / 2.0f;
 		t2d.origin = glm::vec2(core.resources.texture(sp.texture).getSize()) / 2.0f;
+		t2d.rotation = 45.0f;
 
 		// Create portals
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();

@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "Output.h"
 
 namespace ENG
 {
@@ -170,7 +171,7 @@ namespace ENG
 		glDeleteVertexArrays(1, &id);
 	}
 
-	Vertex2D Mesh2D::operator[](const int index)
+	Vertex2D& Mesh2D::operator[](const int index)
 	{
 		dirty = true;
 		return vertices[index];

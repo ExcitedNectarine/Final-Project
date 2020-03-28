@@ -38,7 +38,7 @@ namespace ENG
 		void create();
 		void update();
 		void cleanup();
-		Vertex2D operator[](const int index);
+		Vertex2D& operator[](const int index);
 		std::size_t vertexCount();
 		void bind();
 		void unbind();

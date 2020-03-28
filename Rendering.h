@@ -10,6 +10,10 @@
 namespace ENG
 {
 	struct Core;
+	
+	struct Renderer
+	{
+	};
 
 	namespace CS
 	{
@@ -21,7 +25,6 @@ namespace ENG
 			bool shaded = true;
 			bool transparent = false;
 			bool hud = false;
-			bool billboard = false;
 		};
 
 		struct Light : ECSComponent<Light>
@@ -34,17 +37,28 @@ namespace ENG
 
 		struct Sprite : ECSComponent<Sprite>
 		{
+			Sprite();
+
 			std::string texture = "notexture.png";
+			bool billboard = true;
+			bool shaded = true;
+
+			bool animated = false;
+			glm::ivec2 frame;
+			glm::ivec2 frames;
+			float frame_time = 0.0f;
+			float timer = 0.0f;
 		};
 	}
 
-	void updateModels(Core& core);
+	void updateSprites(Core& core);
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);
 
 	void spriteStart();
 	void drawSprites(Core& core);
+	void drawSprites3D(Core& core);
 
 	/**
 	* Uploads lighting information to shader.
