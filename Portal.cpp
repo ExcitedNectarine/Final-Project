@@ -83,24 +83,24 @@ namespace ENG
 		core.view = view_d;
 	}
 
-	void drawPortals(Entities& entities, Resources& resources, Settings& settings, glm::mat4 perspective, glm::mat4 view)
+	void drawPortals(Core& core)
 	{
-		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Portal>& portals = core.entities.getPool<CS::Portal>();
 
-		resources.shader("portals.shdr").setUniform("view", view);
-		resources.shader("portals.shdr").setUniform("projection", perspective);
+		core.resources.shader("portals.shdr").setUniform("view", glm::inverse(core.view->get()));
+		core.resources.shader("portals.shdr").setUniform("projection", core.perspective);
 
 		// Disable backface culling for drawing portals, so that portals become 2-way.
 		glDisable(GL_CULL_FACE);
 		
-		Mesh& cube = resources.mesh("cube.obj");
+		Mesh& cube = core.resources.mesh("cube.obj");
 		cube.bind();
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
-			resources.shader("portals.shdr").setUniform("transform", preventNearClipping(settings, transforms[id], transforms[portals[id].player]).get());
-			resources.shader("portals.shdr").bind();
+			core.resources.shader("portals.shdr").setUniform("transform", preventNearClipping(core.settings, transforms[id], transforms[portals[id].player]).get());
+			core.resources.shader("portals.shdr").bind();
 			portals[id].framebuffer.getTexture().bind();
 			glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
 		}

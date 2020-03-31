@@ -61,19 +61,14 @@ void run(ENG::Core& core)
 		ENG::drawToPortals(core);
 
 		ENG::updateSprites(core);
-
-		ENG::setLights(core.entities, core.resources.shader("default.shdr"));
-		core.resources.shader("default.shdr").setUniform("view", glm::inverse(core.view->get()));
-		core.resources.shader("default.shdr").setUniform("view_pos", core.view->position);
-		core.resources.shader("unshaded.shdr").setUniform("view", glm::inverse(core.view->get()));
-		core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(glm::inverse(core.view->get()))));
+		ENG::updateRenderer(core);
 
 		core.window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
 		ENG::drawSkybox(core.resources);
-		ENG::drawPortals(core.entities, core.resources, core.settings, core.perspective, glm::inverse(core.view->get()));
 		ENG::drawModels(core);
 		ENG::drawSprites3D(core);
+		ENG::drawPortals(core);
 		ENG::drawModelsToHUD(core);
 		ENG::drawSprites(core);
 
@@ -82,7 +77,7 @@ void run(ENG::Core& core)
 		glfwPollEvents();
 	}
 
-	scriptEnd(core);
+	ENG::scriptEnd(core);
 }
 
 ////////////////////////////////////
@@ -96,6 +91,7 @@ struct PlayerScript : ENG::Script
 {
 	ENG::CS::Transform* transform;
 	ENG::CS::Controller* controller;
+	ENG::CS::BoxCollider* box;
 	glm::vec3 direction;
 	glm::vec3 velocity;
 	float speed = 8.0f;
@@ -112,7 +108,8 @@ struct PlayerScript : ENG::Script
 		controller = &core.entities.getComponent<ENG::CS::Controller>(id);
 		transform->position.y = 20.0f;
 
-		core.entities.getComponent<ENG::CS::BoxCollider>(id).size.y = 2.0f;
+		box = &core.entities.getComponent<ENG::CS::BoxCollider>(id);
+		box->size.y = 3.0f;
 	}
 
 	void mouselook(ENG::Core& core)
@@ -199,6 +196,8 @@ struct PlayerScript : ENG::Script
 		mouselook(core);
 		movement(core);
 
+		OUTPUT(ENG::intersectAABBvPlane(transform->position, box->size, glm::vec3(-10.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
+
 		core.view = transform;
 	}
 };
@@ -258,17 +257,15 @@ int main()
 		s.texture = "Space3.jpg";
 		s.shaded = false;
 		s.animated = true;
-		s.frames = { 4, 2 };
-		s.frame_time = 0.5f;
+		s.frames = { 8, 8 };
+		s.frame_time = 1.0f;
 		core.entities.getComponent<ENG::CS::Transform>(spr).scale *= 0.5f;
 		core.entities.getComponent<ENG::CS::Transform>(spr).position.y = 5.0f;
 
 		// Crosshair
 		ENG::EntityID ch = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
-
 		ENG::CS::Sprite& sp = core.entities.getComponent<ENG::CS::Sprite>(ch);
 		sp.texture = "crosshair.png";
-
 		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(ch);
 		t2d.position = glm::vec2(core.window.getSize()) / 2.0f;
 		t2d.origin = glm::vec2(core.resources.texture(sp.texture).getSize()) / 2.0f;

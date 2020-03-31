@@ -11,6 +11,15 @@ namespace ENG
 			frames(1) {}
 	}
 
+	void updateRenderer(Core& core)
+	{
+		setLights(core.entities, core.resources.shader("default.shdr"));
+		core.resources.shader("default.shdr").setUniform("view", glm::inverse(core.view->get()));
+		core.resources.shader("default.shdr").setUniform("view_pos", core.view->position);
+		core.resources.shader("unshaded.shdr").setUniform("view", glm::inverse(core.view->get()));
+		core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(glm::inverse(core.view->get()))));
+	}
+
 	void drawModel(Core& core, CS::Model& m, glm::mat4 t)
 	{
 		if (m.shaded)
@@ -47,16 +56,8 @@ namespace ENG
 		for (auto& p : distances)
 		{
 			CS::Model& m = models[p.second];
-			if (m.hud || m.transparent) continue;
+			if (m.hud) continue;
 			drawModel(core, m, getWorldT(core.entities, p.second));
-		}
-
-		// Draw transparent models from furthest to closest.
-		for (std::vector<std::pair<float, EntityID>>::reverse_iterator it = distances.rbegin(); it != distances.rend(); ++it)
-		{
-			CS::Model& m = models[it->second];
-			if (m.hud || !m.transparent) continue;
-			drawModel(core, m, getWorldT(core.entities, it->second));
 		}
 	}
 
@@ -86,8 +87,6 @@ namespace ENG
 		glDepthMask(GL_TRUE);
 	}
 
-	Mesh2D quad_2d;
-	Mesh quad_3d;
 	void spriteStart()
 	{
 		std::vector<Vertex2D> verts_2d = {
@@ -141,6 +140,9 @@ namespace ENG
 		}
 	}
 
+	/**
+	* Draws sprites with Transform2D components.
+	*/
 	void drawSprites(Core& core)
 	{
 		ComponentMap<CS::Transform2D>& transforms = core.entities.getPool<CS::Transform2D>();
@@ -187,6 +189,9 @@ namespace ENG
 		}
 	}
 
+	/**
+	* Draws sprites with the Transform component.
+	*/
 	void drawSprites3D(Core& core)
 	{
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
@@ -258,6 +263,8 @@ namespace ENG
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
 		ComponentMap<CS::Light>& lights = entities.getPool<CS::Light>();
+
+		//shader.setUniform("ambient", renderer.ambient);
 
 		std::vector<EntityID> ents = entities.entitiesWith<CS::Transform, CS::Light>();
 		for (std::size_t i = 0; i < ents.size(); i++)

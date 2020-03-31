@@ -10,33 +10,29 @@
 namespace ENG
 {
 	struct Core;
-	
 	struct Renderer
 	{
-		Mesh quad_3d;
-		Mesh2D quad_2d;
+		glm::vec3 ambient;
 	};
 
 	namespace CS
 	{
+		/**
+		* Model component used for drawing a mesh with a texture to the screen.
+		*/
 		struct Model : ECSComponent<Model>
 		{
 			std::string mesh = "cube.obj";
 			std::string texture = "notexture.png";
 
 			bool shaded = true;
-			bool transparent = false;
 			bool hud = false;
 		};
 
-		struct Light : ECSComponent<Light>
-		{
-			Light() : colour(1.0f) {}
-
-			glm::vec3 colour;
-			float radius = 5.0f;
-		};
-
+		/**
+		* Sprite component can be used for 2D or 3D sprites. Also supports simple
+		* sprite animation.
+		*/
 		struct Sprite : ECSComponent<Sprite>
 		{
 			Sprite();
@@ -51,14 +47,30 @@ namespace ENG
 			float frame_time = 0.0f;
 			float timer = 0.0f;
 		};
+
+		struct Light : ECSComponent<Light>
+		{
+			Light() : colour(1.0f) {}
+
+			glm::vec3 colour;
+			float radius = 5.0f;
+		};
 	}
 
-	void updateSprites(Core& core);
+	namespace
+	{
+		Mesh2D quad_2d;
+		Mesh quad_3d;
+	}
+
+	void updateRenderer(Core& core);
+
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);
 
 	void spriteStart();
+	void updateSprites(Core& core);
 	void drawSprites(Core& core);
 	void drawSprites3D(Core& core);
 

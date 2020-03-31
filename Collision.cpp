@@ -145,4 +145,40 @@ namespace ENG
 		t = tmin;
 		return true;
 	}
+
+	/**
+	* Checks if an AABB intersects a plane.
+	*/
+	bool intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm)
+	{
+		glm::vec3 bhs = b_size / 2.0f;
+		glm::vec3 b_min = b_pos - bhs;
+		glm::vec3 b_max = b_pos + bhs;
+
+		// All 8 vertices in AABB
+		glm::vec3 verts[8] =
+		{
+			b_min,
+			b_max,
+			{b_max.x, b_min.y, b_min.z},
+			{b_min.x, b_max.y, b_min.z},
+			{b_min.x, b_min.y, b_max.z},
+			{b_min.x, b_max.y, b_max.z},
+			{b_max.x, b_min.y, b_max.z},
+			{b_max.x, b_max.y, b_min.z}
+		};
+
+		// Check if all vertices are on the same side of the plane. If not, then they intersect
+		int sign = 0, prev_sign = glm::sign(glm::dot(p_norm, p_pos - verts[0]));
+		for (int i = 1; i < 8; i++)
+		{
+			sign = glm::sign(glm::dot(p_norm, p_pos - verts[i]));
+			if (sign != prev_sign)
+				return true;
+
+			prev_sign = sign;
+		}
+
+		return false;
+	}
 }

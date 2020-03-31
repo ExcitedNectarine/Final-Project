@@ -44,4 +44,9 @@ namespace ENG
 	* Checks if a ray intersects an AABB.
 	*/
 	bool intersectAABBvRay(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir, float& t);
+
+	/**
+	* Checks if an AABB intersects a plane.
+	*/
+	bool intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm);
 }
