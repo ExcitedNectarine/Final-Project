@@ -12,62 +12,27 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Controller>& controllers = core.entities.getPool<CS::Controller>();
 		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
-		ComponentMap<CS::Script>& scripts = core.entities.getPool<CS::Script>();
-
-		std::vector<EntityID> box_ents = core.entities.entitiesWith<CS::Transform, CS::BoxCollider>();
 
 		for (EntityID a : core.entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
-			glm::vec3 new_pos = transforms[a].position;
 			glm::vec3 a_size = boxes[a].size * transforms[a].scale;
 
-			// Move and check collision along X axis.
-			new_pos.x += controllers[a].velocity.x * core.delta;
-			for (EntityID b : box_ents)
+			transforms[a].position += controllers[a].velocity * core.delta;
+			controllers[a].on_floor = false;
+
+			for (EntityID b : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 			{
 				if (a == b || !boxes[b].solid) continue;
 
 				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
-				if (intersectAABBvAABB(new_pos, a_size, transforms[b].position, b_size))
+				IntersectData d = intersectAABBvAABB(transforms[a].position, a_size, transforms[b].position, b_size);
+				if (d.intersects)
 				{
-					if (controllers[a].velocity.x > 0.0f) new_pos.x = (transforms[b].position.x - (b_size.x / 2.0f)) - (a_size.x / 2.0f);
-					if (controllers[a].velocity.x < 0.0f) new_pos.x = (transforms[b].position.x + (b_size.x / 2.0f)) + (a_size.x / 2.0f);
+					transforms[a].position -= d.normal * d.distance;
+					if (!controllers[a].on_floor)
+						controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f);
 				}
 			}
-
-			// Move and check collision along Y axis.
-			new_pos.y += controllers[a].velocity.y * core.delta;
-			for (EntityID b : box_ents)
-			{
-				if (a == b || !boxes[b].solid) continue;
-
-				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
-				if (intersectAABBvAABB(new_pos, a_size, transforms[b].position, b_size))
-				{
-					if (controllers[a].velocity.y > 0.0f) new_pos.y = (transforms[b].position.y - (b_size.y / 2.0f)) - (a_size.y / 2.0f);
-					if (controllers[a].velocity.y < 0.0f)
-					{
-						new_pos.y = (transforms[b].position.y + (b_size.y / 2.0f)) + (a_size.y / 2.0f);
-						controllers[a].on_floor = true;
-					}
-				}
-			}
-
-			// Move and check collision along Z axis.
-			new_pos.z += controllers[a].velocity.z * core.delta;
-			for (EntityID b : box_ents)
-			{
-				if (a == b || !boxes[b].solid) continue;
-
-				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
-				if (intersectAABBvAABB(new_pos, a_size, transforms[b].position, b_size))
-				{
-					if (controllers[a].velocity.z > 0.0f) new_pos.z = (transforms[b].position.z - (b_size.z / 2.0f)) - (a_size.z / 2.0f);
-					if (controllers[a].velocity.z < 0.0f) new_pos.z = (transforms[b].position.z + (b_size.z / 2.0f)) + (a_size.z / 2.0f);
-				}
-			}
-
-			transforms[a].position = new_pos;
 		}
 	}
 
@@ -96,22 +61,6 @@ namespace ENG
 		}
 
 		return 0;
-	}
-
-	/**
-	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
-	*/
-	bool intersectAABBvAABB(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 b_pos, const glm::vec3& b_size)
-	{
-		a_pos -= a_size / 2.0f;
-		b_pos -= b_size / 2.0f;
-
-		return (a_pos.x < b_pos.x + b_size.x &&
-				a_pos.x + a_size.x > b_pos.x &&
-				a_pos.y < b_pos.y + b_size.y &&
-				a_pos.y + a_size.y > b_pos.y &&
-				a_pos.z < b_pos.z + b_size.z &&
-				a_pos.z + a_size.z > b_pos.z);
 	}
 
 	/**
@@ -169,10 +118,10 @@ namespace ENG
 		};
 
 		// Check if all vertices are on the same side of the plane. If not, then they intersect
-		int sign = 0, prev_sign = glm::sign(glm::dot(p_norm, p_pos - verts[0]));
+		int sign = 0, prev_sign = static_cast<int>(glm::sign(glm::dot(p_norm, p_pos - verts[0])));
 		for (int i = 1; i < 8; i++)
 		{
-			sign = glm::sign(glm::dot(p_norm, p_pos - verts[i]));
+			sign = static_cast<int>(glm::sign(glm::dot(p_norm, p_pos - verts[i])));
 			if (sign != prev_sign)
 				return true;
 
@@ -180,5 +129,74 @@ namespace ENG
 		}
 
 		return false;
+	}
+
+	///
+
+	/**
+	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
+	*/
+	IntersectData intersectAABBvAABB(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& b_pos, const glm::vec3& b_size)
+	{
+		glm::vec3 a_min = a_pos - (a_size / 2.0f);
+		glm::vec3 a_max = a_pos + (a_size / 2.0f);
+		glm::vec3 b_min = b_pos - (b_size / 2.0f);
+		glm::vec3 b_max = b_pos + (b_size / 2.0f);
+
+		glm::vec3 dist1 = b_min - a_max;
+		glm::vec3 dist2 = a_min - b_max;
+		glm::vec3 max_dist(
+			glm::max(dist1.x, dist2.x),
+			glm::max(dist1.y, dist2.y),
+			glm::max(dist1.z, dist2.z)
+		);
+
+		// Max distance on X, Y and Z. If less than 0, the AABBs intersect
+		float dist = glm::max(max_dist.x, glm::max(max_dist.y, max_dist.z));
+
+		// Find which axis the distance is on, and which direction to move in.
+		glm::vec3 norm(
+			approximate(dist, max_dist.x, 0.01f) ? (a_pos.x > b_pos.x ? 1.0f : -1.0f) : 0.0f,
+			approximate(dist, max_dist.y, 0.01f) ? (a_pos.y > b_pos.y ? 1.0f : -1.0f) : 0.0f,
+			approximate(dist, max_dist.z, 0.01f) ? (a_pos.z > b_pos.z ? 1.0f : -1.0f) : 0.0f
+		);
+
+		return { dist < 0, dist, norm };
+	}
+
+	/**
+	* Checks if a ray intersects an AABB.
+	*/
+	IntersectData intersectAABBvRay2(glm::vec3 b_pos, const glm::vec3& b_size, glm::vec3 r_pos, const glm::vec3& r_dir)
+	{
+		glm::vec3 dir_frac = 1.0f / r_dir;
+
+		glm::vec3 b_min = b_pos - (b_size / 2.0f);
+		glm::vec3 b_max = b_pos + (b_size / 2.0f);
+
+		glm::vec3 t1 = (b_min - r_pos) * dir_frac;
+		glm::vec3 t2 = (b_max - r_pos) * dir_frac;
+
+		float tmin = glm::max(glm::max(glm::min(t1.x, t2.x), glm::min(t1.y, t2.y)), glm::min(t1.z, t2.z));
+		float tmax = glm::min(glm::min(glm::max(t1.x, t2.x), glm::max(t1.y, t2.y)), glm::max(t1.z, t2.z));
+
+		IntersectData data;
+
+		if (tmax < 0.0f || tmin > tmax)
+			data.distance = tmax;
+		else
+		{
+			data.distance = tmin;
+			data.intersects = true;
+		}
+
+		return data;
+	}
+
+	/**
+	* Checks if an AABB intersects a plane.
+	*/
+	IntersectData intersectAABBvPlane2(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm)
+	{
 	}
 }

@@ -32,7 +32,7 @@ namespace ENG
 			int side = static_cast<int>(glm::sign(glm::dot(transforms[portal].forward(), transforms[portal].position - transforms[player].position)));
 
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			if (intersectAABBvAABB(transforms[portal].position, { 2.0f, 2.0f, 1.0f }, transforms[player].position, { 0.5f, 0.5f, 0.5f }))
+			if (intersectAABBvAABB(transforms[portal].position, { 2.0f, 2.0f, 1.0f }, transforms[player].position, { 0.5f, 0.5f, 0.5f }).intersects)
 			{
 				// If the player moves from one side of the portal to the other, teleport them.
 				if (side != portals[portal].prev_side)

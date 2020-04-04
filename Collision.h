@@ -4,6 +4,8 @@
 #include "Transform.h"
 #include "Script.h"
 
+#include <glm/gtx/string_cast.hpp>
+
 namespace ENG
 {
 	namespace CS
@@ -24,6 +26,13 @@ namespace ENG
 		};
 	}
 
+	struct IntersectData
+	{
+		bool intersects = false;
+		float distance = 0.0f;
+		glm::vec3 normal;
+	};
+
 	/**
 	* Move controller components through the world, blocking the movement if they encounter a solid
 	* collider.
@@ -36,11 +45,6 @@ namespace ENG
 	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore, float& t);
 
 	/**
-	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
-	*/
-	bool intersectAABBvAABB(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 b_pos, const glm::vec3& b_size);
-
-	/**
 	* Checks if a ray intersects an AABB.
 	*/
 	bool intersectAABBvRay(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir, float& t);
@@ -49,4 +53,21 @@ namespace ENG
 	* Checks if an AABB intersects a plane.
 	*/
 	bool intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm);
+
+	///
+
+	/**
+	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
+	*/
+	IntersectData intersectAABBvAABB(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& b_pos, const glm::vec3& b_size);
+
+	/**
+	* Checks if a ray intersects an AABB.
+	*/
+	IntersectData intersectAABBvRay2(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir);
+
+	/**
+	* Checks if an AABB intersects a plane.
+	*/
+	IntersectData intersectAABBvPlane2(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm);
 }

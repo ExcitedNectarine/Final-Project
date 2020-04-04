@@ -185,6 +185,9 @@ struct PlayerScript : ENG::Script
 		else
 			velocity.y = 0.0f;
 
+		if (velocity.y <= -10.0f)
+			velocity.y = -10.0f;
+
 		controller->velocity = velocity;
 	}
 
@@ -196,7 +199,8 @@ struct PlayerScript : ENG::Script
 		mouselook(core);
 		movement(core);
 
-		OUTPUT(ENG::intersectAABBvPlane(transform->position, box->size, glm::vec3(-10.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
+	//	OUTPUT(ENG::intersectAABBvPlane(transform->position, box->size, glm::vec3(-10.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
+		//OUTPUT(ENG::intersectAABBvAABB2(transform->position, box->size, { 0.0f, -1.0f, 0.0f }, glm::vec3(2.0f)).intersects);
 
 		core.view = transform;
 	}
