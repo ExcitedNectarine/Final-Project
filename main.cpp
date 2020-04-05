@@ -199,9 +199,6 @@ struct PlayerScript : ENG::Script
 		mouselook(core);
 		movement(core);
 
-	//	OUTPUT(ENG::intersectAABBvPlane(transform->position, box->size, glm::vec3(-10.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
-		//OUTPUT(ENG::intersectAABBvAABB2(transform->position, box->size, { 0.0f, -1.0f, 0.0f }, glm::vec3(2.0f)).intersects);
-
 		core.view = transform;
 	}
 };
@@ -312,6 +309,10 @@ int main()
 		ENG::CS::Transform& td = core.entities.getComponent<ENG::CS::Transform>(portal_d);
 		td.position = { 15.0f, 0.05f, 0.0f };
 		td.rotation.y = 90.0f;
+
+		for (int x = 0; x < 4; x++)
+			for (int z = 0; z < 20; z++)
+				createProp(core, { x * 2.0f, 0.0f, z * 2.0f });
 
 		// Environment
 		createProp(core, { -15.0f, 0.0f, -7.5f });

@@ -39,6 +39,33 @@ namespace ENG
 		glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
 	}
 
+	bool inView(CS::Transform& view, const glm::vec3& forward, const glm::vec3& pos, const glm::vec3& size)
+	{
+		glm::vec3 min = pos - size / 2.0f;
+		glm::vec3 max = pos + size / 2.0f;
+
+		// All 8 vertices in AABB
+		glm::vec3 verts[8] =
+		{
+			min,
+			max,
+			{ max.x, min.y, min.z },
+			{ min.x, max.y, min.z },
+			{ min.x, min.y, max.z },
+			{ min.x, max.y, max.z },
+			{ max.x, min.y, max.z },
+			{ max.x, max.y, min.z }
+		};
+
+		for (int i = 0; i < 8; i++)
+		{
+			if (glm::dot(view.forward(), view.position - verts[i]) > 0 || glm::dot(forward, verts[i] - view.position) < 0)
+				return true;
+		}
+
+		return false;
+	}
+
 	/**
 	* Draws model components.
 	*/
@@ -56,8 +83,10 @@ namespace ENG
 		for (auto& p : distances)
 		{
 			CS::Model& m = models[p.second];
-			if (m.hud) continue;
-			drawModel(core, m, getWorldT(core.entities, p.second));
+			CS::Transform t = decompose(getWorldT(core.entities, p.second));
+
+			if (m.hud || !inView(*core.view, t.forward(), t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
+			drawModel(core, m, t.get());
 		}
 	}
 

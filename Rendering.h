@@ -65,6 +65,7 @@ namespace ENG
 
 	void updateRenderer(Core& core);
 
+	bool inView(CS::Transform& view, const glm::vec3& forward, const glm::vec3& pos, const glm::vec3& size);
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);

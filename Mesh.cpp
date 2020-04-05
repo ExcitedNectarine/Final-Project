@@ -1,6 +1,8 @@
 #include "Mesh.h"
 #include "Output.h"
 
+#include <glm/gtx/string_cast.hpp>
+
 namespace ENG
 {
 	void Mesh::setVertices(const std::vector<Vertex>& new_vertices)
@@ -47,9 +49,18 @@ namespace ENG
 		std::vector<GLfloat> uvs;
 		std::vector<GLfloat> normals;
 
+		glm::vec3 min(0.0f);
+		glm::vec3 max(0.0f);
+
 		// Add vertices to buffers.
 		for (const Vertex& vertex : vertices)
 		{
+			if (vertex.position.x < min.x && vertex.position.y < min.y && vertex.position.z < min.z)
+				min = vertex.position;
+
+			if (vertex.position.x > max.x && vertex.position.y > max.y && vertex.position.z > max.z)
+				max = vertex.position;
+
 			positions.push_back(vertex.position.x);
 			positions.push_back(vertex.position.y);
 			positions.push_back(vertex.position.z);
@@ -61,6 +72,8 @@ namespace ENG
 			normals.push_back(vertex.normal.y);
 			normals.push_back(vertex.normal.z);
 		}
+
+		size = max - min;
 
 		// Upload positions
 		glBindBuffer(GL_ARRAY_BUFFER, position_id);
@@ -103,6 +116,7 @@ namespace ENG
 		glBindVertexArray(id);
 	}
 	void Mesh::unbind() { glBindVertexArray(NULL); }
+	glm::vec3 Mesh::getSize() { return size; }
 
 	// 2D
 

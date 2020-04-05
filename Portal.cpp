@@ -61,6 +61,8 @@ namespace ENG
 
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Portal>())
 		{
+			if (!inView(*core.view, transforms[id].forward(), transforms[id].position, { 2.0f, 2.0f, 1.0f })) continue;
+
 			portals[id].framebuffer.bind();
 			view_t = decompose(portals[portals[id].other].camera);
 			glm::mat4 view = glm::inverse(portals[portals[id].other].camera);

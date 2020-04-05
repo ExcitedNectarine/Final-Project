@@ -24,11 +24,13 @@ namespace ENG
 		std::size_t vertexCount();
 		void bind();
 		void unbind();
+		glm::vec3 getSize();
 
 	private:
 		GLuint id, position_id, uv_id, normal_id;
 		bool dirty = false;
 		std::vector<Vertex> vertices;
+		glm::vec3 size;
 	};
 
 	class Mesh2D
