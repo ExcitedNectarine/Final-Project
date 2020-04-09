@@ -47,7 +47,7 @@ namespace ENG
 
 		while (std::getline(stream, line))
 		{
-			if (line.size() == 0) break;
+			if (line.size() == 0) continue;
 
 			std::vector<std::string> split = splitText(line, ' ');
 			if (split.at(0) == "v") // Vertex pos

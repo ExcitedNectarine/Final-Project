@@ -13,8 +13,6 @@ namespace ENG
 
 		window = glfwCreateWindow(size.x, size.y, title.c_str(), NULL, NULL);
 		glfwMakeContextCurrent(window);
-		glfwWindowHint(GLFW_SAMPLES, 4);
-		glfwSwapInterval(1);
 		glewInit();
 
 		glEnable(GL_CULL_FACE);

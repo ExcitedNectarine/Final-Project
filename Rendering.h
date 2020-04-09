@@ -13,6 +13,9 @@ namespace ENG
 	struct Renderer
 	{
 		glm::vec3 ambient;
+		EntityID view;
+		Mesh2D quad_2d;
+		Mesh quad_3d;
 	};
 
 	namespace CS
@@ -48,6 +51,13 @@ namespace ENG
 			float timer = 0.0f;
 		};
 
+		struct Text : ECSComponent<Text>
+		{
+			std::string text = "Placeholder";
+			std::string font = "default.ttf";
+			uint16_t size = 32;
+		};
+
 		struct Light : ECSComponent<Light>
 		{
 			Light() : colour(1.0f) {}
@@ -65,7 +75,7 @@ namespace ENG
 
 	void updateRenderer(Core& core);
 
-	bool inView(CS::Transform& view, const glm::vec3& forward, const glm::vec3& pos, const glm::vec3& size);
+	bool inView(CS::Transform& view, const glm::vec3& pos, const glm::vec3& size);
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);

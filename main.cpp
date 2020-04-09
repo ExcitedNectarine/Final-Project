@@ -54,6 +54,8 @@ void run(ENG::Core& core)
 		core.delta = static_cast<float>(current - last);
 		last = current;
 
+		//if ((1000.0f / 60.0f) > core.delta)
+
 		ENG::scriptUpdate(core);
 		ENG::moveControllers(core);
 
@@ -94,7 +96,7 @@ struct PlayerScript : ENG::Script
 	ENG::CS::BoxCollider* box;
 	glm::vec3 direction;
 	glm::vec3 velocity;
-	float speed = 8.0f;
+	float speed = 6.0f;
 
 	glm::dvec2 last_mouse;
 	glm::dvec2 mouse_offset;
@@ -109,7 +111,7 @@ struct PlayerScript : ENG::Script
 		transform->position.y = 20.0f;
 
 		box = &core.entities.getComponent<ENG::CS::BoxCollider>(id);
-		box->size.y = 3.0f;
+		box->size = { 0.5f, 1.5f, 0.5f };
 	}
 
 	void mouselook(ENG::Core& core)
@@ -125,7 +127,6 @@ struct PlayerScript : ENG::Script
 	void movement(ENG::Core& core)
 	{
 		direction = glm::vec3(0.0f);
-
 		if (core.window.isKeyPressed(GLFW_KEY_W)) direction -= transform->forward();
 		else if (core.window.isKeyPressed(GLFW_KEY_S)) direction += transform->forward();
 		if (core.window.isKeyPressed(GLFW_KEY_A)) direction -= transform->right();
@@ -134,6 +135,28 @@ struct PlayerScript : ENG::Script
 		if (core.window.isKeyPressed(GLFW_KEY_Q))
 			transform->position = { 0.0f, 10.0f, 0.0f };
 
+		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
+		{
+			velocity.y = 7.5f;
+			controller->on_floor = false;
+		}
+
+		if (direction != glm::vec3(0.0f))
+			direction = glm::normalize(direction);
+
+		velocity.x = direction.x * speed;
+		velocity.z = direction.z * speed;
+		
+		if (!controller->on_floor)
+			velocity.y -= 9.1f * core.delta;
+		else
+			velocity.y = 0.0f;
+
+		controller->velocity = velocity;
+	}
+
+	void actions(ENG::Core& core)
+	{
 		if (pickup == 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
 		{
 			pickup = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
@@ -157,7 +180,7 @@ struct PlayerScript : ENG::Script
 			if (floor != 0 && dist < 5.0f)
 			{
 				glm::vec3 new_pos = transform->position + dist * -transform->forward();
-				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size.y / 2.0f;
+				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size.y;
 
 				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = 0;
 				core.entities.getComponent<ENG::CS::Transform>(pickup).position = new_pos;
@@ -167,28 +190,6 @@ struct PlayerScript : ENG::Script
 				pickup = 0;
 			}
 		}
-
-		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
-		{
-			velocity.y = 5.0f;
-			controller->on_floor = false;
-		}
-
-		if (direction != glm::vec3(0.0f))
-			direction = glm::normalize(direction);
-
-		velocity.x = direction.x * speed;
-		velocity.z = direction.z * speed;
-		
-		if (!controller->on_floor)
-			velocity.y -= 9.1f * core.delta;
-		else
-			velocity.y = 0.0f;
-
-		if (velocity.y <= -10.0f)
-			velocity.y = -10.0f;
-
-		controller->velocity = velocity;
 	}
 
 	void update(ENG::Core& core)
@@ -198,6 +199,7 @@ struct PlayerScript : ENG::Script
 
 		mouselook(core);
 		movement(core);
+		actions(core);
 
 		core.view = transform;
 	}
@@ -208,9 +210,9 @@ ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
 
 	core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
+	core.entities.getComponent<ENG::CS::Model>(prop).texture = "rock.png";
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(prop).rotation.x = -90;
-	core.entities.getComponent<ENG::CS::BoxCollider>(prop).size *= 2.0f;
 	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 25.0f, 25.0f, 50.0f };
 	core.entities.getComponent<ENG::CS::Light>(prop).radius = 15.0f;
 
@@ -223,7 +225,6 @@ void createBarrier(ENG::Core& core, glm::vec3 pos)
 
 	core.entities.getComponent<ENG::CS::Transform>(platform).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(platform).scale = { 20.0f, 1.0f, 20.0f };
-	core.entities.getComponent<ENG::CS::BoxCollider>(platform).size = { 2.0f, 2.0f, 2.0f };
 }
 
 int main()
@@ -272,8 +273,11 @@ int main()
 		t2d.origin = glm::vec2(core.resources.texture(sp.texture).getSize()) / 2.0f;
 
 		// Create portals
-		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
-		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
+		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
+
+		core.entities.getComponent<ENG::CS::Model>(portal_a).mesh = "portal_border.obj";
+		core.entities.getComponent<ENG::CS::Model>(portal_b).mesh = "portal_border.obj";
 
 		ENG::CS::Portal& pa = core.entities.getComponent<ENG::CS::Portal>(portal_a);
 		pa.player = player;
@@ -284,15 +288,17 @@ int main()
 		pb.other = portal_a;
 
 		ENG::CS::Transform& ta = core.entities.getComponent<ENG::CS::Transform>(portal_a);
-		ta.position = { 0.0f, 0.05f, -7.5f };
+		ta.position = { 0.0f, 0.1f, 0.0f };
 
 		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
-		tb.position = { 0.0f, 22.05f, 7.5f };
+		tb.position = { 0.0f, 22.1f, 0.0f };
 		tb.rotation.y = 180.0f;
 
 		// Create other portals
-		ENG::EntityID portal_c = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
-		ENG::EntityID portal_d = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal>();
+		ENG::EntityID portal_c = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
+		ENG::EntityID portal_d = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
+		core.entities.getComponent<ENG::CS::Model>(portal_c).mesh = "portal_border.obj";
+		core.entities.getComponent<ENG::CS::Model>(portal_d).mesh = "portal_border.obj";
 
 		ENG::CS::Portal& pc = core.entities.getComponent<ENG::CS::Portal>(portal_c);
 		pc.player = player;
@@ -303,16 +309,12 @@ int main()
 		pd.other = portal_c;
 
 		ENG::CS::Transform& tc = core.entities.getComponent<ENG::CS::Transform>(portal_c);
-		tc.position = { -15.0f, 0.05f, 0.0f };
-		tc.rotation.y = 90.0f;
+		tc.position = { -20.0f, 8.0f, 3.5f };
+		tc.rotation.x = 90.0f;
 
 		ENG::CS::Transform& td = core.entities.getComponent<ENG::CS::Transform>(portal_d);
-		td.position = { 15.0f, 0.05f, 0.0f };
-		td.rotation.y = 90.0f;
-
-		for (int x = 0; x < 4; x++)
-			for (int z = 0; z < 20; z++)
-				createProp(core, { x * 2.0f, 0.0f, z * 2.0f });
+		td.position = { 15.0f, 3.0f, 3.5f };
+		td.rotation = { 0.0f, 45.0f, 0.0f };
 
 		// Environment
 		createProp(core, { -15.0f, 0.0f, -7.5f });

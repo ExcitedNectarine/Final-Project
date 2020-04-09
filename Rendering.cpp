@@ -39,10 +39,10 @@ namespace ENG
 		glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
 	}
 
-	bool inView(CS::Transform& view, const glm::vec3& forward, const glm::vec3& pos, const glm::vec3& size)
+	bool inView(CS::Transform& view, const glm::vec3& pos, const glm::vec3& size)
 	{
-		glm::vec3 min = pos - size / 2.0f;
-		glm::vec3 max = pos + size / 2.0f;
+		glm::vec3 min = pos - size;
+		glm::vec3 max = pos + size;
 
 		// All 8 vertices in AABB
 		glm::vec3 verts[8] =
@@ -59,7 +59,7 @@ namespace ENG
 
 		for (int i = 0; i < 8; i++)
 		{
-			if (glm::dot(view.forward(), view.position - verts[i]) > 0 || glm::dot(forward, verts[i] - view.position) < 0)
+			if (glm::dot(view.forward(), view.position - verts[i]) > 0)
 				return true;
 		}
 
@@ -79,13 +79,15 @@ namespace ENG
 			distances.emplace_back(glm::distance(core.view->position, transforms[id].position), id);
 		std::sort(distances.begin(), distances.end());
 
+		int i = 0;
+
 		// Draw opaque models from closest to furthest.
 		for (auto& p : distances)
 		{
 			CS::Model& m = models[p.second];
 			CS::Transform t = decompose(getWorldT(core.entities, p.second));
 
-			if (m.hud || !inView(*core.view, t.forward(), t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
+			if (m.hud || !inView(*core.view, t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
 			drawModel(core, m, t.get());
 		}
 	}

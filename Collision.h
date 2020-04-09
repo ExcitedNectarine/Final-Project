@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <array>
 #include "Transform.h"
 #include "Script.h"
@@ -44,10 +45,6 @@ namespace ENG
 	*/
 	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore, float& t);
 
-	/**
-	* Checks if a ray intersects an AABB.
-	*/
-	bool intersectAABBvRay(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir, float& t);
 
 	/**
 	* Checks if an AABB intersects a plane.
@@ -60,11 +57,12 @@ namespace ENG
 	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
 	*/
 	IntersectData intersectAABBvAABB(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& b_pos, const glm::vec3& b_size);
+	IntersectData sweptAABB(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& a_vel, const glm::vec3& d_pos, const glm::vec3& d_size);
 
 	/**
 	* Checks if a ray intersects an AABB.
 	*/
-	IntersectData intersectAABBvRay2(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir);
+	IntersectData intersectAABBvRay(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir);
 
 	/**
 	* Checks if an AABB intersects a plane.
