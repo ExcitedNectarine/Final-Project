@@ -36,6 +36,7 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 		ENG::CS::Light,
 		ENG::CS::Script,
 		ENG::CS::BoxCollider,
+		ENG::CS::PlaneCollider,
 		ENG::CS::Controller,
 		ENG::CS::Portal
 	>();
@@ -133,7 +134,9 @@ struct PlayerScript : ENG::Script
 		else if (core.window.isKeyPressed(GLFW_KEY_D)) direction += transform->right();
 
 		if (core.window.isKeyPressed(GLFW_KEY_Q))
-			transform->position = { 0.0f, 10.0f, 0.0f };
+			transform->position = { -5.0f, 10.0f, 0.0f };
+		if (core.window.isKeyPressed(GLFW_KEY_E))
+			transform->position = { 5.0f, 10.0f, 0.0f };
 
 		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
 		{
@@ -209,22 +212,24 @@ ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
 	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
 
-	core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
-	core.entities.getComponent<ENG::CS::Model>(prop).texture = "rock.png";
+	//core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
+	core.entities.getComponent<ENG::CS::Model>(prop).texture = "brickwall.jpg";
+	core.entities.getComponent<ENG::CS::Model>(prop).normal = "brickwall_normal.jpg";
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
-	core.entities.getComponent<ENG::CS::Transform>(prop).rotation.x = -90;
-	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 25.0f, 25.0f, 50.0f };
-	core.entities.getComponent<ENG::CS::Light>(prop).radius = 15.0f;
+	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 1.0f, 1.0f, 1.0f };
+	core.entities.getComponent<ENG::CS::Light>(prop).radius = 2.5;
 
 	return prop;
 }
 
-void createBarrier(ENG::Core& core, glm::vec3 pos)
+ENG::EntityID createBarrier(ENG::Core& core, glm::vec3 pos)
 {
 	ENG::EntityID platform = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider>();
 
 	core.entities.getComponent<ENG::CS::Transform>(platform).position = pos;
 	core.entities.getComponent<ENG::CS::Transform>(platform).scale = { 20.0f, 1.0f, 20.0f };
+
+	return platform;
 }
 
 int main()
@@ -233,7 +238,7 @@ int main()
 	{
 		ENG::Core core;
 		createCore(core, "Resources/settings.set");
-		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.2f));
+		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.0f));
 		core.resources.shader("unshaded.shdr").setUniform("ambient", glm::vec3(1.0f));
 		core.window.lockMouse(true);
 		core.entities.addComponentPool<Pickup>();
@@ -245,7 +250,7 @@ int main()
 		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
 		ENG::CS::Model& gm = core.entities.getComponent<ENG::CS::Model>(gun);
 		gm.mesh = "gun.obj";
-		gm.texture = "gun.png";
+		//gm.texture = "gun.png";
 		gm.hud = true;
 
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
@@ -257,12 +262,10 @@ int main()
 		ENG::EntityID spr = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Sprite>();
 		ENG::CS::Sprite& s = core.entities.getComponent<ENG::CS::Sprite>(spr);
 		s.texture = "Space3.jpg";
-		s.shaded = false;
 		s.animated = true;
-		s.frames = { 8, 8 };
-		s.frame_time = 1.0f;
-		core.entities.getComponent<ENG::CS::Transform>(spr).scale *= 0.5f;
-		core.entities.getComponent<ENG::CS::Transform>(spr).position.y = 5.0f;
+		s.frames = { 4, 4 };
+		s.frame_time = 2.0f;
+		core.entities.getComponent<ENG::CS::Transform>(spr).position.y = 7.5f;
 
 		// Crosshair
 		ENG::EntityID ch = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
@@ -275,9 +278,12 @@ int main()
 		// Create portals
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
 		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
-
 		core.entities.getComponent<ENG::CS::Model>(portal_a).mesh = "portal_border.obj";
+		core.entities.getComponent<ENG::CS::Model>(portal_a).texture = "brickwall.jpg";
+		core.entities.getComponent<ENG::CS::Model>(portal_a).normal = "brickwall_normal.jpg";
 		core.entities.getComponent<ENG::CS::Model>(portal_b).mesh = "portal_border.obj";
+		core.entities.getComponent<ENG::CS::Model>(portal_b).texture = "brickwall.jpg";
+		core.entities.getComponent<ENG::CS::Model>(portal_b).normal = "brickwall_normal.jpg";
 
 		ENG::CS::Portal& pa = core.entities.getComponent<ENG::CS::Portal>(portal_a);
 		pa.player = player;
@@ -289,6 +295,7 @@ int main()
 
 		ENG::CS::Transform& ta = core.entities.getComponent<ENG::CS::Transform>(portal_a);
 		ta.position = { 0.0f, 0.1f, 0.0f };
+		ta.rotation.y = 45.0f;
 
 		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
 		tb.position = { 0.0f, 22.1f, 0.0f };
@@ -310,7 +317,7 @@ int main()
 
 		ENG::CS::Transform& tc = core.entities.getComponent<ENG::CS::Transform>(portal_c);
 		tc.position = { -20.0f, 8.0f, 3.5f };
-		tc.rotation.x = 90.0f;
+		tc.rotation.y = 90.0f;
 
 		ENG::CS::Transform& td = core.entities.getComponent<ENG::CS::Transform>(portal_d);
 		td.position = { 15.0f, 3.0f, 3.5f };
@@ -321,7 +328,23 @@ int main()
 		createProp(core, { 15.0f, 0.0f, -7.5f });
 
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
-		createBarrier(core, { 0.0f, 20.0f, 0.0f });
+		auto b2 = createBarrier(core, { 0.0f, 20.0f, 0.0f });
+		core.entities.getComponent<ENG::CS::Model>(b2).texture = "brickwall.jpg";
+		core.entities.getComponent<ENG::CS::Model>(b2).normal = "brickwall_normal.jpg";
+
+		ENG::EntityID plane = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
+		core.entities.getComponent<ENG::CS::Transform>(plane).position.z = -20.0f;
+
+		ENG::EntityID plane2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
+		core.entities.getComponent<ENG::CS::Transform>(plane2).position.z = 20.0f;
+
+		ENG::EntityID plane3 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
+		core.entities.getComponent<ENG::CS::Transform>(plane3).position.x = -20.0f;
+		core.entities.getComponent<ENG::CS::Transform>(plane3).rotation.y = 90.0f;
+
+		ENG::EntityID plane4 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
+		core.entities.getComponent<ENG::CS::Transform>(plane4).position.x = 20.0f;
+		core.entities.getComponent<ENG::CS::Transform>(plane4).rotation.y = 90.0f;
 
 		run(core);
 	}

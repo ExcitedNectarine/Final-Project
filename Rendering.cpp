@@ -34,7 +34,9 @@ namespace ENG
 		}
 
 		core.resources.mesh(m.mesh).bind();
+
 		core.resources.texture(m.texture).bind();
+		core.resources.texture(m.normal).bind(1);
 
 		glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
 	}

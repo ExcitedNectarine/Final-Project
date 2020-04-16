@@ -31,6 +31,8 @@ namespace ENG
 		glBindAttribLocation(id, 0, "in_position");
 		glBindAttribLocation(id, 1, "in_uv");
 		glBindAttribLocation(id, 2, "in_normal");
+		glBindAttribLocation(id, 3, "in_tangent");
+		glBindAttribLocation(id, 4, "in_bitangent");
 
 		glLinkProgram(id);
 		linkErrorCheck();

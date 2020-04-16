@@ -24,7 +24,11 @@ varying mat4 out_pvt;
 
 void main()
 {
+	// Project the UV into clip space.
 	vec4 clip = out_pvt * vec4(out_uv, 1.0);
+	
+	// Then, convert the UV to NDC space (-1 to 1).
+	// Translate to (0, 1) then clamp the result.
 	vec2 new_uv = clamp(vec2(clip / clip.w) / 2.0 + 0.5, vec2(0.0), vec2(1.0));
 	gl_FragColor = texture2D(texture, new_uv);
 }

@@ -27,6 +27,7 @@ namespace ENG
 		{
 			std::string mesh = "cube.obj";
 			std::string texture = "notexture.png";
+			std::string normal = "nonormal.png";
 
 			bool shaded = true;
 			bool hud = false;

@@ -19,6 +19,14 @@ namespace ENG
 			bool solid = true;
 		};
 
+		struct PlaneCollider :ECSComponent<PlaneCollider>
+		{
+			PlaneCollider() : size(1.0f) {}
+
+			glm::vec3 size;
+			bool solid = true;
+		};
+
 		struct Controller : ECSComponent<Controller>
 		{
 			glm::vec3 velocity;
@@ -45,19 +53,12 @@ namespace ENG
 	*/
 	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore, float& t);
 
-
-	/**
-	* Checks if an AABB intersects a plane.
-	*/
-	bool intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm);
-
 	///
 
 	/**
 	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
 	*/
 	IntersectData intersectAABBvAABB(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& b_pos, const glm::vec3& b_size);
-	IntersectData sweptAABB(const glm::vec3& a_pos, const glm::vec3& a_size, const glm::vec3& a_vel, const glm::vec3& d_pos, const glm::vec3& d_size);
 
 	/**
 	* Checks if a ray intersects an AABB.
@@ -67,5 +68,10 @@ namespace ENG
 	/**
 	* Checks if an AABB intersects a plane.
 	*/
-	IntersectData intersectAABBvPlane2(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm);
+	IntersectData intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 p_size);
+
+	/**
+	* Checks if a ray intersects a plane.
+	*/
+	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir);
 }

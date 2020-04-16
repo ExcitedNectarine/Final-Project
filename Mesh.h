@@ -27,7 +27,7 @@ namespace ENG
 		glm::vec3 getSize();
 
 	private:
-		GLuint id, position_id, uv_id, normal_id;
+		GLuint id, position_id, uv_id, normal_id, tangent_id, bitangent_id;
 		bool dirty = false;
 		std::vector<Vertex> vertices;
 		glm::vec3 size;
@@ -44,10 +44,12 @@ namespace ENG
 		std::size_t vertexCount();
 		void bind();
 		void unbind();
+		glm::vec2 getSize();
 
 	private:
 		GLuint id, position_id, uv_id;
 		bool dirty = false;
 		std::vector<Vertex2D> vertices;
+		glm::vec2 size;
 	};
 }

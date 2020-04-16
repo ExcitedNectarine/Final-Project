@@ -116,6 +116,7 @@ namespace ENG
 			core.resources.shader("portals.shdr").setUniform("transform", t.get());
 			core.resources.shader("portals.shdr").bind();
 			portals[id].framebuffer.getTexture().bind();
+
 			glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
 		}
 		
@@ -123,18 +124,20 @@ namespace ENG
 	}
 
 	/**
-	* Move screen position back and scale wall, so that far side is the same as when camera clips
-	* near side.
+	* Move screen position back and scale wall along Z.
 	*/
 	CS::Transform preventNearClipping(Settings& settings, CS::Transform screen, CS::Transform player)
 	{
+		// Calculate distance from camera to corner of near plane.
 		float fov = settings.getf("fov");
 		float aspect = settings.getf("width") / settings.getf("height");
+		float near_dist = 0.1f;
 
-		float half_height = 0.1f * glm::tan(fov);
+		float half_height = near_dist * glm::tan(fov);
 		float half_width = half_height * aspect;
-		float corner_dist = glm::length(glm::vec3(half_width, half_height, 0.1f));
+		float corner_dist = glm::length(glm::vec3(half_width, half_height, near_dist));
 
+		// Set scale of screen, and move back from whichever way player is facing.
 		bool facing = glm::dot(screen.forward(), screen.position - player.position) > 0;
 		screen.scale.z = corner_dist;
 		screen.position += (screen.forward() * (facing ? 1.0f : -1.0f));

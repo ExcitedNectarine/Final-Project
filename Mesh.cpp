@@ -19,6 +19,8 @@ namespace ENG
 		glGenBuffers(1, &position_id);
 		glGenBuffers(1, &uv_id);
 		glGenBuffers(1, &normal_id);
+		glGenBuffers(1, &tangent_id);
+		glGenBuffers(1, &bitangent_id);
 
 		// Create vertex array.
 		glGenVertexArrays(1, &id);
@@ -39,6 +41,16 @@ namespace ENG
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
 		glEnableVertexAttribArray(2);
 
+		// Bind tangent buffer to vertex array.
+		glBindBuffer(GL_ARRAY_BUFFER, tangent_id);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+		glEnableVertexAttribArray(3);
+
+		// Bind bitangent buffer to vertex array.
+		glBindBuffer(GL_ARRAY_BUFFER, bitangent_id);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+		glEnableVertexAttribArray(4);
+
 		glBindBuffer(GL_ARRAY_BUFFER, NULL);
 		glBindVertexArray(NULL);
 	}
@@ -48,6 +60,8 @@ namespace ENG
 		std::vector<GLfloat> positions;
 		std::vector<GLfloat> uvs;
 		std::vector<GLfloat> normals;
+		std::vector<GLfloat> tangents;
+		std::vector<GLfloat> bitangents;
 
 		glm::vec3 min(0.0f);
 		glm::vec3 max(0.0f);
@@ -75,6 +89,35 @@ namespace ENG
 
 		size = max - min;
 
+		for (std::size_t i = 0; i < vertices.size(); i += 3)
+		{
+			glm::vec3& v0 = vertices[i].position;
+			glm::vec3& v1 = vertices[i + 1].position;
+			glm::vec3& v2 = vertices[i + 2].position;
+
+			glm::vec2& uv0 = vertices[i].uv;
+			glm::vec2& uv1 = vertices[i + 1].uv;
+			glm::vec2& uv2 = vertices[i + 2].uv;
+
+			glm::vec3 dpos1 = v1 - v0;
+			glm::vec3 dpos2 = v2 - v0;
+
+			glm::vec2 duv1 = uv1 - uv0;
+			glm::vec2 duv2 = uv2 - uv0;
+
+			float r = 1.0f / (duv1.x * duv2.y - duv1.y * duv2.x);
+			glm::vec3 tangent = glm::normalize((dpos1 * duv2.y - dpos2 * duv1.y) * r);
+			glm::vec3 bitangent = glm::normalize((dpos2 * duv1.x - dpos1 * duv2.x) * r);
+
+			tangents.push_back(tangent.x);
+			tangents.push_back(tangent.y);
+			tangents.push_back(tangent.z);
+
+			bitangents.push_back(bitangent.x);
+			bitangents.push_back(bitangent.y);
+			bitangents.push_back(bitangent.z);
+		}
+
 		// Upload positions
 		glBindBuffer(GL_ARRAY_BUFFER, position_id);
 		glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(GLfloat), &positions.at(0), GL_STATIC_DRAW);
@@ -87,6 +130,14 @@ namespace ENG
 		glBindBuffer(GL_ARRAY_BUFFER, normal_id);
 		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(GLfloat), &normals.at(0), GL_STATIC_DRAW);
 
+		// Upload tangents
+		glBindBuffer(GL_ARRAY_BUFFER, tangent_id);
+		glBufferData(GL_ARRAY_BUFFER, tangents.size() * sizeof(GLfloat), &tangents.at(0), GL_STATIC_DRAW);
+
+		// Upload bitangents
+		glBindBuffer(GL_ARRAY_BUFFER, bitangent_id);
+		glBufferData(GL_ARRAY_BUFFER, bitangents.size() * sizeof(GLfloat), &bitangents.at(0), GL_STATIC_DRAW);
+
 		glBindBuffer(GL_ARRAY_BUFFER, NULL);
 	}
 
@@ -95,6 +146,8 @@ namespace ENG
 		glDeleteBuffers(1, &position_id);
 		glDeleteBuffers(1, &uv_id);
 		glDeleteBuffers(1, &normal_id);
+		glDeleteBuffers(1, &tangent_id);
+		glDeleteBuffers(1, &bitangent_id);
 		glDeleteVertexArrays(1, &id);
 	}
 
@@ -157,15 +210,26 @@ namespace ENG
 		std::vector<GLfloat> positions;
 		std::vector<GLfloat> uvs;
 
+		glm::vec2 min(0.0f);
+		glm::vec2 max(0.0f);
+
 		// Add vertices to buffers.
 		for (const Vertex2D& vertex : vertices)
 		{
+			if (vertex.position.x < min.x && vertex.position.y < min.y)
+				min = vertex.position;
+
+			if (vertex.position.x > max.x && vertex.position.y > max.y)
+				max = vertex.position;
+
 			positions.push_back(vertex.position.x);
 			positions.push_back(vertex.position.y);
 
 			uvs.push_back(vertex.uv.x);
 			uvs.push_back(vertex.uv.y);
 		}
+
+		size = max - min;
 
 		// Upload positions
 		glBindBuffer(GL_ARRAY_BUFFER, position_id);
@@ -204,4 +268,5 @@ namespace ENG
 	}
 
 	void Mesh2D::unbind() { glBindVertexArray(NULL); }
+	glm::vec2 Mesh2D::getSize() { return size; }
 }
