@@ -1,7 +1,9 @@
 [VERTEX]
-attribute vec3 in_position;
+#version 330 core
 
-varying vec3 out_uv;
+layout (location = 0) in vec3 in_position;
+
+out vec3 out_uv;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -13,7 +15,9 @@ void main()
 }
 
 [FRAGMENT]
-varying vec3 out_uv;
+#version 330 core
+
+in vec3 out_uv;
 
 uniform samplerCube skybox;
 

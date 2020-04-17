@@ -1,11 +1,13 @@
 [VERTEX]
-attribute vec2 in_position;
-attribute vec2 in_uv;
+#version 330 core
+
+layout (location = 0) in vec2 in_position;
+layout (location = 1) in vec2 in_uv;
 
 uniform mat4 projection;
 uniform mat4 transform;
 
-varying vec2 out_uv;
+out vec2 out_uv;
 
 void main()
 {
@@ -14,9 +16,11 @@ void main()
 }
 
 [FRAGMENT]
+#version 330 core
+
 uniform sampler2D texture;
 
-varying vec2 out_uv;
+in vec2 out_uv;
 
 void main()
 {

@@ -2,5 +2,4 @@ Resources/Meshes/portal_border.obj
 Resources/Meshes/cube.obj
 Resources/Meshes/cube_inverted.obj
 Resources/Meshes/quad.obj
-Resources/Meshes/skull.obj
 Resources/Meshes/gun.obj

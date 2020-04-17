@@ -1,9 +1,3 @@
 Resources/Textures/notexture.png
-Resources/Textures/nonormal.png
-Resources/Textures/lorry.jpg
-Resources/Textures/rock.png
 Resources/Textures/Space3.jpg
-Resources/Textures/gun.png
 Resources/Textures/crosshair.png
-Resources/Textures/brickwall.jpg
-Resources/Textures/brickwall_normal.jpg

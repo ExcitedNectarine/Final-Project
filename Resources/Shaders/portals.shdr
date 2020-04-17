@@ -1,26 +1,31 @@
 [VERTEX]
-attribute vec3 in_position;
+#version 330 core
+
+layout (location = 0) in vec3 in_position;
 
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 transform;
 
-varying vec3 out_uv;
-varying mat4 out_pvt;
+out vec3 out_uv;
+out mat4 out_pvt;
 
 void main()
 {
-	out_pvt = projection * view * transform;
-	gl_Position = out_pvt * vec4(in_position, 1.0);
 	out_uv = in_position;
+	out_pvt = projection * view * transform;
+	
+	gl_Position = out_pvt * vec4(in_position, 1.0);
 }
 
 [FRAGMENT]
+#version 330 core
+
 uniform sampler2D texture;
 uniform vec3 ambient;
 
-varying vec3 out_uv;
-varying mat4 out_pvt;
+in vec3 out_uv;
+in mat4 out_pvt;
 
 void main()
 {

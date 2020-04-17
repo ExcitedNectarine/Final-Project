@@ -27,7 +27,6 @@ namespace ENG
 		{
 			std::string mesh = "cube.obj";
 			std::string texture = "notexture.png";
-			std::string normal = "nonormal.png";
 
 			bool shaded = true;
 			bool hud = false;
@@ -50,13 +49,6 @@ namespace ENG
 			glm::ivec2 frames;
 			float frame_time = 0.0f;
 			float timer = 0.0f;
-		};
-
-		struct Text : ECSComponent<Text>
-		{
-			std::string text = "Placeholder";
-			std::string font = "default.ttf";
-			uint16_t size = 32;
 		};
 
 		struct Light : ECSComponent<Light>

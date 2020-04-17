@@ -212,12 +212,10 @@ ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
 	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
 
-	//core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
-	core.entities.getComponent<ENG::CS::Model>(prop).texture = "brickwall.jpg";
-	core.entities.getComponent<ENG::CS::Model>(prop).normal = "brickwall_normal.jpg";
+	core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
-	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 1.0f, 1.0f, 1.0f };
-	core.entities.getComponent<ENG::CS::Light>(prop).radius = 2.5;
+	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 2.5f, 1.0f, 0.5f };
+	core.entities.getComponent<ENG::CS::Light>(prop).radius = 10.0f;
 
 	return prop;
 }
@@ -238,7 +236,7 @@ int main()
 	{
 		ENG::Core core;
 		createCore(core, "Resources/settings.set");
-		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.0f));
+		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.2f));
 		core.resources.shader("unshaded.shdr").setUniform("ambient", glm::vec3(1.0f));
 		core.window.lockMouse(true);
 		core.entities.addComponentPool<Pickup>();
@@ -279,11 +277,7 @@ int main()
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
 		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
 		core.entities.getComponent<ENG::CS::Model>(portal_a).mesh = "portal_border.obj";
-		core.entities.getComponent<ENG::CS::Model>(portal_a).texture = "brickwall.jpg";
-		core.entities.getComponent<ENG::CS::Model>(portal_a).normal = "brickwall_normal.jpg";
 		core.entities.getComponent<ENG::CS::Model>(portal_b).mesh = "portal_border.obj";
-		core.entities.getComponent<ENG::CS::Model>(portal_b).texture = "brickwall.jpg";
-		core.entities.getComponent<ENG::CS::Model>(portal_b).normal = "brickwall_normal.jpg";
 
 		ENG::CS::Portal& pa = core.entities.getComponent<ENG::CS::Portal>(portal_a);
 		pa.player = player;
@@ -329,8 +323,6 @@ int main()
 
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
 		auto b2 = createBarrier(core, { 0.0f, 20.0f, 0.0f });
-		core.entities.getComponent<ENG::CS::Model>(b2).texture = "brickwall.jpg";
-		core.entities.getComponent<ENG::CS::Model>(b2).normal = "brickwall_normal.jpg";
 
 		ENG::EntityID plane = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
 		core.entities.getComponent<ENG::CS::Transform>(plane).position.z = -20.0f;
