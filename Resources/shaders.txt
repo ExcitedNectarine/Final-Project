@@ -1,5 +1,4 @@
 Resources/Shaders/default.shdr
-Resources/Shaders/unshaded.shdr
 Resources/Shaders/skybox.shdr
 Resources/Shaders/sprite.shdr
 Resources/Shaders/portals.shdr

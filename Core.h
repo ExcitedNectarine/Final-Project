@@ -6,6 +6,7 @@
 #include "Settings.h"
 #include "CubeMap.h"
 #include "Transform.h"
+#include "Rendering.h"
 
 namespace ENG
 {
@@ -19,8 +20,7 @@ namespace ENG
 		Resources resources;
 		Settings settings;
 		CubeMap skybox;
-
-		CS::Transform* view;
+		Renderer renderer;
 
 		glm::mat4 perspective;
 		glm::mat4 orthographic;

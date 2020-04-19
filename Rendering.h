@@ -12,10 +12,8 @@ namespace ENG
 	struct Core;
 	struct Renderer
 	{
+		CS::Transform* view;
 		glm::vec3 ambient;
-		EntityID view;
-		Mesh2D quad_2d;
-		Mesh quad_3d;
 	};
 
 	namespace CS
@@ -27,8 +25,6 @@ namespace ENG
 		{
 			std::string mesh = "cube.obj";
 			std::string texture = "notexture.png";
-
-			bool shaded = true;
 			bool hud = false;
 		};
 
@@ -42,7 +38,6 @@ namespace ENG
 
 			std::string texture = "notexture.png";
 			bool billboard = true;
-			bool shaded = true;
 
 			bool animated = false;
 			glm::ivec2 frame;
@@ -81,5 +76,5 @@ namespace ENG
 	/**
 	* Uploads lighting information to shader.
 	*/
-	void setLights(Entities& entities, Shader& shader);
+	void setLights(Core& core, Shader& shader);
 }

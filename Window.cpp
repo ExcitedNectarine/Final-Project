@@ -15,6 +15,13 @@ namespace ENG
 		glfwMakeContextCurrent(window);
 		glewInit();
 
+		const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+		position = { mode->width / 2, mode->height / 2 };
+		position -= size / 2;
+
+		glfwSetWindowPos(window, position.x, position.y);
+
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
@@ -46,4 +53,5 @@ namespace ENG
 	bool Window::isKeyPressed(int key) { return glfwGetKey(window, key); }
 	bool Window::isMouseButtonPressed(int button) { return glfwGetMouseButton(window, button); }
 	glm::ivec2 Window::getSize() { return size; }
+	glm::ivec2 Window::getPosition() { return position; }
 }

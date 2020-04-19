@@ -24,7 +24,6 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 	core.skybox.bind();
 
 	core.resources.shader("default.shdr").setUniform("projection", core.perspective);
-	core.resources.shader("unshaded.shdr").setUniform("projection", core.perspective);
 	core.resources.shader("skybox.shdr").setUniform("projection", core.perspective);
 	core.resources.shader("sprite.shdr").setUniform("projection", core.orthographic);
 
@@ -54,8 +53,6 @@ void run(ENG::Core& core)
 		current = glfwGetTime();
 		core.delta = static_cast<float>(current - last);
 		last = current;
-
-		//if ((1000.0f / 60.0f) > core.delta)
 
 		ENG::scriptUpdate(core);
 		ENG::moveControllers(core);
@@ -155,7 +152,7 @@ struct PlayerScript : ENG::Script
 		else
 			velocity.y = 0.0f;
 
-		controller->velocity = velocity;
+		controller->velocity = velocity * transform->scale;
 	}
 
 	void actions(ENG::Core& core)
@@ -180,7 +177,7 @@ struct PlayerScript : ENG::Script
 		if (pickup != 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
 		{
 			ENG::EntityID floor = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
-			if (floor != 0 && dist < 5.0f)
+			if (floor != 0)
 			{
 				glm::vec3 new_pos = transform->position + dist * -transform->forward();
 				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size.y;
@@ -204,7 +201,7 @@ struct PlayerScript : ENG::Script
 		movement(core);
 		actions(core);
 
-		core.view = transform;
+		core.renderer.view = transform;
 	}
 };
 
@@ -212,7 +209,6 @@ ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
 	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
 
-	core.entities.getComponent<ENG::CS::Model>(prop).shaded = false;
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
 	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 2.5f, 1.0f, 0.5f };
 	core.entities.getComponent<ENG::CS::Light>(prop).radius = 10.0f;
@@ -236,42 +232,14 @@ int main()
 	{
 		ENG::Core core;
 		createCore(core, "Resources/settings.set");
-		core.resources.shader("default.shdr").setUniform("ambient", glm::vec3(0.2f));
-		core.resources.shader("unshaded.shdr").setUniform("ambient", glm::vec3(1.0f));
+
 		core.window.lockMouse(true);
 		core.entities.addComponentPool<Pickup>();
+		core.renderer.ambient = glm::vec3(0.5f);
 
 		// Create player
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller>();
+		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Model>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
-
-		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		ENG::CS::Model& gm = core.entities.getComponent<ENG::CS::Model>(gun);
-		gm.mesh = "gun.obj";
-		//gm.texture = "gun.png";
-		gm.hud = true;
-
-		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
-		t.parent = player;
-		t.position = { 0.5f, -0.5f, -0.5f };
-		t.scale *= 0.25f;
-		t.rotation = { 0.0f, 180.0f, 180.0f };
-
-		ENG::EntityID spr = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Sprite>();
-		ENG::CS::Sprite& s = core.entities.getComponent<ENG::CS::Sprite>(spr);
-		s.texture = "Space3.jpg";
-		s.animated = true;
-		s.frames = { 4, 4 };
-		s.frame_time = 2.0f;
-		core.entities.getComponent<ENG::CS::Transform>(spr).position.y = 7.5f;
-
-		// Crosshair
-		ENG::EntityID ch = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
-		ENG::CS::Sprite& sp = core.entities.getComponent<ENG::CS::Sprite>(ch);
-		sp.texture = "crosshair.png";
-		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(ch);
-		t2d.position = glm::vec2(core.window.getSize()) / 2.0f;
-		t2d.origin = glm::vec2(core.resources.texture(sp.texture).getSize()) / 2.0f;
 
 		// Create portals
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
@@ -288,55 +256,21 @@ int main()
 		pb.other = portal_a;
 
 		ENG::CS::Transform& ta = core.entities.getComponent<ENG::CS::Transform>(portal_a);
-		ta.position = { 0.0f, 0.1f, 0.0f };
-		ta.rotation.y = 45.0f;
+		ta.position = { 0.0f, 0.01f, -10.0f };
 
 		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
-		tb.position = { 0.0f, 22.1f, 0.0f };
-		tb.rotation.y = 180.0f;
+		tb.position = { 0.0f, 0.21f, 0.0f };
+		tb.scale *= 0.2f;
+		tb.rotation.y = 90.0f;
 
-		// Create other portals
-		ENG::EntityID portal_c = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
-		ENG::EntityID portal_d = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
-		core.entities.getComponent<ENG::CS::Model>(portal_c).mesh = "portal_border.obj";
-		core.entities.getComponent<ENG::CS::Model>(portal_d).mesh = "portal_border.obj";
-
-		ENG::CS::Portal& pc = core.entities.getComponent<ENG::CS::Portal>(portal_c);
-		pc.player = player;
-		pc.other = portal_d;
-
-		ENG::CS::Portal& pd = core.entities.getComponent<ENG::CS::Portal>(portal_d);
-		pd.player = player;
-		pd.other = portal_c;
-
-		ENG::CS::Transform& tc = core.entities.getComponent<ENG::CS::Transform>(portal_c);
-		tc.position = { -20.0f, 8.0f, 3.5f };
-		tc.rotation.y = 90.0f;
-
-		ENG::CS::Transform& td = core.entities.getComponent<ENG::CS::Transform>(portal_d);
-		td.position = { 15.0f, 3.0f, 3.5f };
-		td.rotation = { 0.0f, 45.0f, 0.0f };
-
-		// Environment
-		createProp(core, { -15.0f, 0.0f, -7.5f });
-		createProp(core, { 15.0f, 0.0f, -7.5f });
+		for (int i = 0; i < 5; i++)
+			createProp(core, { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) });
 
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
-		auto b2 = createBarrier(core, { 0.0f, 20.0f, 0.0f });
+		auto b = createBarrier(core, { 0.0f, -0.5f, 0.0f });
+		core.entities.getComponent<ENG::CS::Transform>(b).scale = { 2.0f, 0.5f, 2.0f };
 
-		ENG::EntityID plane = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
-		core.entities.getComponent<ENG::CS::Transform>(plane).position.z = -20.0f;
-
-		ENG::EntityID plane2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
-		core.entities.getComponent<ENG::CS::Transform>(plane2).position.z = 20.0f;
-
-		ENG::EntityID plane3 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
-		core.entities.getComponent<ENG::CS::Transform>(plane3).position.x = -20.0f;
-		core.entities.getComponent<ENG::CS::Transform>(plane3).rotation.y = 90.0f;
-
-		ENG::EntityID plane4 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::PlaneCollider>();
-		core.entities.getComponent<ENG::CS::Transform>(plane4).position.x = 20.0f;
-		core.entities.getComponent<ENG::CS::Transform>(plane4).rotation.y = 90.0f;
+		OUTPUT(glm::length(glm::vec3(1.0f)));
 
 		run(core);
 	}

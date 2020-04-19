@@ -178,6 +178,9 @@ namespace ENG
 		return data;
 	}
 
+	/**
+	* Checks if a ray intersects a plane.
+	*/
 	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir)
 	{
 		IntersectData data;

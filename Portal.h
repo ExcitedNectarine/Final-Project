@@ -1,7 +1,5 @@
 #pragma once
 
-#include <glm/gtx/euler_angles.hpp>
-#include <glm/gtx/vector_angle.hpp>
 #include "Collision.h"
 #include "Rendering.h"
 #include "FrameBuffer.h"
@@ -18,6 +16,7 @@ namespace ENG
 			glm::mat4 camera;
 			FrameBuffer framebuffer;
 			int prev_side = 0;
+			bool active = false;
 		};
 	}
 

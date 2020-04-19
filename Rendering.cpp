@@ -1,6 +1,5 @@
 #include "Rendering.h"
 #include "Core.h"
-#include <glm/gtx/string_cast.hpp>
 
 namespace ENG
 {
@@ -13,25 +12,18 @@ namespace ENG
 
 	void updateRenderer(Core& core)
 	{
-		setLights(core.entities, core.resources.shader("default.shdr"));
-		core.resources.shader("default.shdr").setUniform("view", glm::inverse(core.view->get()));
-		core.resources.shader("default.shdr").setUniform("view_pos", core.view->position);
-		core.resources.shader("unshaded.shdr").setUniform("view", glm::inverse(core.view->get()));
-		core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(glm::inverse(core.view->get()))));
+		glm::mat4 view = glm::inverse(core.renderer.view->get());
+
+		setLights(core, core.resources.shader("default.shdr"));
+		core.resources.shader("default.shdr").setUniform("view", view);
+		core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
 	}
 
-	void drawModel(Core& core, CS::Model& m, glm::mat4 t)
+	void drawModel(Core& core, CS::Model& m, glm::mat4 t, bool emitter)
 	{
-		if (m.shaded)
-		{
-			core.resources.shader("default.shdr").setUniform("transform", t);
-			core.resources.shader("default.shdr").bind();
-		}
-		else
-		{
-			core.resources.shader("unshaded.shdr").setUniform("transform", t);
-			core.resources.shader("unshaded.shdr").bind();
-		}
+		core.resources.shader("default.shdr").setUniform("transform", t);
+		core.resources.shader("default.shdr").setUniform("emitter", emitter);
+		core.resources.shader("default.shdr").bind();
 
 		core.resources.mesh(m.mesh).bind();
 		core.resources.texture(m.texture).bind();
@@ -76,7 +68,7 @@ namespace ENG
 
 		std::vector<std::pair<float, EntityID>> distances;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
-			distances.emplace_back(glm::distance(core.view->position, transforms[id].position), id);
+			distances.emplace_back(glm::distance(core.renderer.view->position, transforms[id].position), id);
 		std::sort(distances.begin(), distances.end());
 
 		int i = 0;
@@ -87,8 +79,8 @@ namespace ENG
 			CS::Model& m = models[p.second];
 			CS::Transform t = decompose(getWorldT(core.entities, p.second));
 
-			if (m.hud || !inView(*core.view, t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
-			drawModel(core, m, t.get());
+			if (m.hud || !inView(*core.renderer.view, t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
+			drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(p.second));
 		}
 	}
 
@@ -103,7 +95,7 @@ namespace ENG
 		{
 			CS::Model& m = models[id];
 			if (!m.hud) continue;
-			drawModel(core, m, getWorldT(core.entities, id));
+			drawModel(core, m, getWorldT(core.entities, id), core.entities.hasComponent<ENG::CS::Light>(id));
 		}
 	}
 
@@ -149,7 +141,7 @@ namespace ENG
 
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
 			if (sprites[id].billboard)
-				transforms[id].rotation = core.view->rotation;
+				transforms[id].rotation = core.renderer.view->rotation;
 
 		for (EntityID id : core.entities.entitiesWith<CS::Sprite>())
 		{
@@ -230,7 +222,7 @@ namespace ENG
 
 		std::vector<std::pair<float, EntityID>> distances;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
-			distances.emplace_back(glm::distance(core.view->position, transforms[id].position), id);
+			distances.emplace_back(glm::distance(core.renderer.view->position, transforms[id].position), id);
 		std::sort(distances.begin(), distances.end());
 
 		glm::vec2 frame_size;
@@ -267,16 +259,9 @@ namespace ENG
 			t = transforms[it->second];
 			t.scale *= glm::vec3(size, 1.0f);
 
-			if (s.shaded)
-			{
-				core.resources.shader("default.shdr").setUniform("transform", t.get());
-				core.resources.shader("default.shdr").bind();
-			}
-			else
-			{
-				core.resources.shader("unshaded.shdr").setUniform("transform", t.get());
-				core.resources.shader("unshaded.shdr").bind();
-			}
+			core.resources.shader("default.shdr").setUniform("transform", t.get());
+			core.resources.shader("default.shdr").setUniform("emitter", core.entities.hasComponent<ENG::CS::Light>(it->second));
+			core.resources.shader("default.shdr").bind();
 
 			quad_3d.bind();
 			core.resources.texture(s.texture).bind();
@@ -290,17 +275,19 @@ namespace ENG
 	/**
 	* Uploads lighting information to shader.
 	*/
-	void setLights(Entities& entities, Shader& shader)
+	void setLights(Core& core, Shader& shader)
 	{
-		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::Light>& lights = entities.getPool<CS::Light>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Light>& lights = core.entities.getPool<CS::Light>();
 
-		//shader.setUniform("ambient", renderer.ambient);
+		shader.setUniform("ambient", core.renderer.ambient);
 
-		std::vector<EntityID> ents = entities.entitiesWith<CS::Transform, CS::Light>();
+		std::vector<EntityID> ents = core.entities.entitiesWith<CS::Transform, CS::Light>();
 		for (std::size_t i = 0; i < ents.size(); i++)
 		{
-			shader.setUniform("lights[" + std::to_string(i) + "].position", decompose(getWorldT(entities, ents[i])).position);
+			CS::Transform t = decompose(getWorldT(core.entities, ents[i]));
+
+			shader.setUniform("lights[" + std::to_string(i) + "].position", t.position);
 			shader.setUniform("lights[" + std::to_string(i) + "].colour", lights[ents[i]].colour);
 			shader.setUniform("lights[" + std::to_string(i) + "].radius", lights[ents[i]].radius);
 		}

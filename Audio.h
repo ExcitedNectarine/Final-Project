@@ -10,6 +10,12 @@ namespace ENG
 {
 	void audioInit();
 
+	struct AudioInfo
+	{
+		int effect_volume = 50;
+		int music_volume = 50;
+	};
+
 	struct Audio
 	{
 		void cleanup();

@@ -30,8 +30,9 @@ namespace ENG
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
 
-	void Texture::bind(GLuint unit) { glActiveTexture(GL_TEXTURE0 + unit); glBindTexture(GL_TEXTURE_2D, id); }
+	void Texture::bind() { glBindTexture(GL_TEXTURE_2D, id); }
 	void Texture::unbind() { glBindTexture(GL_TEXTURE_2D, NULL); }
 	void Texture::cleanup() { glDeleteTextures(1, &id); }
 	GLuint Texture::getID() { return id; }
+	glm::ivec2 Texture::getSize() { return size; }
 }

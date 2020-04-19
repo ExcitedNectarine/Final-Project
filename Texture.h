@@ -15,11 +15,11 @@ namespace ENG
 	public:
 		void create(const glm::ivec2& size);
 		void createFromImage(const Image& image);
-		void bind(GLuint unit = 0);
+		void bind();
 		void unbind();
 		void cleanup();
 		GLuint getID();
-		glm::ivec2 getSize() { return size; }
+		glm::ivec2 getSize();
 
 	private:
 		GLuint id;
