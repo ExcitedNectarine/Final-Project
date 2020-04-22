@@ -42,7 +42,9 @@ namespace ENG
 	/**
 	* Returns an entities world transformation.
 	*/
-	glm::mat4 getWorldT(Entities& entities, EntityID id);
+	glm::mat4 getWorldM(Entities& entities, EntityID id);
+
+	CS::Transform getWorldT(Entities& entities, EntityID id);
 
 	/**
 	* Convert transformation matrix into a transform component.

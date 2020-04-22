@@ -13,6 +13,7 @@ namespace ENG
 		ComponentMap<CS::Controller>& controllers = core.entities.getPool<CS::Controller>();
 		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
 		ComponentMap<CS::PlaneCollider>& planes = core.entities.getPool<CS::PlaneCollider>();
+		ComponentMap<CS::Script>& scripts = core.entities.getPool<CS::Script>();
 
 		for (EntityID a : core.entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
@@ -23,26 +24,40 @@ namespace ENG
 
 			for (EntityID b : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 			{
-				if (a == b || !boxes[b].solid) continue;
+				if (a == b) continue;
 
-				glm::vec3 b_size = boxes[b].size * transforms[b].scale;
+				CS::Transform t = getWorldT(core.entities, b);
+
+				glm::vec3 b_size = boxes[b].size * t.scale;
 				
-				IntersectData d = intersectAABBvAABB(transforms[a].position, a_size, transforms[b].position, b_size);
+				IntersectData d = intersectAABBvAABB(getWorldT(core.entities, a).position, a_size, t.position, b_size);
 				if (d.intersects)
 				{
 					transforms[a].position -= d.normal * d.distance;
 					if (!controllers[a].on_floor)
 						controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f);
+
+					if (boxes[b].trigger)
+					{
+						boxes[b]._collided = true;
+						scripts[a].script->onTriggerEnter(core, b);
+					}
+				}
+				else if (boxes[b]._collided)
+				{
+					boxes[b]._collided = false;
+					scripts[a].script->onTriggerExit(core, b);
 				}
 			}
 
 			for (EntityID b : core.entities.entitiesWith<CS::Transform, CS::PlaneCollider>())
 			{
-				if (a == b || !planes[b].solid) continue;
+				if (a == b) continue;
 
-				glm::vec3 b_size = planes[b].size * transforms[b].scale;
+				CS::Transform t = getWorldT(core.entities, b);
+				glm::vec3 b_size = planes[b].size * t.scale;
 
-				IntersectData d = intersectAABBvPlane(transforms[a].position, a_size, transforms[b].position, -transforms[b].forward(), b_size);
+				IntersectData d = intersectAABBvPlane(getWorldT(core.entities, a).position, a_size, t.position, -t.forward(), b_size);
 				if (d.intersects)
 				{
 					// using vec3(0, -1, 0) allows moving up and down slopes
@@ -66,9 +81,11 @@ namespace ENG
 		std::map<float, EntityID> distances;
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 		{
-			if (id == ignore || !boxes[id].solid) continue;
+			if (id == ignore || boxes[id].trigger) continue;
 
-			d = intersectAABBvRay(transforms[id].position, boxes[id].size * transforms[id].scale, r_pos, r_dir);
+			CS::Transform t = getWorldT(entities, id);
+
+			d = intersectAABBvRay(t.position, boxes[id].size * t.scale, r_pos, r_dir);
 			if (d.intersects)
 				distances[d.distance] = id;
 		}

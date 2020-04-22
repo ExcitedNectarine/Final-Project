@@ -5,20 +5,18 @@
 #include "FrameBuffer.h"
 #include "Settings.h"
 
-namespace ENG
+namespace Game
 {
-	namespace CS
+	using namespace ENG;
+
+	struct Portal : ECSComponent<Portal>
 	{
-		struct Portal : ECSComponent<Portal>
-		{
-			EntityID other;
-			EntityID player;
-			glm::mat4 camera;
-			FrameBuffer framebuffer;
-			int prev_side = 0;
-			bool active = false;
-		};
-	}
+		EntityID other;
+		EntityID player;
+		glm::mat4 camera;
+		FrameBuffer frame;
+		int prev_side = 0;
+	};
 
 	void startPortals(Entities& entities, const glm::ivec2& size);
 	void updatePortals(Entities& entities);

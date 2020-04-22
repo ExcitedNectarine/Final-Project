@@ -2,49 +2,51 @@
 #include "Core.h"
 #include <glm/gtx/string_cast.hpp>
 
-namespace ENG
+namespace Game
 {
 	void startPortals(Entities& entities, const glm::ivec2& size)
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
+		ComponentMap<Portal>& portals = entities.getPool<Portal>();
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, CS::Portal>())
+		for (EntityID id : entities.entitiesWith<CS::Transform, Portal>())
 		{
-			portals[id].prev_side = static_cast<int>(glm::sign(glm::dot(transforms[id].forward(), transforms[portals[id].player].position - transforms[id].position)));
-			portals[id].framebuffer.create(size);
+			CS::Transform portal_t = getWorldT(entities, id);
+			CS::Transform player_t = getWorldT(entities, portals[id].player);
+
+			portals[id].prev_side = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), player_t.position - portal_t.position)));
+			portals[id].frame.create(size);
 		}
 	}
 
 	void updatePortals(Entities& entities)
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::Portal>& portals = entities.getPool<CS::Portal>();
+		ComponentMap<Portal>& portals = entities.getPool<Portal>();
 		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
 
-		EntityID player;
-		EntityID other;
-
-		for (EntityID portal : entities.entitiesWith<CS::Transform, CS::Portal>())
+		for (EntityID portal : entities.entitiesWith<CS::Transform, Portal>())
 		{
-			player = portals[portal].player;
-			other = portals[portal].other;
+			EntityID player = portals[portal].player;
+			EntityID other = portals[portal].other;
+
+			CS::Transform portal_t = getWorldT(entities, portal);
+			CS::Transform player_t = getWorldT(entities, player);
+			CS::Transform other_t = getWorldT(entities, other);
 
 			// Check which side of portal player is on
-			int side = static_cast<int>(glm::sign(glm::dot(transforms[portal].forward(), transforms[portal].position - transforms[player].position)));
+			int side = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - player_t.position)));
 
-			glm::vec3 p_size = glm::vec3(2.0f) * transforms[portal].scale;
-			glm::vec3 pl_size = boxes[player].size * transforms[player].scale;
+			glm::vec3 p_size = glm::vec3(2.0f) * portal_t.scale;
+			glm::vec3 pl_size = boxes[player].size * player_t.scale;
 
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			if (intersectAABBvAABB(transforms[portal].position, p_size, transforms[player].position, pl_size).intersects)
+			if (intersectAABBvAABB(portal_t.position, p_size, player_t.position, pl_size).intersects)
 			{
-				portals[portal].active = true;
-
 				// If the player moves from one side of the portal to the other, teleport them.
 				if (side != portals[portal].prev_side)
 				{
-					glm::mat4 m = transforms[other].get() * glm::inverse(transforms[portal].get()) * transforms[player].get();
+					glm::mat4 m = other_t.get() * glm::inverse(portal_t.get()) * player_t.get();
 					transforms[player] = ENG::decompose(m);
 
 					// Never rotate on Z, only X and Y.
@@ -54,11 +56,9 @@ namespace ENG
 					portals[other].prev_side = side;
 				}
 			}
-			else
-				portals[portal].active = false;
 
 			// Transform camera match players transform relative to the portal.
-			portals[portal].camera = transforms[portal].get() * glm::inverse(transforms[other].get()) * transforms[player].get();
+			portals[portal].camera = portal_t.get() * glm::inverse(other_t.get()) * getWorldT(entities, player).get();
 			portals[portal].prev_side = side;
 		}
 	}
@@ -66,17 +66,19 @@ namespace ENG
 	void drawToPortals(Core& core)
 	{
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		ComponentMap<CS::Portal>& portals = core.entities.getPool<CS::Portal>();
+		ComponentMap<Portal>& portals = core.entities.getPool<Portal>();
 
 		CS::Transform view_t;
 		CS::Transform* view_d = core.renderer.view;
 
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Portal>())
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, Portal>())
 		{
-			// Don't render to portal if its not in view.
-			if (!inView(*view_d, transforms[id].position, { 2.0f, 2.0f, 2.0f })) continue;
+			CS::Transform t = getWorldT(core.entities, id);
 
-			portals[id].framebuffer.bind();
+			// Don't render to portal if its not in view.
+			if (!inView(*view_d, t.position, glm::vec3(1.0f))) continue;
+
+			portals[id].frame.bind();
 			view_t = decompose(portals[portals[id].other].camera);
 			glm::mat4 view = glm::inverse(portals[portals[id].other].camera);
 
@@ -90,7 +92,8 @@ namespace ENG
 			drawSkybox(core.resources);
 			drawModels(core);
 			drawSprites3D(core);
-			portals[id].framebuffer.unbind();
+
+			portals[id].frame.unbind();
 		}
 
 		core.renderer.view = view_d;
@@ -99,7 +102,8 @@ namespace ENG
 	void drawPortals(Core& core)
 	{
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		ComponentMap<CS::Portal>& portals = core.entities.getPool<CS::Portal>();
+		ComponentMap<Portal>& portals = core.entities.getPool<Portal>();
+		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
 
 		core.resources.shader("portals.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
 		core.resources.shader("portals.shdr").setUniform("projection", core.perspective);
@@ -110,19 +114,24 @@ namespace ENG
 		Mesh& cube = core.resources.mesh("cube.obj");
 		cube.bind();
 
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Portal>())
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, Portal>())
 		{
-			if (!inView(*core.renderer.view, transforms[id].position, glm::vec3(1.0f))) continue;
+			CS::Transform portal_t = getWorldT(core.entities, id);
+			CS::Transform player_t = getWorldT(core.entities, portals[id].player);
 
-			CS::Transform t = transforms[id];
-			if (portals[id].active)
-				t = preventNearClipping(core.settings, transforms[id], transforms[portals[id].player]);
+			if (!inView(*core.renderer.view, portal_t.position, glm::vec3(1.0f))) continue;
+
+			glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
+			glm::vec3 pl_size = boxes[portals[id].player].size * player_t.scale;
+
+			if (intersectAABBvAABB(portal_t.position, p_size, player_t.position, pl_size).intersects)
+				portal_t = preventNearClipping(core.settings, portal_t, player_t);
 			else
-				t.scale.z = 0.0f;
+				portal_t.scale.z = 0.0f;
 
-			core.resources.shader("portals.shdr").setUniform("transform", t.get());
+			core.resources.shader("portals.shdr").setUniform("transform", portal_t.get());
 			core.resources.shader("portals.shdr").bind();
-			portals[id].framebuffer.getTexture().bind();
+			portals[id].frame.getTexture().bind();
 
 			glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
 		}
@@ -146,7 +155,7 @@ namespace ENG
 
 		// Set scale of screen, and move back from whichever way player is facing.
 		bool facing = glm::dot(screen.forward(), screen.position - player.position) > 0;
-		screen.scale.z = corner_dist;
+		screen.scale.z *= corner_dist;
 		screen.position += (screen.forward() * (facing ? 1.0f : -1.0f));
 
 		return screen;

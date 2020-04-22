@@ -16,21 +16,22 @@ namespace ENG
 			BoxCollider() : size(1.0f) {}
 
 			glm::vec3 size;
-			bool solid = true;
+			bool trigger = false;
+
+			bool _collided = false;
 		};
 
-		struct PlaneCollider :ECSComponent<PlaneCollider>
+		struct PlaneCollider : ECSComponent<PlaneCollider>
 		{
 			PlaneCollider() : size(1.0f) {}
 
 			glm::vec3 size;
-			bool solid = true;
+			bool trigger = false;
 		};
 
 		struct Controller : ECSComponent<Controller>
 		{
 			glm::vec3 velocity;
-			bool collided = false;
 			bool on_floor = false;
 		};
 	}
@@ -52,8 +53,6 @@ namespace ENG
 	* Cast a ray into the world, and return the closest intersecting box ID.
 	*/
 	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore, float& t);
-
-	///
 
 	/**
 	* Checks if two axis-aligned (not rotated) bounding boxes are colliding

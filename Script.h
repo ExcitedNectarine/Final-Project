@@ -27,9 +27,14 @@ namespace ENG
 		virtual void end(Core& core) {}
 
 		/**
-		* Called if entity collides with another entity
+		* Called if entity enters trigger.
 		*/
-		virtual void onCollision(Core& core, EntityID hit_id) {}
+		virtual void onTriggerEnter(Core& core, EntityID hit_id) {}
+
+		/**
+		* Called if entity exits trigger.
+		**/
+		virtual void onTriggerExit(Core& core, EntityID hit_id) {}
 
 		EntityID id;
 	};

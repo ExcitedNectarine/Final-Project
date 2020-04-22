@@ -68,7 +68,7 @@ namespace ENG
 
 		std::vector<std::pair<float, EntityID>> distances;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
-			distances.emplace_back(glm::distance(core.renderer.view->position, transforms[id].position), id);
+			distances.emplace_back(glm::distance(core.renderer.view->position, getWorldT(core.entities, id).position), id);
 		std::sort(distances.begin(), distances.end());
 
 		int i = 0;
@@ -77,7 +77,7 @@ namespace ENG
 		for (auto& p : distances)
 		{
 			CS::Model& m = models[p.second];
-			CS::Transform t = decompose(getWorldT(core.entities, p.second));
+			CS::Transform t = getWorldT(core.entities, p.second);
 
 			if (m.hud || !inView(*core.renderer.view, t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
 			drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(p.second));
@@ -95,7 +95,7 @@ namespace ENG
 		{
 			CS::Model& m = models[id];
 			if (!m.hud) continue;
-			drawModel(core, m, getWorldT(core.entities, id), core.entities.hasComponent<ENG::CS::Light>(id));
+			drawModel(core, m, getWorldM(core.entities, id), core.entities.hasComponent<ENG::CS::Light>(id));
 		}
 	}
 
@@ -222,7 +222,7 @@ namespace ENG
 
 		std::vector<std::pair<float, EntityID>> distances;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
-			distances.emplace_back(glm::distance(core.renderer.view->position, transforms[id].position), id);
+			distances.emplace_back(glm::distance(core.renderer.view->position, getWorldT(core.entities, id).position), id);
 		std::sort(distances.begin(), distances.end());
 
 		glm::vec2 frame_size;
@@ -256,7 +256,7 @@ namespace ENG
 				quad_3d[5].uv = { huv.x, luv.y };
 			}
 
-			t = transforms[it->second];
+			t = getWorldT(core.entities, it->second);
 			t.scale *= glm::vec3(size, 1.0f);
 
 			core.resources.shader("default.shdr").setUniform("transform", t.get());
@@ -285,7 +285,7 @@ namespace ENG
 		std::vector<EntityID> ents = core.entities.entitiesWith<CS::Transform, CS::Light>();
 		for (std::size_t i = 0; i < ents.size(); i++)
 		{
-			CS::Transform t = decompose(getWorldT(core.entities, ents[i]));
+			CS::Transform t = getWorldT(core.entities, ents[i]);
 
 			shader.setUniform("lights[" + std::to_string(i) + "].position", t.position);
 			shader.setUniform("lights[" + std::to_string(i) + "].colour", lights[ents[i]].colour);

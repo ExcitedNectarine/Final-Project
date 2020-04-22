@@ -1,5 +1,6 @@
 #include "Core.h"
 #include "Components.h"
+#include "Portal.h"
 
 ////////////////////////////////////
 void createCore(ENG::Core& core, const std::string& setting_file)
@@ -36,15 +37,14 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 		ENG::CS::Script,
 		ENG::CS::BoxCollider,
 		ENG::CS::PlaneCollider,
-		ENG::CS::Controller,
-		ENG::CS::Portal
+		ENG::CS::Controller
 	>();
 }
 
 void run(ENG::Core& core)
 {
 	ENG::scriptStart(core);
-	ENG::startPortals(core.entities, core.window.getSize());
+	Game::startPortals(core.entities, core.window.getSize());
 	ENG::spriteStart();
 
 	double current = 0.0, last = 0.0;
@@ -57,8 +57,8 @@ void run(ENG::Core& core)
 		ENG::scriptUpdate(core);
 		ENG::moveControllers(core);
 
-		ENG::updatePortals(core.entities);
-		ENG::drawToPortals(core);
+		Game::updatePortals(core.entities);
+		Game::drawToPortals(core);
 
 		ENG::updateSprites(core);
 		ENG::updateRenderer(core);
@@ -68,7 +68,7 @@ void run(ENG::Core& core)
 		ENG::drawSkybox(core.resources);
 		ENG::drawModels(core);
 		ENG::drawSprites3D(core);
-		ENG::drawPortals(core);
+		Game::drawPortals(core);
 		ENG::drawModelsToHUD(core);
 		ENG::drawSprites(core);
 
@@ -82,10 +82,13 @@ void run(ENG::Core& core)
 
 ////////////////////////////////////
 
-struct Pickup : ENG::ECSComponent<Pickup>
+namespace Game
 {
-	bool active = false;
-};
+	struct Pickup : ENG::ECSComponent<Pickup>
+	{
+		bool active = false;
+	};
+}
 
 struct PlayerScript : ENG::Script
 {
@@ -130,11 +133,6 @@ struct PlayerScript : ENG::Script
 		if (core.window.isKeyPressed(GLFW_KEY_A)) direction -= transform->right();
 		else if (core.window.isKeyPressed(GLFW_KEY_D)) direction += transform->right();
 
-		if (core.window.isKeyPressed(GLFW_KEY_Q))
-			transform->position = { -5.0f, 10.0f, 0.0f };
-		if (core.window.isKeyPressed(GLFW_KEY_E))
-			transform->position = { 5.0f, 10.0f, 0.0f };
-
 		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
 		{
 			velocity.y = 7.5f;
@@ -161,7 +159,7 @@ struct PlayerScript : ENG::Script
 		{
 			pickup = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
 
-			if (pickup != 0 && core.entities.hasComponent<Pickup>(pickup))
+			if (pickup != 0 && core.entities.hasComponent<Game::Pickup>(pickup))
 			{
 				OUTPUT("Pickup up " << pickup);
 
@@ -169,7 +167,7 @@ struct PlayerScript : ENG::Script
 				core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -3.5f };
 				core.entities.getComponent<ENG::CS::Transform>(pickup).rotation = glm::vec3(0.0f);
 				core.entities.getComponent<ENG::CS::Model>(pickup).hud = true;
-				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).solid = false;
+				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = true;
 			}
 			else pickup = 0;
 		}
@@ -185,7 +183,7 @@ struct PlayerScript : ENG::Script
 				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = 0;
 				core.entities.getComponent<ENG::CS::Transform>(pickup).position = new_pos;
 				core.entities.getComponent<ENG::CS::Model>(pickup).hud = false;
-				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).solid = true;
+				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = false;
 
 				pickup = 0;
 			}
@@ -207,7 +205,7 @@ struct PlayerScript : ENG::Script
 
 ENG::EntityID createProp(ENG::Core& core, glm::vec3 pos)
 {
-	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Pickup>();
+	ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Game::Pickup>();
 
 	core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
 	core.entities.getComponent<ENG::CS::Light>(prop).colour = { 2.5f, 1.0f, 0.5f };
@@ -234,24 +232,31 @@ int main()
 		createCore(core, "Resources/settings.set");
 
 		core.window.lockMouse(true);
-		core.entities.addComponentPool<Pickup>();
+		core.entities.addComponentPool<Game::Portal>();
+		core.entities.addComponentPool<Game::Pickup>();
 		core.renderer.ambient = glm::vec3(0.5f);
 
 		// Create player
 		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Model>();
 		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<PlayerScript>();
 
+		ENG::EntityID table_scene = core.entities.addEntity<ENG::CS::Transform>();
+		ENG::CS::Transform& ts_t = core.entities.getComponent<ENG::CS::Transform>(table_scene);
+		ts_t.position.x = -5.0f;
+		ts_t.rotation.y = -31.0f;
+		ts_t.scale = glm::vec3(0.2f);
+
 		// Create portals
-		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
-		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Portal, ENG::CS::Model>();
+		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, Game::Portal, ENG::CS::Model>();
+		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, Game::Portal, ENG::CS::Model>();
 		core.entities.getComponent<ENG::CS::Model>(portal_a).mesh = "portal_border.obj";
 		core.entities.getComponent<ENG::CS::Model>(portal_b).mesh = "portal_border.obj";
 
-		ENG::CS::Portal& pa = core.entities.getComponent<ENG::CS::Portal>(portal_a);
+		Game::Portal& pa = core.entities.getComponent<Game::Portal>(portal_a);
 		pa.player = player;
 		pa.other = portal_b;
 
-		ENG::CS::Portal& pb = core.entities.getComponent<ENG::CS::Portal>(portal_b);
+		Game::Portal& pb = core.entities.getComponent<Game::Portal>(portal_b);
 		pb.player = player;
 		pb.other = portal_a;
 
@@ -259,9 +264,8 @@ int main()
 		ta.position = { 0.0f, 0.01f, -10.0f };
 
 		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
-		tb.position = { 0.0f, 0.21f, 0.0f };
-		tb.scale *= 0.2f;
-		tb.rotation.y = 90.0f;
+		tb.position = { 0.0f, 1.0f, 0.0f };
+		tb.parent = table_scene;
 
 		for (int i = 0; i < 5; i++)
 			createProp(core, { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) });
@@ -269,8 +273,7 @@ int main()
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
 		auto b = createBarrier(core, { 0.0f, -0.5f, 0.0f });
 		core.entities.getComponent<ENG::CS::Transform>(b).scale = { 2.0f, 0.5f, 2.0f };
-
-		OUTPUT(glm::length(glm::vec3(1.0f)));
+		core.entities.getComponent<ENG::CS::Transform>(b).parent = table_scene;
 
 		run(core);
 	}
