@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "Transform.h"
+#include "Collision.h"
 #include "Resources.h"
 #include "FrameBuffer.h"
 
@@ -14,6 +14,7 @@ namespace ENG
 	{
 		CS::Transform* view;
 		glm::vec3 ambient;
+		bool draw_colliders = false;
 	};
 
 	namespace CS
@@ -72,6 +73,8 @@ namespace ENG
 	void updateSprites(Core& core);
 	void drawSprites(Core& core);
 	void drawSprites3D(Core& core);
+
+	void drawColliders(Core& core);
 
 	/**
 	* Uploads lighting information to shader.

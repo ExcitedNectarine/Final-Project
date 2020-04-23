@@ -1,0 +1,27 @@
+[VERTEX]
+#version 330 core
+
+layout (location = 0) in vec3 in_position;
+layout (location = 3) in vec3 in_colour;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 transform;
+
+out vec3 out_colour;
+
+void main()
+{
+	out_colour = in_colour;
+	gl_Position = projection * view * transform * vec4(in_position, 1.0);
+}
+
+[FRAGMENT]
+#version 330 core
+
+in vec3 out_colour;
+
+void main()
+{
+	gl_FragColor = vec4(out_colour, 1.0);
+}

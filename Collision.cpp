@@ -5,7 +5,7 @@ namespace ENG
 {
 	/**
 	* Move controller components through the world, blocking the movement if they encounter a solid
-	* collider.
+	* collider, and detect when controllers enter and exit triggers.
 	*/
 	void moveControllers(Core& core)
 	{
@@ -27,7 +27,6 @@ namespace ENG
 				if (a == b) continue;
 
 				CS::Transform t = getWorldT(core.entities, b);
-
 				glm::vec3 b_size = boxes[b].size * t.scale;
 				
 				IntersectData d = intersectAABBvAABB(getWorldT(core.entities, a).position, a_size, t.position, b_size);

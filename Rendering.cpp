@@ -71,8 +71,6 @@ namespace ENG
 			distances.emplace_back(glm::distance(core.renderer.view->position, getWorldT(core.entities, id).position), id);
 		std::sort(distances.begin(), distances.end());
 
-		int i = 0;
-
 		// Draw opaque models from closest to furthest.
 		for (auto& p : distances)
 		{
@@ -270,6 +268,33 @@ namespace ENG
 		}
 
 		glEnable(GL_CULL_FACE);
+	}
+
+	void drawColliders(Core& core)
+	{
+		if (!core.renderer.draw_colliders)
+			return;
+
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
+
+		Mesh& cube = core.resources.mesh("cube.obj");
+		cube.bind();
+
+		core.resources.shader("colliders.shdr").setUniform("projection", core.perspective);
+		core.resources.shader("colliders.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
+
+		for (ENG::EntityID id : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+		{
+			CS::Transform t = getWorldT(core.entities, id);
+			t.rotation = glm::vec3(0.0f);
+			t.scale *= boxes[id].size;
+
+			core.resources.shader("colliders.shdr").setUniform("transform", t.get());
+			core.resources.shader("colliders.shdr").bind();
+
+			glDrawArrays(GL_LINE_STRIP, 0, cube.vertexCount());
+		}
 	}
 
 	/**

@@ -4,6 +4,40 @@
 
 namespace Game
 {
+	EntityID createPortal(Core& core)
+	{
+		ENG::EntityID portal = core.entities.addEntity<CS::Transform, Portal, CS::Model>();
+		
+		CS::Model& m = core.entities.getComponent<CS::Model>(portal);
+		m.mesh = "portal_border.obj";
+
+		ENG::EntityID b1 = core.entities.addEntity<CS::Transform, CS::BoxCollider>();
+		ENG::EntityID b2 = core.entities.addEntity<CS::Transform, CS::BoxCollider>();
+		ENG::EntityID b3 = core.entities.addEntity<CS::Transform, CS::BoxCollider>();
+
+		// How big the colliders are, and how distance from centre.
+		glm::vec3 size(0.3f, 1.5f, 0.3f);
+		float dist = 1.3f;
+
+		core.entities.getComponent<CS::BoxCollider>(b1).size = size;
+		core.entities.getComponent<CS::BoxCollider>(b2).size = size;
+		core.entities.getComponent<CS::BoxCollider>(b3).size = { 1.5f, 0.3f, 0.3f };
+
+		CS::Transform& t1 = core.entities.getComponent<CS::Transform>(b1);
+		t1.position.x = -dist;
+		t1.parent = portal;
+
+		CS::Transform& t2 = core.entities.getComponent<CS::Transform>(b2);
+		t2.position.x = dist;
+		t2.parent = portal;
+
+		CS::Transform& t3 = core.entities.getComponent<CS::Transform>(b3);
+		t3.position.y = dist;
+		t3.parent = portal;
+
+		return portal;
+	}
+
 	void startPortals(Entities& entities, const glm::ivec2& size)
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
@@ -37,7 +71,7 @@ namespace Game
 			// Check which side of portal player is on
 			int side = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - player_t.position)));
 
-			glm::vec3 p_size = glm::vec3(2.0f) * portal_t.scale;
+			glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
 			glm::vec3 pl_size = boxes[player].size * player_t.scale;
 
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.

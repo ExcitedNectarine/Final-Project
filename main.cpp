@@ -67,6 +67,7 @@ void run(ENG::Core& core)
 
 		ENG::drawSkybox(core.resources);
 		ENG::drawModels(core);
+		ENG::drawColliders(core);
 		ENG::drawSprites3D(core);
 		Game::drawPortals(core);
 		ENG::drawModelsToHUD(core);
@@ -112,7 +113,7 @@ struct PlayerScript : ENG::Script
 		transform->position.y = 20.0f;
 
 		box = &core.entities.getComponent<ENG::CS::BoxCollider>(id);
-		box->size = { 0.5f, 1.5f, 0.5f };
+		box->size = { 0.5f, 1.0f, 0.5f };
 	}
 
 	void mouselook(ENG::Core& core)
@@ -235,6 +236,7 @@ int main()
 		core.entities.addComponentPool<Game::Portal>();
 		core.entities.addComponentPool<Game::Pickup>();
 		core.renderer.ambient = glm::vec3(0.5f);
+		core.renderer.draw_colliders = true;
 
 		// Create player
 		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Model>();
@@ -243,14 +245,13 @@ int main()
 		ENG::EntityID table_scene = core.entities.addEntity<ENG::CS::Transform>();
 		ENG::CS::Transform& ts_t = core.entities.getComponent<ENG::CS::Transform>(table_scene);
 		ts_t.position.x = -5.0f;
-		ts_t.rotation.y = -31.0f;
-		ts_t.scale = glm::vec3(0.2f);
+		ts_t.position.y = 1.0f;
+		ts_t.rotation.y = -34.0f;
+		ts_t.scale = glm::vec3(0.1f);
 
 		// Create portals
-		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, Game::Portal, ENG::CS::Model>();
-		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, Game::Portal, ENG::CS::Model>();
-		core.entities.getComponent<ENG::CS::Model>(portal_a).mesh = "portal_border.obj";
-		core.entities.getComponent<ENG::CS::Model>(portal_b).mesh = "portal_border.obj";
+		ENG::EntityID portal_a = Game::createPortal(core);
+		ENG::EntityID portal_b = Game::createPortal(core);
 
 		Game::Portal& pa = core.entities.getComponent<Game::Portal>(portal_a);
 		pa.player = player;
@@ -264,15 +265,14 @@ int main()
 		ta.position = { 0.0f, 0.01f, -10.0f };
 
 		ENG::CS::Transform& tb = core.entities.getComponent<ENG::CS::Transform>(portal_b);
-		tb.position = { 0.0f, 1.0f, 0.0f };
+		tb.position = { 0.0f, 0.01f, 0.0f };
 		tb.parent = table_scene;
 
 		for (int i = 0; i < 5; i++)
 			createProp(core, { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) });
 
 		createBarrier(core, { 0.0f, -2.0f, 0.0f });
-		auto b = createBarrier(core, { 0.0f, -0.5f, 0.0f });
-		core.entities.getComponent<ENG::CS::Transform>(b).scale = { 2.0f, 0.5f, 2.0f };
+		auto b = createBarrier(core, { 0.0f, -2.0f, 0.0f });
 		core.entities.getComponent<ENG::CS::Transform>(b).parent = table_scene;
 
 		run(core);

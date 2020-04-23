@@ -27,7 +27,7 @@ namespace ENG
 		glm::vec3 getSize();
 
 	private:
-		GLuint id, position_id, uv_id, normal_id;
+		GLuint id, position_id, uv_id, normal_id, colour_id;
 		bool dirty = false;
 		std::vector<Vertex> vertices;
 		glm::vec3 size;

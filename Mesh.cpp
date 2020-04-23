@@ -19,6 +19,7 @@ namespace ENG
 		glGenBuffers(1, &position_id);
 		glGenBuffers(1, &uv_id);
 		glGenBuffers(1, &normal_id);
+		glGenBuffers(1, &colour_id);
 
 		// Create vertex array.
 		glGenVertexArrays(1, &id);
@@ -39,6 +40,11 @@ namespace ENG
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
 		glEnableVertexAttribArray(2);
 
+		// Bind colour buffer to vertex array.
+		glBindBuffer(GL_ARRAY_BUFFER, colour_id);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+		glEnableVertexAttribArray(3);
+
 		glBindBuffer(GL_ARRAY_BUFFER, NULL);
 		glBindVertexArray(NULL);
 	}
@@ -48,6 +54,7 @@ namespace ENG
 		std::vector<GLfloat> positions;
 		std::vector<GLfloat> uvs;
 		std::vector<GLfloat> normals;
+		std::vector<GLfloat> colours;
 
 		glm::vec3 min(0.0f);
 		glm::vec3 max(0.0f);
@@ -71,6 +78,10 @@ namespace ENG
 			normals.push_back(vertex.normal.x);
 			normals.push_back(vertex.normal.y);
 			normals.push_back(vertex.normal.z);
+
+			colours.push_back(vertex.colour.x);
+			colours.push_back(vertex.colour.y);
+			colours.push_back(vertex.colour.z);
 		}
 
 		size = max - min;
@@ -87,6 +98,10 @@ namespace ENG
 		glBindBuffer(GL_ARRAY_BUFFER, normal_id);
 		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(GLfloat), &normals.at(0), GL_STATIC_DRAW);
 
+		// Upload colours
+		glBindBuffer(GL_ARRAY_BUFFER, colour_id);
+		glBufferData(GL_ARRAY_BUFFER, colours.size() * sizeof(GLfloat), &colours.at(0), GL_STATIC_DRAW);
+
 		glBindBuffer(GL_ARRAY_BUFFER, NULL);
 	}
 
@@ -95,6 +110,7 @@ namespace ENG
 		glDeleteBuffers(1, &position_id);
 		glDeleteBuffers(1, &uv_id);
 		glDeleteBuffers(1, &normal_id);
+		glDeleteBuffers(1, &colour_id);
 		glDeleteVertexArrays(1, &id);
 	}
 
