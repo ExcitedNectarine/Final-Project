@@ -12,10 +12,22 @@ namespace ENG
 	struct Core;
 	struct Renderer
 	{
+		EntityID view_id;
 		CS::Transform* view;
 		glm::vec3 ambient;
 		bool draw_colliders = false;
 	};
+
+	//glm::mat4 getView(Core& core)
+	//{
+	//	if (core.renderer.view != nullptr)
+	//		return core.renderer.view->get();
+
+	//	if (core.renderer.view_id != 0)
+	//		return getWorldM(core.entities, core.renderer.view_id);
+
+	//	return glm::mat4(1.0f);
+	//}
 
 	namespace CS
 	{

@@ -17,52 +17,26 @@ namespace ENG
 
 		for (EntityID a : core.entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
-			glm::vec3 a_size = boxes[a].size * transforms[a].scale;
-
 			transforms[a].position += controllers[a].velocity * core.delta;
 			controllers[a].on_floor = false;
 
+			CS::Transform a_t = getWorldT(core.entities, a);
 			for (EntityID b : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 			{
 				if (a == b) continue;
+				CS::Transform b_t = getWorldT(core.entities, b);
 
-				CS::Transform t = getWorldT(core.entities, b);
-				glm::vec3 b_size = boxes[b].size * t.scale;
-				
-				IntersectData d = intersectAABBvAABB(getWorldT(core.entities, a).position, a_size, t.position, b_size);
+				IntersectData d;
+				if (a_t.rotation == glm::vec3(0.0f) && b_t.rotation == glm::vec3(0.0f))
+					d = intersectAABBvAABB(a_t.position, boxes[a].size * a_t.scale, b_t.position, boxes[b].size * b_t.scale);
+				else
+					d = intersectOBBvOBB(a_t, boxes[a].size, b_t, boxes[b].size);
+
 				if (d.intersects)
 				{
 					transforms[a].position -= d.normal * d.distance;
 					if (!controllers[a].on_floor)
-						controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f);
-
-					if (boxes[b].trigger)
-					{
-						boxes[b]._collided = true;
-						scripts[a].script->onTriggerEnter(core, b);
-					}
-				}
-				else if (boxes[b]._collided)
-				{
-					boxes[b]._collided = false;
-					scripts[a].script->onTriggerExit(core, b);
-				}
-			}
-
-			for (EntityID b : core.entities.entitiesWith<CS::Transform, CS::PlaneCollider>())
-			{
-				if (a == b) continue;
-
-				CS::Transform t = getWorldT(core.entities, b);
-				glm::vec3 b_size = planes[b].size * t.scale;
-
-				IntersectData d = intersectAABBvPlane(getWorldT(core.entities, a).position, a_size, t.position, -t.forward(), b_size);
-				if (d.intersects)
-				{
-					// using vec3(0, -1, 0) allows moving up and down slopes
-					transforms[a].position -= d.normal * d.distance;
-					if (!controllers[a].on_floor)
-						controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f);
+						controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f) || approximate(d.normal.y, -1.0f, 0.1f);
 				}
 			}
 		}
@@ -116,7 +90,11 @@ namespace ENG
 			approximate(dist, max_dist.z, 0.01f) ? (a_pos.z > b_pos.z ? 1.0f : -1.0f) : 0.0f
 		);
 
-		return { dist < 0, dist, norm };
+		IntersectData d;
+		d.intersects = dist < 0;
+		d.distance = dist;
+		d.normal = norm;
+		return d;
 	}
 
 	/**
@@ -200,6 +178,140 @@ namespace ENG
 	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir)
 	{
 		IntersectData data;
+
+		return data;
+	}
+
+	// OBB STUFF --  WORK IN PROGRESS -----------------------------
+
+	/**
+	* Get the world space vertex positions of bounding box.
+	*/
+	std::array<glm::vec3, 8> getBoxVerts(glm::vec3 size, glm::mat4 t)
+	{
+		glm::vec3 min = -size;
+		glm::vec3 max = size;
+
+		// All 8 vertices in box
+		// First generate as axis aligned.
+		std::array<glm::vec3, 8> verts =
+		{
+			min,
+			max,
+			{ max.x, min.y, min.z },
+			{ min.x, max.y, min.z },
+			{ min.x, min.y, max.z },
+			{ min.x, max.y, max.z },
+			{ max.x, min.y, max.z },
+			{ max.x, max.y, min.z }
+		};
+
+		// Rotate, scale and translate vertices
+		for (glm::vec3& v : verts)
+			v = glm::vec3(t * glm::vec4(v, 1.0f));
+
+		return verts;
+	}
+
+	/**
+	* Find the minimum and maximum projected vertices of a box along an axis.
+	*/
+	void findMinMaxAlongAxis(glm::vec3 axis, const std::array<glm::vec3, 8>& verts, float& min, float& max)
+	{
+		min = std::numeric_limits<float>::max();
+		max = -min;
+
+		for (int i = 0; i < 8; i++)
+		{
+			float dot = glm::dot(verts[i], axis);
+			min = glm::min(min, dot);
+			max = glm::max(max, dot);
+		}
+	}
+
+	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size)
+	{
+		IntersectData data;
+		data.intersects = true;
+
+		//glm::vec3 dist = glm::max(a_t.position, b_t.position) - glm::min(a_t.position, b_t.position);
+		glm::vec3 dist = b_t.position - a_t.position;
+
+		// Use transformation forward and right vectors as axis, and the up vector is cross between forward and right
+		glm::vec3 a_x_axis = a_t.right();
+		glm::vec3 a_z_axis = a_t.forward();
+		glm::vec3 a_y_axis = glm::cross(a_x_axis, a_z_axis);
+
+		glm::vec3 b_x_axis = b_t.right();
+		glm::vec3 b_z_axis = b_t.forward();
+		glm::vec3 b_y_axis = glm::cross(b_x_axis, b_z_axis);
+
+		// All 15 axis
+		std::array<glm::vec3, 15> all_axes =
+		{
+			a_x_axis,
+			a_y_axis,
+			a_z_axis,
+			b_x_axis,
+			b_y_axis,
+			b_z_axis,
+			glm::cross(a_x_axis, b_x_axis),
+			glm::cross(a_x_axis, b_y_axis),
+			glm::cross(a_x_axis, b_z_axis),
+			glm::cross(a_y_axis, b_x_axis),
+			glm::cross(a_y_axis, b_y_axis),
+			glm::cross(a_y_axis, b_z_axis),
+			glm::cross(a_z_axis, b_x_axis),
+			glm::cross(a_z_axis, b_y_axis),
+			glm::cross(a_z_axis, b_z_axis)
+		};
+
+		// Get vertices of boxes A and B
+		std::array<glm::vec3, 8> a_verts = getBoxVerts(a_size, a_t.get());
+		std::array<glm::vec3, 8> b_verts = getBoxVerts(b_size, b_t.get());
+
+		float shortest_overlap = std::numeric_limits<float>::max();
+		for (int i = 0; i < 15; i++)
+		{
+			// Stops cross products being zero.
+			if (all_axes[i] == glm::vec3(0.0f))
+				continue;
+
+			glm::vec3 axis = glm::normalize(all_axes[i]);
+
+			float a_min, a_max, b_min, b_max;
+			findMinMaxAlongAxis(axis, a_verts, a_min, a_max);
+			findMinMaxAlongAxis(axis, b_verts, b_min, b_max);
+
+			float proj_dist = glm::abs(glm::dot(dist, axis));
+			float a_radius = glm::abs((a_max - a_min) / 2.0f);
+			float b_radius = glm::abs((b_max - b_min) / 2.0f);
+
+			// if the projected distance is greater than the projected radius of both boxes, then they don't collide on the axis.
+			if (proj_dist > (a_radius + b_radius))
+			{
+				data.intersects = false;
+				break;
+			}
+
+			else // if they intersect on the axis
+			{
+				float overlap_dist = glm::abs(glm::min(a_max, b_max) - glm::max(a_min, b_min));
+				if (overlap_dist < shortest_overlap)
+				{
+					shortest_overlap = overlap_dist;
+					data.normal = axis; // use the least intersecting axis as the normal to resolve collision
+				}
+			}
+		}
+
+		if (data.intersects)
+		{
+			float a_pos = glm::dot(a_t.position, data.normal);
+			float b_pos = glm::dot(b_t.position, data.normal);
+			data.distance = shortest_overlap;
+			data.normal *= (a_pos < b_pos ? 1.0f : -1.0f);
+		}
 
 		return data;
 	}

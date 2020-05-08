@@ -284,17 +284,23 @@ namespace ENG
 		core.resources.shader("colliders.shdr").setUniform("projection", core.perspective);
 		core.resources.shader("colliders.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
 
-		for (ENG::EntityID id : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+		//std::vector<EntityID> box_entities = core.entities.entitiesWith<CS::Transform, CS::BoxCollider>();
+		//for (std::size_t i = 0; i < box_entities.size(); i++)
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 		{
 			CS::Transform t = getWorldT(core.entities, id);
-			t.rotation = glm::vec3(0.0f);
 			t.scale *= boxes[id].size;
+
+			//core.resources.shader("colliders.shdr").setUniform("transform[" + std::to_string(i) + "]", t.get());
 
 			core.resources.shader("colliders.shdr").setUniform("transform", t.get());
 			core.resources.shader("colliders.shdr").bind();
 
 			glDrawArrays(GL_LINE_STRIP, 0, cube.vertexCount());
 		}
+
+		//core.resources.shader("colliders.shdr").bind();
+		//glDrawArraysInstanced(GL_LINE_STRIP, 0, cube.vertexCount(), boxes.size());
 	}
 
 	/**

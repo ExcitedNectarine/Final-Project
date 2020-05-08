@@ -38,6 +38,8 @@ namespace ENG
 
 	struct IntersectData
 	{
+		IntersectData() : normal(0.0f) {}
+
 		bool intersects = false;
 		float distance = 0.0f;
 		glm::vec3 normal;
@@ -73,4 +75,7 @@ namespace ENG
 	* Checks if a ray intersects a plane.
 	*/
 	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir);
+
+	std::array<glm::vec3, 8> getBoxVerts(glm::vec3 size, glm::mat4 t);
+	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size);
 }
