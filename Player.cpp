@@ -7,8 +7,11 @@ namespace Game
 		ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Game::Pickup>();
 
 		core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
-		core.entities.getComponent<ENG::CS::Light>(prop).colour = { 2.5f, 1.0f, 0.5f };
+		core.entities.getComponent<ENG::CS::Light>(prop).colour = glm::normalize(glm::vec3(ENG::randomFloat(1.0f, 10.0f), ENG::randomFloat(1.0f, 10.0f), ENG::randomFloat(1.0f, 10.0f))) * 2.0f;
 		core.entities.getComponent<ENG::CS::Light>(prop).radius = 10.0f;
+
+		core.entities.getComponent<ENG::CS::Model>(prop).mesh = "lamp.obj";
+		core.entities.getComponent<ENG::CS::BoxCollider>(prop).size = glm::vec3(0.2f, 1.0f, 0.2f);
 
 		return prop;
 	}
@@ -24,6 +27,14 @@ namespace Game
 		pct.parent = player;
 
 		//core.renderer.view = &pct;
+
+		ENG::EntityID crosshair = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
+		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(crosshair);
+		t2d.origin = glm::vec2(core.resources.texture("crosshair.png").getSize()) / 2.0f;
+		t2d.position = glm::vec2(core.window.getSize()) / 2.0f;
+
+		ENG::CS::Sprite& s = core.entities.getComponent<ENG::CS::Sprite>(crosshair);
+		s.texture = "crosshair.png";
 
 		return player;
 	}
@@ -90,7 +101,6 @@ namespace Game
 
 				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = id;
 				core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -3.5f };
-				core.entities.getComponent<ENG::CS::Transform>(pickup).rotation = glm::vec3(0.0f);
 				core.entities.getComponent<ENG::CS::Model>(pickup).hud = true;
 				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = true;
 			}
@@ -121,14 +131,12 @@ namespace Game
 			core.window.close();
 
 		if (core.window.isKeyPressed(GLFW_KEY_Q))
-			transform->position = glm::vec3(0.0f, 10.0f, 0.0f);
+			core.renderer.draw_colliders = !core.renderer.draw_colliders;
 
 		mouselook(core);
 		movement(core);
 		actions(core);
 
-		//transform->rotation = rotation;
 		core.renderer.view = transform;
-		//transform->rotation = glm::vec3(0.0f);
 	}
 }

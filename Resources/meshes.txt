@@ -3,3 +3,4 @@ Resources/Meshes/cube.obj
 Resources/Meshes/cube_inverted.obj
 Resources/Meshes/quad.obj
 Resources/Meshes/gun.obj
+Resources/Meshes/lamp.obj

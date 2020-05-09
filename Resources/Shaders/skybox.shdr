@@ -2,26 +2,29 @@
 #version 330 core
 
 layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec2 in_uv;
 
-out vec3 out_uv;
+out vec2 out_uv;
 
 uniform mat4 projection;
 uniform mat4 view;
 
 void main()
 {
-    out_uv = in_position;
+    out_uv = in_uv;
     gl_Position = projection * view * vec4(in_position, 1.0);
 }
 
 [FRAGMENT]
 #version 330 core
 
-in vec3 out_uv;
+uniform sampler2D texture;
 
-uniform samplerCube skybox;
+in vec2 out_uv;
+
+//uniform samplerCube skybox;
 
 void main()
 {
-	gl_FragColor = texture(skybox, out_uv);
+	gl_FragColor = texture2D(texture, out_uv);
 }

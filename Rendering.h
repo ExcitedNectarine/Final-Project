@@ -92,4 +92,6 @@ namespace ENG
 	* Uploads lighting information to shader.
 	*/
 	void setLights(Core& core, Shader& shader);
+
+	std::vector<EntityID> getEntitiesInView(ENG::Core& core);
 }

@@ -75,7 +75,7 @@ namespace Game
 			glm::vec3 pl_size = boxes[player].size * player_t.scale;
 
 			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			if (intersectAABBvAABB(portal_t.position, p_size, player_t.position, pl_size).intersects)
+			if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), player_t, boxes[player].size).intersects)
 			{
 				// If the player moves from one side of the portal to the other, teleport them.
 				if (side != portals[portal].prev_side)
@@ -158,7 +158,7 @@ namespace Game
 			glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
 			glm::vec3 pl_size = boxes[portals[id].player].size * player_t.scale;
 
-			if (intersectAABBvAABB(portal_t.position, p_size, player_t.position, pl_size).intersects)
+			if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), player_t, boxes[portals[id].player].size).intersects)
 				portal_t = preventNearClipping(core.settings, portal_t, player_t);
 			else
 				portal_t.scale.z = 0.0f;

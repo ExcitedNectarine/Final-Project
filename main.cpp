@@ -11,7 +11,7 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 
 	glm::vec2 window_size(core.settings.getf("width"), core.settings.getf("height"));
 
-	core.perspective = glm::perspective(glm::radians(core.settings.getf("fov")), window_size.x / window_size.y, 0.1f, 500.0f);
+	core.perspective = glm::perspective(glm::radians(core.settings.getf("fov")), window_size.x / window_size.y, 0.1f, 250.0f);
 	core.orthographic = glm::ortho(0.0f, window_size.x, window_size.y, 0.0f);
 
 	core.window.create(window_size, core.settings.get("title"));
@@ -91,6 +91,14 @@ ENG::EntityID createBarrier(ENG::Core& core, glm::vec3 pos)
 	return platform;
 }
 
+struct Rotator : ENG::Script
+{
+	void update(ENG::Core& core)
+	{
+		//core.entities.getComponent<ENG::CS::Transform>(id).rotation.y += 25.0f * core.delta;
+	}
+};
+
 int main()
 {
 	try
@@ -100,10 +108,9 @@ int main()
 
 		core.entities.addComponentPools<Game::Portal, Game::Pickup>();
 		core.window.lockMouse(true);
-		core.renderer.ambient = glm::vec3(0.5f);
-		//core.renderer.draw_colliders = true;
+		core.renderer.ambient = glm::vec3(0.1f);
 
-		// Create player
+		//// Create player
 		ENG::EntityID player = Game::createPlayer(core);
 
 		ENG::EntityID table_scene = core.entities.addEntity<ENG::CS::Transform>();
