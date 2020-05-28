@@ -13,6 +13,7 @@ namespace ENG
 
 		window = glfwCreateWindow(size.x, size.y, title.c_str(), NULL, NULL);
 		glfwMakeContextCurrent(window);
+		glfwSwapInterval(1);
 		glewInit();
 
 		const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());

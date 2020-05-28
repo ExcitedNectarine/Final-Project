@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Collision.h"
-#include "Rendering.h"
-#include "FrameBuffer.h"
+#include "Components.h"
 #include "Settings.h"
 
 namespace Game
@@ -12,10 +10,12 @@ namespace Game
 	struct Portal : ECSComponent<Portal>
 	{
 		EntityID other;
-		EntityID player;
-		glm::mat4 camera;
 		FrameBuffer frame;
-		int prev_side = 0;
+	};
+
+	struct Traveller : ECSComponent<Traveller>
+	{
+		glm::vec3 position_last_frame;
 	};
 
 	EntityID createPortal(Core& core);

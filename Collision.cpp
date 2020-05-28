@@ -23,7 +23,7 @@ namespace ENG
 			CS::Transform a_t = getWorldT(core.entities, a);
 			for (EntityID b : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 			{
-				if (a == b) continue;
+				if (a == b || boxes[b].trigger) continue;
 				CS::Transform b_t = getWorldT(core.entities, b);
 
 				IntersectData d;

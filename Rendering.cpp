@@ -31,105 +31,6 @@ namespace ENG
 		glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
 	}
 
-	//glm::vec3 frustumProject(glm::vec3 p, glm::mat4 projection, glm::mat4 view)
-	//{
-	//	glm::vec4 world_pos = glm::inverse(projection) * glm::inverse(view) * glm::vec4(p, 1.0f);
-	//	world_pos = world_pos / world_pos.w;
-	//	return glm::vec3(world_pos);
-	//}
-
-	//std::array<glm::vec3, 8> getFrustumVerts(glm::mat4 projection, glm::mat4 view)
-	//{
-	//	glm::vec3 max = glm::vec3(1.0f);
-	//	glm::vec3 min = glm::vec3(-1.0f);
-
-	//	std::array<glm::vec3, 8> verts =
-	//	{
-	//		min,
-	//		max,
-	//		{ max.x, min.y, min.z },
-	//		{ min.x, max.y, min.z },
-	//		{ min.x, min.y, max.z },
-	//		{ min.x, max.y, max.z },
-	//		{ max.x, min.y, max.z },
-	//		{ max.x, max.y, min.z }
-	//	};
-
-	//	for (glm::vec3& v : verts)
-	//	{
-	//		v = frustumProject(v, projection, view);
-	//	}
-
-	//	return verts;
-	//}
-
-	//std::vector<EntityID> getEntitiesInView(ENG::Core& core)
-	//{
-	//	std::vector<EntityID> in_view;
-
-	//	ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-	//	ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
-
-	//	CS::Transform pv_t = *core.renderer.view;//decompose(pv);
-
-	//	glm::vec3 f_x_axis = pv_t.right();
-	//	glm::vec3 f_z_axis = pv_t.forward();
-	//	glm::vec3 f_y_axis = glm::cross(f_x_axis, f_z_axis);
-
-	//	std::array<glm::vec3, 8> frustum_verts = getFrustumVerts(core.perspective, core.renderer.view->get());
-	//	glm::vec3 fp = frustumProject(glm::vec3(0.0f), core.perspective, core.renderer.view->get());
-
-	//	OUTPUT(glm::to_string(fp));
-
-	//	for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
-	//	{
-	//		CS::Transform t = getWorldT(core.entities, id);
-	//		glm::vec3 dist = t.position - fp;
-
-	//		glm::vec3 x_axis = t.right();
-	//		glm::vec3 z_axis = t.forward();
-	//		glm::vec3 y_axis = glm::cross(x_axis, y_axis);
-
-	//		glm::vec3 all_axes[6] = {
-	//			f_x_axis,
-	//			f_y_axis,
-	//			f_z_axis,
-	//			x_axis,
-	//			y_axis,
-	//			z_axis
-	//		};
-
-	//		glm::vec3 size = core.resources.mesh(models[id].mesh).getSize() * t.scale;
-	//		std::array<glm::vec3, 8> model_verts = getBoxVerts(size, t.get());
-
-	//		bool colliding = true;
-	//		for (int i = 0; i < 6; i++)
-	//		{
-	//			glm::vec3 axis = glm::normalize(all_axes[i]);
-
-	//			float a_min, a_max, b_min, b_max;
-	//			findMinMaxAlongAxis(axis, frustum_verts, a_min, a_max);
-	//			findMinMaxAlongAxis(axis, model_verts, b_min, b_max);
-
-	//			float proj_dist = glm::abs(glm::dot(dist, axis));
-	//			float a_radius = glm::abs((a_max - a_min) / 2.0f);
-	//			float b_radius = glm::abs((b_max - b_min) / 2.0f);
-
-	//			// if the projected distance is greater than the projected radius of both boxes, then they don't collide on the axis.
-	//			if (proj_dist > (a_radius + b_radius))
-	//			{
-	//				colliding = false;
-	//				break;
-	//			}
-	//		}
-
-	//		if (colliding)
-	//			in_view.push_back(id);
-	//	}
-
-	//	return in_view;
-	//}
-
 	bool inView(CS::Transform& view, const glm::vec3& pos, const glm::vec3& size)
 	{
 		glm::vec3 min = pos - size;
@@ -165,28 +66,14 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
 
-		std::vector<std::pair<float, EntityID>> distances;
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
-			distances.emplace_back(glm::distance(core.renderer.view->position, getWorldT(core.entities, id).position), id);
-		std::sort(distances.begin(), distances.end());
-
-		// Draw opaque models from closest to furthest.
-		for (auto& p : distances)
-		{
-			CS::Model& m = models[p.second];
-			CS::Transform t = getWorldT(core.entities, p.second);
-
-			if (m.hud || !inView(*core.renderer.view, t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
-			drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(p.second));
-		}
-
 		//OUTPUT(getEntitiesInView(core).size());
-		//for (EntityID id : getEntitiesInView(core))
-		//{
-		//	CS::Model& m = models[id];
-		//	CS::Transform t = getWorldT(core.entities, id);
-		//	drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(id));
-		//}
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
+		{
+			CS::Model& m = models[id];
+			CS::Transform t = getWorldT(core.entities, id);
+			if (m.hud || !inView(*core.renderer.view, t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
+			drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(id));
+		}
 	}
 
 	void drawModelsToHUD(Core& core)
@@ -392,23 +279,16 @@ namespace ENG
 		core.resources.shader("colliders.shdr").setUniform("projection", core.perspective);
 		core.resources.shader("colliders.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
 
-		//std::vector<EntityID> box_entities = core.entities.entitiesWith<CS::Transform, CS::BoxCollider>();
-		//for (std::size_t i = 0; i < box_entities.size(); i++)
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 		{
 			CS::Transform t = getWorldT(core.entities, id);
 			t.scale *= boxes[id].size;
-
-			//core.resources.shader("colliders.shdr").setUniform("transform[" + std::to_string(i) + "]", t.get());
 
 			core.resources.shader("colliders.shdr").setUniform("transform", t.get());
 			core.resources.shader("colliders.shdr").bind();
 
 			glDrawArrays(GL_LINE_STRIP, 0, cube.vertexCount());
 		}
-
-		//core.resources.shader("colliders.shdr").bind();
-		//glDrawArraysInstanced(GL_LINE_STRIP, 0, cube.vertexCount(), boxes.size());
 	}
 
 	/**
@@ -426,9 +306,12 @@ namespace ENG
 		{
 			CS::Transform t = getWorldT(core.entities, ents[i]);
 
+			// Scale light radius by average of scale
+			float scale_average = (t.scale.x + t.scale.y + t.scale.z) / 3.0f;
+
 			shader.setUniform("lights[" + std::to_string(i) + "].position", t.position);
 			shader.setUniform("lights[" + std::to_string(i) + "].colour", lights[ents[i]].colour);
-			shader.setUniform("lights[" + std::to_string(i) + "].radius", lights[ents[i]].radius);
+			shader.setUniform("lights[" + std::to_string(i) + "].radius", lights[ents[i]].radius * scale_average);
 		}
 	}
 }

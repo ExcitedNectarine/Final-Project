@@ -1,6 +1,5 @@
 #include "Portal.h"
 #include "Core.h"
-#include <glm/gtx/string_cast.hpp>
 
 namespace Game
 {
@@ -10,6 +9,7 @@ namespace Game
 		
 		CS::Model& m = core.entities.getComponent<CS::Model>(portal);
 		m.mesh = "portal_border.obj";
+		m.texture = "portal_border.png";
 
 		ENG::EntityID b1 = core.entities.addEntity<CS::Transform, CS::BoxCollider>();
 		ENG::EntityID b2 = core.entities.addEntity<CS::Transform, CS::BoxCollider>();
@@ -42,58 +42,63 @@ namespace Game
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
 		ComponentMap<Portal>& portals = entities.getPool<Portal>();
+		ComponentMap<Traveller>& travellers = entities.getPool<Traveller>();
 
-		for (EntityID id : entities.entitiesWith<CS::Transform, Portal>())
-		{
-			CS::Transform portal_t = getWorldT(entities, id);
-			CS::Transform player_t = getWorldT(entities, portals[id].player);
+		// Create the textures for the portal's cameras to draw to.
+		for (EntityID portal : entities.entitiesWith<CS::Transform, Portal>())
+			portals[portal].frame.create(size);
 
-			portals[id].prev_side = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), player_t.position - portal_t.position)));
-			portals[id].frame.create(size);
-		}
+		// Set the traveller's positions at the start to avoid unwanted teleportations.
+		for (EntityID traveller : entities.entitiesWith<CS::Transform, Traveller>())
+			travellers[traveller].position_last_frame = getWorldT(entities, traveller).position;
 	}
 
 	void updatePortals(Entities& entities)
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<Portal>& portals = entities.getPool<Portal>();
 		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
+		ComponentMap<Portal>& portals = entities.getPool<Portal>();
+		ComponentMap<Traveller>& travellers = entities.getPool<Traveller>();
 
-		for (EntityID portal : entities.entitiesWith<CS::Transform, Portal>())
+		for (EntityID traveller : entities.entitiesWith<CS::Transform, CS::BoxCollider, Traveller>())
 		{
-			EntityID player = portals[portal].player;
-			EntityID other = portals[portal].other;
+			CS::Transform traveller_t = getWorldT(entities, traveller);
 
-			CS::Transform portal_t = getWorldT(entities, portal);
-			CS::Transform player_t = getWorldT(entities, player);
-			CS::Transform other_t = getWorldT(entities, other);
-
-			// Check which side of portal player is on
-			int side = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - player_t.position)));
-
-			glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
-			glm::vec3 pl_size = boxes[player].size * player_t.scale;
-
-			// Is the player colliding with the portal? Basically check if the player could travel through the portal.
-			if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), player_t, boxes[player].size).intersects)
+			bool teleported = false;
+			for (EntityID portal : entities.entitiesWith<CS::Transform, Portal>())
 			{
-				// If the player moves from one side of the portal to the other, teleport them.
-				if (side != portals[portal].prev_side)
+				EntityID other = portals[portal].other;
+
+				CS::Transform portal_t = getWorldT(entities, portal);
+				CS::Transform other_t = getWorldT(entities, other);
+
+				glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
+				glm::vec3 t_size = boxes[traveller].size * traveller_t.scale;
+
+				// Is the traveller colliding with the portal? Basically check if the traveller could travel through the portal.
+				if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), traveller_t, t_size).intersects)
 				{
-					glm::mat4 m = other_t.get() * glm::inverse(portal_t.get()) * player_t.get();
-					transforms[player] = ENG::decompose(m);
+					// Check which side of portal player is on, and previous side.
+					int side_this_frame = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - traveller_t.position)));
+					int side_last_frame = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - travellers[traveller].position_last_frame)));
 
-					// Never rotate on Z, only X and Y.
-					transforms[player].rotation.z = 0.0f;
+					// If the player moves from one side of the portal to the other, teleport them.
+					if (side_this_frame != side_last_frame)
+					{
+						glm::mat4 m = other_t.get() * glm::inverse(portal_t.get()) * traveller_t.get();
+						transforms[traveller] = decompose(m);
 
-					// Prevents double teleporting
-					portals[other].prev_side = side;
+						// Never rotate on Z, only X and Y.
+						transforms[traveller].rotation.z = 0.0f;
+
+						travellers[traveller].position_last_frame = getWorldT(entities, traveller).position;
+						teleported = true;
+					}
 				}
 			}
 
-			// Transform camera match players transform relative to the portal.
-			portals[portal].camera = portal_t.get() * glm::inverse(other_t.get()) * getWorldT(entities, player).get();
-			portals[portal].prev_side = side;
+			if (!teleported)
+				travellers[traveller].position_last_frame = traveller_t.position;
 		}
 	}
 
@@ -105,29 +110,40 @@ namespace Game
 		CS::Transform view_t;
 		CS::Transform* view_d = core.renderer.view;
 
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, Portal>())
+		for (EntityID portal : core.entities.entitiesWith<CS::Transform, Portal>())
 		{
-			CS::Transform t = getWorldT(core.entities, id);
+			EntityID other = portals[portal].other;
+
+			CS::Transform portal_t = getWorldT(core.entities, portal);
+			CS::Transform other_t = getWorldT(core.entities, other);
 
 			// Don't render to portal if its not in view.
-			if (!inView(*view_d, t.position, glm::vec3(1.0f))) continue;
+			if (!inView(*view_d, portal_t.position, glm::vec3(1.0f))) continue;
+			
+			// Get the view for the camera pointed at the portal.
+			glm::mat4 camera = other_t.get() * glm::inverse(portal_t.get()) * view_d->get();
+			glm::mat4 view = glm::inverse(camera);
+			view_t = decompose(camera);
 
-			portals[id].frame.bind();
-			view_t = decompose(portals[portals[id].other].camera);
-			glm::mat4 view = glm::inverse(portals[portals[id].other].camera);
-
+			// Set the core's view to the camera view
 			core.renderer.view = &view_t;
+
+			// Update with new view
+			updateRenderer(core);
 			updateSprites(core);
+
+			portals[portal].frame.bind();
 
 			core.resources.shader("default.shdr").setUniform("view", view);
 			core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
 
+			// Draw the scene to the framebuffer.
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawSkybox(core.resources);
 			drawModels(core);
 			drawSprites3D(core);
 
-			portals[id].frame.unbind();
+			portals[portal].frame.unbind();
 		}
 
 		core.renderer.view = view_d;
@@ -148,18 +164,21 @@ namespace Game
 		Mesh& cube = core.resources.mesh("cube.obj");
 		cube.bind();
 
+		CS::Transform view_t = *core.renderer.view;
+
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, Portal>())
 		{
 			CS::Transform portal_t = getWorldT(core.entities, id);
-			CS::Transform player_t = getWorldT(core.entities, portals[id].player);
 
 			if (!inView(*core.renderer.view, portal_t.position, glm::vec3(1.0f))) continue;
 
 			glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
-			glm::vec3 pl_size = boxes[portals[id].player].size * player_t.scale;
+			glm::vec3 pl_size = glm::vec3(0.5f) * view_t.scale;
 
-			if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), player_t, boxes[portals[id].player].size).intersects)
-				portal_t = preventNearClipping(core.settings, portal_t, player_t);
+			// Only try to prevent the near plane clipping if the player is actually able to pass through the portal.
+			// This allows the portal to be a flat plane otherwise.
+			if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), view_t, pl_size).intersects)
+				portal_t = preventNearClipping(core.settings, portal_t, view_t);
 			else
 				portal_t.scale.z = 0.0f;
 

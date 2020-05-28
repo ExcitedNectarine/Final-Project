@@ -2,3 +2,7 @@ Resources/Textures/notexture.png
 Resources/Textures/Space3.jpg
 Resources/Textures/crosshair.png
 Resources/Textures/skybox.png
+Resources/Textures/gun.png
+Resources/Textures/metal.png
+Resources/Textures/portal_border.png
+Resources/Textures/lamp.png

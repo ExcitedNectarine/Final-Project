@@ -1,19 +1,16 @@
 #pragma once
 
-#include "Core.h"
+#include "Portal.h"
+#include "Pickup.h"
 
 namespace Game
 {
-	struct Pickup : ENG::ECSComponent<Pickup>
-	{
-		bool active = false;
-	};
-
 	ENG::EntityID createPlayer(ENG::Core& core);
-	ENG::EntityID createPickup(ENG::Core& core, glm::vec3 pos);
 
 	struct Player: ENG::Script
 	{
+		Player() : last_mouse(0.0f), mouse_offset(0.0f), velocity(0.0f) {}
+
 		ENG::CS::Transform* transform;
 		ENG::CS::Controller* controller;
 		ENG::CS::BoxCollider* box;

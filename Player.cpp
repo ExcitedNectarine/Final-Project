@@ -1,32 +1,28 @@
 #include "Player.h"
+#include "Core.h"
 
 namespace Game
 {
-	ENG::EntityID createPickup(ENG::Core& core, glm::vec3 pos)
-	{
-		ENG::EntityID prop = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Light, ENG::CS::BoxCollider, Game::Pickup>();
-
-		core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
-		core.entities.getComponent<ENG::CS::Light>(prop).colour = glm::normalize(glm::vec3(ENG::randomFloat(1.0f, 10.0f), ENG::randomFloat(1.0f, 10.0f), ENG::randomFloat(1.0f, 10.0f))) * 2.0f;
-		core.entities.getComponent<ENG::CS::Light>(prop).radius = 10.0f;
-
-		core.entities.getComponent<ENG::CS::Model>(prop).mesh = "lamp.obj";
-		core.entities.getComponent<ENG::CS::BoxCollider>(prop).size = glm::vec3(0.2f, 1.0f, 0.2f);
-
-		return prop;
-	}
-
 	ENG::EntityID createPlayer(ENG::Core& core)
 	{
-		ENG::EntityID player = core.entities.addEntity<ENG::CS::Script, ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Controller, ENG::CS::Model>();
-		core.entities.getComponent<ENG::CS::Script>(player).script = std::make_shared<Game::Player>();
+		ENG::EntityID player = core.entities.addEntity<
+			ENG::CS::Script,
+			ENG::CS::Transform,
+			ENG::CS::BoxCollider,
+			ENG::CS::Controller,
+			ENG::CS::Model,
+			Game::Traveller
+		>();
 
-		ENG::EntityID pc = core.entities.addEntity<ENG::CS::Transform>();
-		ENG::CS::Transform& pct = core.entities.getComponent<ENG::CS::Transform>(pc);
-		pct.position.y = 1.0f;
-		pct.parent = player;
+		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
+		t.parent = player;
+		t.position = { 0.2f, -0.2f, -0.2f };
 
-		//core.renderer.view = &pct;
+		ENG::CS::Model& model = core.entities.getComponent<ENG::CS::Model>(gun);
+		model.mesh = "gun.obj";
+		model.texture = "gun.png";
+		model.hud = true;
 
 		ENG::EntityID crosshair = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
 		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(crosshair);
@@ -35,6 +31,9 @@ namespace Game
 
 		ENG::CS::Sprite& s = core.entities.getComponent<ENG::CS::Sprite>(crosshair);
 		s.texture = "crosshair.png";
+
+		ENG::CS::Script& scr = core.entities.getComponent<ENG::CS::Script>(player);
+		scr.script = std::make_shared<Game::Player>();
 
 		return player;
 	}
@@ -46,7 +45,7 @@ namespace Game
 		transform->position.y = 5.0f;
 
 		box = &core.entities.getComponent<ENG::CS::BoxCollider>(id);
-		box->size = { 0.5f, 0.5f, 0.5f };
+		box->size = { 0.25f, 0.5f, 0.25f };
 	}
 
 	void Player::mouselook(ENG::Core& core)
@@ -61,8 +60,6 @@ namespace Game
 
 	void Player::movement(ENG::Core& core)
 	{
-		//transform->rotation = rotation;
-
 		direction = glm::vec3(0.0f);
 		if (core.window.isKeyPressed(GLFW_KEY_W)) direction -= transform->forward();
 		else if (core.window.isKeyPressed(GLFW_KEY_S)) direction += transform->forward();
@@ -71,7 +68,7 @@ namespace Game
 
 		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
 		{
-			velocity.y = 8.0f;
+			velocity.y = 7.5f;
 			controller->on_floor = false;
 		}
 
@@ -82,7 +79,7 @@ namespace Game
 		velocity.z = direction.z * speed;
 
 		if (!controller->on_floor)
-			velocity.y -= 9.1f * core.delta;
+			velocity.y -= 9.8f * core.delta;
 		else
 			velocity.y = 0.0f;
 
@@ -97,11 +94,6 @@ namespace Game
 
 			if (pickup != 0 && core.entities.hasComponent<Game::Pickup>(pickup))
 			{
-				OUTPUT("Pickup up " << pickup);
-
-				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = id;
-				core.entities.getComponent<ENG::CS::Transform>(pickup).position = { 0.0f, 0.0f, -3.5f };
-				core.entities.getComponent<ENG::CS::Model>(pickup).hud = true;
 				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = true;
 			}
 			else pickup = 0;
@@ -113,11 +105,9 @@ namespace Game
 			if (floor != 0)
 			{
 				glm::vec3 new_pos = transform->position + dist * -transform->forward();
-				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size.y;
+				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size.y * core.entities.getComponent<ENG::CS::Transform>(pickup).scale.y;
 
-				core.entities.getComponent<ENG::CS::Transform>(pickup).parent = 0;
 				core.entities.getComponent<ENG::CS::Transform>(pickup).position = new_pos;
-				core.entities.getComponent<ENG::CS::Model>(pickup).hud = false;
 				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = false;
 
 				pickup = 0;
@@ -132,6 +122,9 @@ namespace Game
 
 		if (core.window.isKeyPressed(GLFW_KEY_Q))
 			core.renderer.draw_colliders = !core.renderer.draw_colliders;
+
+		if (core.window.isKeyPressed(GLFW_KEY_E))
+			transform->position = glm::vec3(2.0f);
 
 		mouselook(core);
 		movement(core);
