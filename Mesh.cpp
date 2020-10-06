@@ -62,11 +62,14 @@ namespace ENG
 		// Add vertices to buffers.
 		for (const Vertex& vertex : vertices)
 		{
-			if (vertex.position.x < min.x && vertex.position.y < min.y && vertex.position.z < min.z)
-				min = vertex.position;
+			//if (vertex.position.x < min.x && vertex.position.y < min.y && vertex.position.z < min.z)
+			//	min = vertex.position;
 
-			if (vertex.position.x > max.x && vertex.position.y > max.y && vertex.position.z > max.z)
-				max = vertex.position;
+			//if (vertex.position.x > max.x && vertex.position.y > max.y && vertex.position.z > max.z)
+			//	max = vertex.position;
+
+			min = glm::min(vertex.position, min);
+			max = glm::max(vertex.position, max);
 
 			positions.push_back(vertex.position.x);
 			positions.push_back(vertex.position.y);

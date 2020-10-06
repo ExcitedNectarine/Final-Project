@@ -10,19 +10,19 @@ namespace Game
 			ENG::CS::Transform,
 			ENG::CS::BoxCollider,
 			ENG::CS::Controller,
-			ENG::CS::Model,
+		//	ENG::CS::Model,
 			Game::Traveller
 		>();
 
-		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
-		t.parent = player;
-		t.position = { 0.2f, -0.2f, -0.2f };
+		//ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+		//ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
+		//t.parent = player;
+		//t.position = { 0.2f, -0.2f, -0.2f };
 
-		ENG::CS::Model& model = core.entities.getComponent<ENG::CS::Model>(gun);
-		model.mesh = "gun.obj";
-		model.texture = "gun.png";
-		model.hud = true;
+		//ENG::CS::Model& model = core.entities.getComponent<ENG::CS::Model>(gun);
+		//model.mesh = "gun.obj";
+		//model.texture = "gun.png";
+		//model.hud = true;
 
 		ENG::EntityID crosshair = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
 		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(crosshair);

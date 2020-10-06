@@ -214,6 +214,39 @@ namespace ENG
 	}
 
 	/**
+	* Get the world-space vertex positions of the view frustum.
+	*/
+	std::array<glm::vec3, 8> getFrustumVerts(glm::mat4 view, glm::mat4 perspective)
+	{
+		glm::vec3 min{ -1.0f };
+		glm::vec3 max{ 1.0f };
+
+		// All 8 vertices in box
+		// First generate as axis aligned.
+		std::array<glm::vec3, 8> verts =
+		{
+			min,
+			max,
+			{ max.x, min.y, min.z },
+			{ min.x, max.y, min.z },
+			{ min.x, min.y, max.z },
+			{ min.x, max.y, max.z },
+			{ max.x, min.y, max.z },
+			{ max.x, max.y, min.z }
+		};
+
+		// Then turn the box into a frustum based on the inverse perspective matrix
+		// and apply view matrix as transformation
+		for (glm::vec3& v : verts)
+		{
+			glm::vec4 new_p = view * glm::inverse(perspective) * glm::vec4(v, 1.0f);
+			v = glm::vec3(new_p) / new_p.w;
+		}
+
+		return verts;
+	}
+
+	/**
 	* Find the minimum and maximum projected vertices of a box along an axis.
 	*/
 	void findMinMaxAlongAxis(glm::vec3 axis, const std::array<glm::vec3, 8>& verts, float& min, float& max)
@@ -229,12 +262,119 @@ namespace ENG
 		}
 	}
 
+	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, Camera c)
+	{
+		IntersectData data;
+		data.intersects = true;
+
+		// Use transformation forward and right vectors as axis, and the up vector is cross between forward and right
+		// Works for the OBB, because faces will always point in same direction as right, forward and up vectors.
+		glm::vec3 a_x_axis = a_t.right();
+		glm::vec3 a_z_axis = a_t.forward();
+		glm::vec3 a_y_axis = glm::cross(a_x_axis, a_z_axis);
+
+		/// FRUSTUM SHAPE ACTS LIKE A DIAMOND SHAPE MMIDDLE
+
+		// ATTENTION ITS THE NORMALS THAT ARE WRONG!!!, USE FACE NORMALS FOR FRUSTUM
+		// CAN ONLY USE FORWARD VECTOR, MUST CALCULATE THE REST
+		glm::vec3 b_z_axis = -view_t.forward();
+		glm::vec3 b_r_axis = glm::rotateY(b_z_axis, glm::radians(90.0f + (c.fov_x / 2.0f)));
+		glm::vec3 b_l_axis = glm::rotateY(b_z_axis, -glm::radians(90.0f + (c.fov_x / 2.0f)));
+		glm::vec3 b_u_axis = glm::rotateX(b_z_axis, glm::radians(90.0f + (c.fov_y / 2.0f)));
+		glm::vec3 b_d_axis = glm::rotateX(b_z_axis, -glm::radians(90.0f + (c.fov_y / 2.0f)));
+
+		// All 8 axis
+		std::array<glm::vec3, 23> all_axes =
+		{
+			a_x_axis,
+			a_y_axis,
+			a_z_axis,
+
+			b_z_axis,
+			b_r_axis,
+			b_l_axis,
+			b_u_axis,
+			b_d_axis,
+
+			glm::cross(a_x_axis, b_z_axis),
+			glm::cross(a_x_axis, b_r_axis),
+			glm::cross(a_x_axis, b_l_axis),
+			glm::cross(a_x_axis, b_u_axis),
+			glm::cross(a_x_axis, b_d_axis),
+
+			glm::cross(a_y_axis, b_z_axis),
+			glm::cross(a_y_axis, b_r_axis),
+			glm::cross(a_y_axis, b_l_axis),
+			glm::cross(a_y_axis, b_u_axis),
+			glm::cross(a_y_axis, b_d_axis),
+
+			glm::cross(a_z_axis, b_z_axis),
+			glm::cross(a_z_axis, b_r_axis),
+			glm::cross(a_z_axis, b_l_axis),
+			glm::cross(a_z_axis, b_u_axis),
+			glm::cross(a_z_axis, b_d_axis)
+		};
+
+		// Get vertices of box A and frustum B
+		std::array<glm::vec3, 8> a_verts = getBoxVerts(a_size, a_t.get()); // box verts
+		std::array<glm::vec3, 8> b_verts = getFrustumVerts(view_t.get(), c.get()); // should be frustum verts
+
+		// Get midpoint of view frustum.
+		float mid_dist = (c.far - c.near) / 2 + c.near;
+		glm::vec3 f_mid = view_t.position + mid_dist * -view_t.forward();
+
+		glm::vec3 dist = f_mid - a_t.position;
+		float shortest_overlap = std::numeric_limits<float>::max();
+		for (int i = 0; i < 23; i++)
+		{
+			// Stops cross products being zero.
+			if (all_axes[i] == glm::vec3(0.0f))
+				continue;
+
+			glm::vec3 axis = glm::normalize(all_axes[i]);
+
+			float a_min, a_max, b_min, b_max;
+			findMinMaxAlongAxis(axis, a_verts, a_min, a_max);
+			findMinMaxAlongAxis(axis, b_verts, b_min, b_max);
+
+			float proj_dist = glm::abs(glm::dot(dist, axis));
+			float a_radius = glm::abs((a_max - a_min) / 2.0f);
+			float b_radius = glm::abs((b_max - b_min) / 2.0f);
+
+			// if the projected distance is greater than the projected radius of both boxes, then they don't collide on the axis.
+			if (proj_dist > (a_radius + b_radius))
+			{
+				data.intersects = false;
+				break;
+			}
+
+			else // if they intersect on the axis
+			{
+				float overlap_dist = glm::abs(glm::min(a_max, b_max) - glm::max(a_min, b_min));
+				if (overlap_dist < shortest_overlap)
+				{
+					shortest_overlap = overlap_dist;
+					data.normal = axis; // use the least intersecting axis as the normal to resolve collision
+				}
+			}
+		}
+
+		if (data.intersects)
+		{
+			float a_pos = glm::dot(a_t.position, data.normal);
+			float b_pos = glm::dot(view_t.position, data.normal);
+			data.distance = shortest_overlap;
+			data.normal *= (a_pos < b_pos ? 1.0f : -1.0f);
+		}
+
+		return data;
+	}
+
 	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size)
 	{
 		IntersectData data;
 		data.intersects = true;
 
-		//glm::vec3 dist = glm::max(a_t.position, b_t.position) - glm::min(a_t.position, b_t.position);
 		glm::vec3 dist = b_t.position - a_t.position;
 
 		// Use transformation forward and right vectors as axis, and the up vector is cross between forward and right

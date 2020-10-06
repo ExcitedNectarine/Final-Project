@@ -1,6 +1,6 @@
 title=Non-Euclidean Puzzler
-width=1280
-height=720
+width=1920
+height=1080
 fov=90
 meshes=Resources/meshes.txt
 textures=Resources/textures.txt

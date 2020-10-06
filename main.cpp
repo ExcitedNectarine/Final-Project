@@ -193,7 +193,7 @@ void createImpossibleRooms(ENG::Core& core)
 
 	EntityID room2 = createRoom(core, "notexture.png");
 	CS::Transform& room2_t = core.entities.getComponent<CS::Transform>(room2);
-	room2_t.position.x = 50.0f;
+	//room2_t.position.x = 50.0f;
 	room2_t.rotation.y = 45.0f;
 	room2_t.scale.x *= 0.25f;
 	room2_t.scale.z *= 0.25f;
@@ -222,27 +222,97 @@ void createImpossibleRooms(ENG::Core& core)
 	tb.position.y = 0.01f;
 }
 
+struct CBox : ENG::Script
+{
+	glm::vec3 vel;
+	float speed = 5.0f;
+
+	void update(ENG::Core& core)
+	{
+		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(id);
+		//t.rotation.y += 45.0f * core.delta;
+
+		vel = glm::vec3(0.0f);
+
+		if (core.window.isKeyPressed(GLFW_KEY_UP))
+			vel.z = -speed;
+		if (core.window.isKeyPressed(GLFW_KEY_DOWN))
+			vel.z = speed;
+		if (core.window.isKeyPressed(GLFW_KEY_LEFT))
+			vel.x = -speed;
+		if (core.window.isKeyPressed(GLFW_KEY_RIGHT))
+			vel.x = speed;
+		if (core.window.isKeyPressed(GLFW_KEY_U))
+			vel.y = speed;
+		if (core.window.isKeyPressed(GLFW_KEY_J))
+			vel.y = -speed;
+
+		t.position += vel * core.delta;
+
+		ENG::Camera cam(glm::vec2(1.0f), 70.0f, 1.0f, 10.0f);
+		ENG::CS::Transform ct;
+		ct.position = { 0.0f, 10.0f, 0.0f };
+
+		ENG::IntersectData d = ENG::intersectOBBvFrustum(t, glm::vec3(1.0f), ct, cam);
+		if (d.intersects)
+			core.entities.getComponent<ENG::CS::Model>(id).texture = "Space3.jpg";
+		else
+			core.entities.getComponent<ENG::CS::Model>(id).texture = "notexture.png";
+	}
+};
+
+void frustumCollisions(ENG::Core& core)
+{
+	using namespace ENG;
+
+	EntityID p = Game::createPlayer(core);
+	createBarrier(core, { 0.0f, -2.0f, 0.0f });
+
+	Camera cam(glm::vec2(1.0f), 70.0f, 1.0f, 10.0f);
+	CS::Transform t;
+	t.position = { 0.0f, 10.0f, 0.0f };
+	t.rotation = { 0.0f, 0.0f, 0.0f };
+
+	// Test box
+	EntityID b = core.entities.addEntity<CS::Transform, CS::Model, CS::BoxCollider, CS::Script>();
+	core.entities.getComponent<CS::Script>(b).script = std::make_shared<CBox>();
+
+	// show actual mesh for frustum
+	EntityID fm = core.entities.addEntity<CS::Transform, CS::Model>();
+	CS::Model& fmod = core.entities.getComponent<CS::Model>(fm);
+	fmod.mesh = "frustumcube.obj";
+
+	ENG::Mesh& m = core.resources.mesh(fmod.mesh);
+	for (int i = 0; i < m.vertexCount(); i++)
+	{
+		glm::vec4 new_p = t.get() * glm::inverse(cam.get()) * glm::vec4(m[i].position, 1.0f);
+		m[i].position = glm::vec3(new_p) / new_p.w;
+	}
+}
+
 int main()
 {
 	try
 	{
-		int i = 0;
-		do {
-			std::cout << "Press 1 for portal demo 1 (table scene), or press 2 for portal demo 2 (impossible room). ";
-			std::cin >> i;
-		} while (i != 1 && i != 2);
+		//int i = 0;
+		//do {
+		//	std::cout << "Press 1 for portal demo 1 (table scene), or press 2 for portal demo 2 (impossible room). ";
+		//	std::cin >> i;
+		//} while (i != 1 && i != 2);
 
 		ENG::Core core;
 		createCore(core, "Resources/settings.set");
 
 		core.entities.addComponentPools<Game::Portal, Game::Traveller, Game::Pickup>();
 		core.window.lockMouse(true);
-		core.renderer.ambient = glm::vec3(0.8f);
+		core.renderer.ambient = glm::vec3(0.5f);
 
-		if (i == 1)
-			createTableScene(core);
-		else if (i == 2)
-			createImpossibleRooms(core);
+		frustumCollisions(core);
+
+		//if (i == 1)
+		//	createTableScene(core);
+		//else if (i == 2)
+		//	createImpossibleRooms(core);
 
 		run(core);
 	}

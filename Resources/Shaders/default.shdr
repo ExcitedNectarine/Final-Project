@@ -50,7 +50,7 @@ void main()
 {
 	vec3 normal = normalize(out_normal);
 	vec3 total_light = ambient;
-	vec4 pixel = texture2D(texture, out_uv);// * vec4(out_colour, 1.0);
+	vec4 pixel = texture2D(texture, out_uv);
 	
 	float distance;
 	float attenuation;

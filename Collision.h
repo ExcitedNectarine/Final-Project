@@ -6,6 +6,7 @@
 #include "Script.h"
 
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 namespace ENG
 {
@@ -77,6 +78,30 @@ namespace ENG
 	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir);
 
 	std::array<glm::vec3, 8> getBoxVerts(glm::vec3 size, glm::mat4 t);
+	std::array<glm::vec3, 8> getFrustumVerts(glm::mat4 view, glm::mat4 perspective);
 	void findMinMaxAlongAxis(glm::vec3 axis, const std::array<glm::vec3, 8>& verts, float& min, float& max);
 	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size);
+
+	struct Camera
+	{
+		float aspect;
+		float fov_y;
+		float fov_x;
+		float near;
+		float far;
+
+		Camera(glm::vec2 size, float fov, float near, float far) : near(near), far(far)
+		{
+			aspect = size.x / size.y;
+			fov_y = fov;
+			fov_x = static_cast<float>(glm::degrees(2 * glm::atan(glm::tan(fov_y * 0.5) * aspect)));
+		}
+
+		glm::mat4 get()
+		{
+			return glm::perspective(glm::radians(fov_y), aspect, near, far);
+		}
+	};
+
+	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, Camera c);
 }
