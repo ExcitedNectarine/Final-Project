@@ -187,14 +187,14 @@ namespace ENG
 	/**
 	* Get the world space vertex positions of bounding box.
 	*/
-	std::array<glm::vec3, 8> getBoxVerts(glm::vec3 size, glm::mat4 t)
+	std::vector<glm::vec3> getBoxVerts(glm::vec3 size, glm::mat4 t)
 	{
 		glm::vec3 min = -size;
 		glm::vec3 max = size;
 
 		// All 8 vertices in box
 		// First generate as axis aligned.
-		std::array<glm::vec3, 8> verts =
+		std::vector<glm::vec3> verts =
 		{
 			min,
 			max,
@@ -216,14 +216,14 @@ namespace ENG
 	/**
 	* Get the world-space vertex positions of the view frustum.
 	*/
-	std::array<glm::vec3, 8> getFrustumVerts(glm::mat4 view, glm::mat4 perspective)
+	std::vector<glm::vec3> getFrustumVerts(glm::mat4 view, glm::mat4 perspective)
 	{
 		glm::vec3 min{ -1.0f };
 		glm::vec3 max{ 1.0f };
 
 		// All 8 vertices in box
 		// First generate as axis aligned.
-		std::array<glm::vec3, 8> verts =
+		std::vector<glm::vec3> verts =
 		{
 			min,
 			max,
@@ -262,109 +262,49 @@ namespace ENG
 		}
 	}
 
-	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, Camera c)
+	void findMinMaxAlongAxis(glm::vec3 axis, const std::vector<glm::vec3>& verts, float& min, float& max)
+	{
+		min = std::numeric_limits<float>::max();
+		max = -min;
+
+		for (std::size_t i = 0; i < verts.size(); i++)
+		{
+			float dot = glm::dot(verts[i], axis);
+			min = glm::min(min, dot);
+			max = glm::max(max, dot);
+		}
+	}
+
+
+	IntersectData seperatedAxisTest(const std::vector<glm::vec3>& a_verts, const std::vector<glm::vec3>& b_verts, const std::vector<glm::vec3>& axes)
 	{
 		IntersectData data;
 		data.intersects = true;
+		data.distance = std::numeric_limits<float>::max();
 
-		// Use transformation forward and right vectors as axis, and the up vector is cross between forward and right
-		// Works for the OBB, because faces will always point in same direction as right, forward and up vectors.
-		glm::vec3 a_x_axis = a_t.right();
-		glm::vec3 a_z_axis = a_t.forward();
-		glm::vec3 a_y_axis = glm::cross(a_x_axis, a_z_axis);
-
-		/// FRUSTUM SHAPE ACTS LIKE A DIAMOND SHAPE MMIDDLE
-
-		// ATTENTION ITS THE NORMALS THAT ARE WRONG!!!, USE FACE NORMALS FOR FRUSTUM
-		// CAN ONLY USE FORWARD VECTOR, MUST CALCULATE THE REST
-		glm::vec3 b_z_axis = -view_t.forward();
-		glm::vec3 b_r_axis = glm::rotateY(b_z_axis, glm::radians(90.0f + (c.fov_x / 2.0f)));
-		glm::vec3 b_l_axis = glm::rotateY(b_z_axis, -glm::radians(90.0f + (c.fov_x / 2.0f)));
-		glm::vec3 b_u_axis = glm::rotateX(b_z_axis, glm::radians(90.0f + (c.fov_y / 2.0f)));
-		glm::vec3 b_d_axis = glm::rotateX(b_z_axis, -glm::radians(90.0f + (c.fov_y / 2.0f)));
-
-		// All 8 axis
-		std::array<glm::vec3, 23> all_axes =
+		for (std::size_t i = 0; i < axes.size(); i++)
 		{
-			a_x_axis,
-			a_y_axis,
-			a_z_axis,
+			if (axes[i] == glm::vec3(0.0f)) continue;
+			glm::vec3 axis = glm::normalize(axes[i]);
 
-			b_z_axis,
-			b_r_axis,
-			b_l_axis,
-			b_u_axis,
-			b_d_axis,
+			float min_a, max_a, min_b, max_b;
+			findMinMaxAlongAxis(axis, a_verts, min_a, max_a);
+			findMinMaxAlongAxis(axis, b_verts, min_b, max_b);
 
-			glm::cross(a_x_axis, b_z_axis),
-			glm::cross(a_x_axis, b_r_axis),
-			glm::cross(a_x_axis, b_l_axis),
-			glm::cross(a_x_axis, b_u_axis),
-			glm::cross(a_x_axis, b_d_axis),
-
-			glm::cross(a_y_axis, b_z_axis),
-			glm::cross(a_y_axis, b_r_axis),
-			glm::cross(a_y_axis, b_l_axis),
-			glm::cross(a_y_axis, b_u_axis),
-			glm::cross(a_y_axis, b_d_axis),
-
-			glm::cross(a_z_axis, b_z_axis),
-			glm::cross(a_z_axis, b_r_axis),
-			glm::cross(a_z_axis, b_l_axis),
-			glm::cross(a_z_axis, b_u_axis),
-			glm::cross(a_z_axis, b_d_axis)
-		};
-
-		// Get vertices of box A and frustum B
-		std::array<glm::vec3, 8> a_verts = getBoxVerts(a_size, a_t.get()); // box verts
-		std::array<glm::vec3, 8> b_verts = getFrustumVerts(view_t.get(), c.get()); // should be frustum verts
-
-		// Get midpoint of view frustum.
-		float mid_dist = (c.far - c.near) / 2 + c.near;
-		glm::vec3 f_mid = view_t.position + mid_dist * -view_t.forward();
-
-		glm::vec3 dist = f_mid - a_t.position;
-		float shortest_overlap = std::numeric_limits<float>::max();
-		for (int i = 0; i < 23; i++)
-		{
-			// Stops cross products being zero.
-			if (all_axes[i] == glm::vec3(0.0f))
-				continue;
-
-			glm::vec3 axis = glm::normalize(all_axes[i]);
-
-			float a_min, a_max, b_min, b_max;
-			findMinMaxAlongAxis(axis, a_verts, a_min, a_max);
-			findMinMaxAlongAxis(axis, b_verts, b_min, b_max);
-
-			float proj_dist = glm::abs(glm::dot(dist, axis));
-			float a_radius = glm::abs((a_max - a_min) / 2.0f);
-			float b_radius = glm::abs((b_max - b_min) / 2.0f);
-
-			// if the projected distance is greater than the projected radius of both boxes, then they don't collide on the axis.
-			if (proj_dist > (a_radius + b_radius))
+			if (min_b > max_a || min_a > max_b)
 			{
 				data.intersects = false;
 				break;
 			}
-
-			else // if they intersect on the axis
+			else
 			{
-				float overlap_dist = glm::abs(glm::min(a_max, b_max) - glm::max(a_min, b_min));
-				if (overlap_dist < shortest_overlap)
+				float dist = glm::abs(glm::min(max_a, max_b) - glm::max(min_a, min_b));
+				if (dist < data.distance)
 				{
-					shortest_overlap = overlap_dist;
-					data.normal = axis; // use the least intersecting axis as the normal to resolve collision
+					data.distance = dist;
+					data.normal = axis * (min_a < min_b ? 1.0f : -1.0f);
 				}
 			}
-		}
-
-		if (data.intersects)
-		{
-			float a_pos = glm::dot(a_t.position, data.normal);
-			float b_pos = glm::dot(view_t.position, data.normal);
-			data.distance = shortest_overlap;
-			data.normal *= (a_pos < b_pos ? 1.0f : -1.0f);
 		}
 
 		return data;
@@ -372,12 +312,6 @@ namespace ENG
 
 	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size)
 	{
-		IntersectData data;
-		data.intersects = true;
-
-		glm::vec3 dist = b_t.position - a_t.position;
-
-		// Use transformation forward and right vectors as axis, and the up vector is cross between forward and right
 		glm::vec3 a_x_axis = a_t.right();
 		glm::vec3 a_z_axis = a_t.forward();
 		glm::vec3 a_y_axis = glm::cross(a_x_axis, a_z_axis);
@@ -387,7 +321,7 @@ namespace ENG
 		glm::vec3 b_y_axis = glm::cross(b_x_axis, b_z_axis);
 
 		// All 15 axis
-		std::array<glm::vec3, 15> all_axes =
+		std::vector<glm::vec3> all_axes =
 		{
 			a_x_axis,
 			a_y_axis,
@@ -407,52 +341,47 @@ namespace ENG
 		};
 
 		// Get vertices of boxes A and B
-		std::array<glm::vec3, 8> a_verts = getBoxVerts(a_size, a_t.get());
-		std::array<glm::vec3, 8> b_verts = getBoxVerts(b_size, b_t.get());
+		std::vector<glm::vec3> a_verts = getBoxVerts(a_size, a_t.get());
+		std::vector<glm::vec3> b_verts = getBoxVerts(b_size, b_t.get());
 
-		float shortest_overlap = std::numeric_limits<float>::max();
-		for (int i = 0; i < 15; i++)
+		return seperatedAxisTest(a_verts, b_verts, all_axes);
+	}
+
+	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, Camera c)
+	{
+		glm::vec3 a_x_axis = a_t.right();
+		glm::vec3 a_z_axis = a_t.forward();
+		glm::vec3 a_y_axis = glm::cross(a_x_axis, a_z_axis);
+
+		glm::vec3 b_z_axis = view_t.forward();
+		glm::vec3 b_r_axis = glm::rotateY(glm::vec3(0.0f, 0.0f, 1.0f), glm::radians(90.0f + (c.fov_x / 2.0f)));
+		glm::vec3 b_l_axis = glm::rotateY(glm::vec3(0.0f, 0.0f, 1.0f), -glm::radians(90.0f + (c.fov_x / 2.0f)));
+		glm::vec3 b_u_axis = glm::rotateX(glm::vec3(0.0f, 0.0f, 1.0f), glm::radians(90.0f + (c.fov_y / 2.0f)));
+		glm::vec3 b_d_axis = glm::rotateX(glm::vec3(0.0f, 0.0f, 1.0f), -glm::radians(90.0f + (c.fov_y / 2.0f)));
+
+		b_r_axis = glm::vec3(glm::vec4(b_r_axis, 0.0f) * view_t.get());
+		b_l_axis = glm::vec3(glm::vec4(b_l_axis, 0.0f) * view_t.get());
+		b_u_axis = glm::vec3(glm::vec4(b_u_axis, 0.0f) * view_t.get());
+		b_d_axis = glm::vec3(glm::vec4(b_d_axis, 0.0f) * view_t.get());
+
+		// All 8 axis
+		std::vector<glm::vec3> all_axes =
 		{
-			// Stops cross products being zero.
-			if (all_axes[i] == glm::vec3(0.0f))
-				continue;
+			a_x_axis,
+			a_y_axis,
+			a_z_axis,
 
-			glm::vec3 axis = glm::normalize(all_axes[i]);
+			b_z_axis,
+			b_r_axis,
+			b_l_axis,
+			b_u_axis,
+			b_d_axis,
+		};
 
-			float a_min, a_max, b_min, b_max;
-			findMinMaxAlongAxis(axis, a_verts, a_min, a_max);
-			findMinMaxAlongAxis(axis, b_verts, b_min, b_max);
+		// Get vertices of box A and frustum B
+		std::vector<glm::vec3> a_verts = getBoxVerts(a_size, a_t.get());
+		std::vector<glm::vec3> b_verts = getFrustumVerts(view_t.get(), c.get());
 
-			float proj_dist = glm::abs(glm::dot(dist, axis));
-			float a_radius = glm::abs((a_max - a_min) / 2.0f);
-			float b_radius = glm::abs((b_max - b_min) / 2.0f);
-
-			// if the projected distance is greater than the projected radius of both boxes, then they don't collide on the axis.
-			if (proj_dist > (a_radius + b_radius))
-			{
-				data.intersects = false;
-				break;
-			}
-
-			else // if they intersect on the axis
-			{
-				float overlap_dist = glm::abs(glm::min(a_max, b_max) - glm::max(a_min, b_min));
-				if (overlap_dist < shortest_overlap)
-				{
-					shortest_overlap = overlap_dist;
-					data.normal = axis; // use the least intersecting axis as the normal to resolve collision
-				}
-			}
-		}
-
-		if (data.intersects)
-		{
-			float a_pos = glm::dot(a_t.position, data.normal);
-			float b_pos = glm::dot(b_t.position, data.normal);
-			data.distance = shortest_overlap;
-			data.normal *= (a_pos < b_pos ? 1.0f : -1.0f);
-		}
-
-		return data;
+		return seperatedAxisTest(a_verts, b_verts, all_axes);
 	}
 }

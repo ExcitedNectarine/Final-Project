@@ -77,8 +77,9 @@ namespace ENG
 	*/
 	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir);
 
-	std::array<glm::vec3, 8> getBoxVerts(glm::vec3 size, glm::mat4 t);
-	std::array<glm::vec3, 8> getFrustumVerts(glm::mat4 view, glm::mat4 perspective);
+	IntersectData seperatedAxisTest(const std::vector<glm::vec3>& a_verts, const std::vector<glm::vec3>& b_verts, const std::vector<glm::vec3>& axes);
+	std::vector<glm::vec3> getBoxVerts(glm::vec3 size, glm::mat4 t);
+	std::vector<glm::vec3> getFrustumVerts(glm::mat4 view, glm::mat4 perspective);
 	void findMinMaxAlongAxis(glm::vec3 axis, const std::array<glm::vec3, 8>& verts, float& min, float& max);
 	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size);
 

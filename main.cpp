@@ -255,9 +255,9 @@ struct CBox : ENG::Script
 
 		ENG::IntersectData d = ENG::intersectOBBvFrustum(t, glm::vec3(1.0f), ct, cam);
 		if (d.intersects)
-			core.entities.getComponent<ENG::CS::Model>(id).texture = "Space3.jpg";
-		else
-			core.entities.getComponent<ENG::CS::Model>(id).texture = "notexture.png";
+		{
+			t.position -= d.distance * d.normal;
+		}
 	}
 };
 
