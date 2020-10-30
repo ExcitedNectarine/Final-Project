@@ -1,5 +1,6 @@
 #include "Collision.h"
 #include "Core.h"
+#include "Rendering.h"
 
 namespace ENG
 {
@@ -58,7 +59,7 @@ namespace ENG
 
 			CS::Transform t = getWorldT(entities, id);
 
-			d = intersectAABBvRay(t.position, boxes[id].size * t.scale, r_pos, r_dir);
+			d = intersectOBBvRay(t, boxes[id].size, r_pos, r_dir);
 			if (d.intersects)
 				distances[d.distance] = id;
 		}
@@ -126,6 +127,60 @@ namespace ENG
 		return data;
 	}
 
+	bool planetest(glm::vec3 axis, glm::vec3 dist, glm::vec3 r_dir, float min, float max, float& tmin, float& tmax)
+	{
+		float e = glm::dot(axis, dist);
+		float f = glm::dot(r_dir, axis);
+
+		if (fabs(f) > 0.001f)
+		{
+			float t1 = (e + min) / f;
+			float t2 = (e + max) / f;
+
+			if (t1 > t2)
+			{
+				float w = t1;
+				t1 = t2;
+				t2 = w;
+			}
+
+			if (t2 < tmax) tmax = t2;
+			if (t1 > tmin) tmin = t1;
+
+			if (tmax < tmin) return false;
+		}
+		else if (-e + min > 0.0f || -e + max < 0.0f)
+			return false;
+
+		return true;
+	}
+
+	/**
+	* Checks if a ray intersects an OBB
+	*/
+	IntersectData intersectOBBvRay(CS::Transform a_t, glm::vec3 a_size, glm::vec3 r_pos, glm::vec3 r_dir)
+	{
+		float tmin = 0.0f;
+		float tmax = 100000.0f;
+		glm::vec3 dist = a_t.position - r_pos;
+
+		a_size *= a_t.scale;
+		glm::vec3 min = -a_size;
+		glm::vec3 max = a_size;
+
+		glm::vec3 x_axis = glm::normalize(a_t.right());
+		glm::vec3 y_axis = glm::normalize(a_t.up());
+		glm::vec3 z_axis = glm::normalize(a_t.forward());
+
+		IntersectData data;
+		data.intersects = planetest(x_axis, dist, r_dir, min.x, max.x, tmin, tmax);
+		data.intersects = planetest(y_axis, dist, r_dir, min.y, max.y, tmin, tmax);
+		data.intersects = planetest(z_axis, dist, r_dir, min.z, max.z, tmin, tmax);
+		data.distance = tmin;
+
+		return data;
+	}
+
 	/**
 	* Checks if an AABB intersects a plane.
 	*/
@@ -172,16 +227,6 @@ namespace ENG
 		return data;
 	}
 
-	/**
-	* Checks if a ray intersects a plane.
-	*/
-	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir)
-	{
-		IntersectData data;
-
-		return data;
-	}
-
 	// OBB STUFF --  WORK IN PROGRESS -----------------------------
 
 	/**
@@ -197,13 +242,13 @@ namespace ENG
 		std::vector<glm::vec3> verts =
 		{
 			min,
-			max,
 			{ max.x, min.y, min.z },
 			{ min.x, max.y, min.z },
+			{ max.x, max.y, min.z },
+			max,
 			{ min.x, min.y, max.z },
 			{ min.x, max.y, max.z },
-			{ max.x, min.y, max.z },
-			{ max.x, max.y, min.z }
+			{ max.x, min.y, max.z }
 		};
 
 		// Rotate, scale and translate vertices
@@ -226,13 +271,13 @@ namespace ENG
 		std::vector<glm::vec3> verts =
 		{
 			min,
-			max,
 			{ max.x, min.y, min.z },
 			{ min.x, max.y, min.z },
+			{ max.x, max.y, min.z },
+			max,
 			{ min.x, min.y, max.z },
 			{ min.x, max.y, max.z },
-			{ max.x, min.y, max.z },
-			{ max.x, max.y, min.z }
+			{ max.x, min.y, max.z }
 		};
 
 		// Then turn the box into a frustum based on the inverse perspective matrix
@@ -249,19 +294,6 @@ namespace ENG
 	/**
 	* Find the minimum and maximum projected vertices of a box along an axis.
 	*/
-	void findMinMaxAlongAxis(glm::vec3 axis, const std::array<glm::vec3, 8>& verts, float& min, float& max)
-	{
-		min = std::numeric_limits<float>::max();
-		max = -min;
-
-		for (int i = 0; i < 8; i++)
-		{
-			float dot = glm::dot(verts[i], axis);
-			min = glm::min(min, dot);
-			max = glm::max(max, dot);
-		}
-	}
-
 	void findMinMaxAlongAxis(glm::vec3 axis, const std::vector<glm::vec3>& verts, float& min, float& max)
 	{
 		min = std::numeric_limits<float>::max();
@@ -284,7 +316,7 @@ namespace ENG
 
 		for (std::size_t i = 0; i < axes.size(); i++)
 		{
-			if (axes[i] == glm::vec3(0.0f)) continue;
+			if (approximate(glm::length2(axes[i]), 0.0f, 0.0001f)) continue;
 			glm::vec3 axis = glm::normalize(axes[i]);
 
 			float min_a, max_a, min_b, max_b;
@@ -312,60 +344,88 @@ namespace ENG
 
 	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size)
 	{
+		// Get vertices of boxes A and B
+		std::vector<glm::vec3> a_verts = getBoxVerts(a_size, a_t.get());
+		std::vector<glm::vec3> b_verts = getBoxVerts(b_size, b_t.get());
+
 		glm::vec3 a_x_axis = a_t.right();
 		glm::vec3 a_z_axis = a_t.forward();
-		glm::vec3 a_y_axis = glm::cross(a_x_axis, a_z_axis);
+		glm::vec3 a_y_axis = a_t.up();
 
 		glm::vec3 b_x_axis = b_t.right();
 		glm::vec3 b_z_axis = b_t.forward();
-		glm::vec3 b_y_axis = glm::cross(b_x_axis, b_z_axis);
+		glm::vec3 b_y_axis = b_t.up();
 
-		// All 15 axis
 		std::vector<glm::vec3> all_axes =
 		{
 			a_x_axis,
 			a_y_axis,
 			a_z_axis,
+
 			b_x_axis,
 			b_y_axis,
 			b_z_axis,
+
 			glm::cross(a_x_axis, b_x_axis),
 			glm::cross(a_x_axis, b_y_axis),
 			glm::cross(a_x_axis, b_z_axis),
+
 			glm::cross(a_y_axis, b_x_axis),
 			glm::cross(a_y_axis, b_y_axis),
 			glm::cross(a_y_axis, b_z_axis),
+
 			glm::cross(a_z_axis, b_x_axis),
 			glm::cross(a_z_axis, b_y_axis),
 			glm::cross(a_z_axis, b_z_axis)
 		};
 
-		// Get vertices of boxes A and B
-		std::vector<glm::vec3> a_verts = getBoxVerts(a_size, a_t.get());
-		std::vector<glm::vec3> b_verts = getBoxVerts(b_size, b_t.get());
-
 		return seperatedAxisTest(a_verts, b_verts, all_axes);
 	}
 
-	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, Camera c)
+	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, CS::Camera c)
 	{
+		// Get vertices of box A and frustum B
+		std::vector<glm::vec3> a_verts = getBoxVerts(a_size, a_t.get());
+		std::vector<glm::vec3> b_verts = getFrustumVerts(view_t.get(), c.get());
+
+		// Box face and edge normals.
 		glm::vec3 a_x_axis = a_t.right();
 		glm::vec3 a_z_axis = a_t.forward();
-		glm::vec3 a_y_axis = glm::cross(a_x_axis, a_z_axis);
+		glm::vec3 a_y_axis = a_t.up();
 
+		// Frustum face Face normals
 		glm::vec3 b_z_axis = view_t.forward();
-		glm::vec3 b_r_axis = glm::rotateY(glm::vec3(0.0f, 0.0f, 1.0f), glm::radians(90.0f + (c.fov_x / 2.0f)));
-		glm::vec3 b_l_axis = glm::rotateY(glm::vec3(0.0f, 0.0f, 1.0f), -glm::radians(90.0f + (c.fov_x / 2.0f)));
-		glm::vec3 b_u_axis = glm::rotateX(glm::vec3(0.0f, 0.0f, 1.0f), glm::radians(90.0f + (c.fov_y / 2.0f)));
-		glm::vec3 b_d_axis = glm::rotateX(glm::vec3(0.0f, 0.0f, 1.0f), -glm::radians(90.0f + (c.fov_y / 2.0f)));
+		glm::vec3 b_r_axis = glm::rotateY(b_z_axis, -glm::radians(90.0f + (c.fov_y / 2.0f)));
+		glm::vec3 b_l_axis = glm::rotateY(b_z_axis, glm::radians(90.0f + (c.fov_y / 2.0f)));
+		glm::vec3 b_u_axis = glm::rotateX(b_z_axis, -glm::radians(90.0f + (c.fov_y / 2.0f)));
+		glm::vec3 b_d_axis = glm::rotateX(b_z_axis, glm::radians(90.0f + (c.fov_y / 2.0f)));
 
-		b_r_axis = glm::vec3(glm::vec4(b_r_axis, 0.0f) * view_t.get());
-		b_l_axis = glm::vec3(glm::vec4(b_l_axis, 0.0f) * view_t.get());
-		b_u_axis = glm::vec3(glm::vec4(b_u_axis, 0.0f) * view_t.get());
-		b_d_axis = glm::vec3(glm::vec4(b_d_axis, 0.0f) * view_t.get());
+		// Frustum edge normals
+		glm::vec3 b_x_axis = view_t.right();
+		glm::vec3 b_y_axis = view_t.up();
+		glm::vec3 b_edge_1 = glm::normalize(b_verts[0] - view_t.position);
+		glm::vec3 b_edge_2 = glm::normalize(b_verts[1] - view_t.position);
+		glm::vec3 b_edge_3 = glm::normalize(b_verts[2] - view_t.position);
+		glm::vec3 b_edge_4 = glm::normalize(b_verts[3] - view_t.position);
 
-		// All 8 axis
-		std::vector<glm::vec3> all_axes =
+		std::vector<glm::vec3> a_edges
+		{
+			a_x_axis,
+			a_y_axis,
+			a_z_axis
+		};
+
+		std::vector<glm::vec3> b_edges
+		{
+			b_x_axis,
+			b_y_axis,
+			b_edge_1,
+			b_edge_2,
+			b_edge_3,
+			b_edge_4
+		};
+
+		std::vector<glm::vec3> axes
 		{
 			a_x_axis,
 			a_y_axis,
@@ -375,13 +435,24 @@ namespace ENG
 			b_r_axis,
 			b_l_axis,
 			b_u_axis,
-			b_d_axis,
+			b_d_axis
 		};
 
-		// Get vertices of box A and frustum B
-		std::vector<glm::vec3> a_verts = getBoxVerts(a_size, a_t.get());
-		std::vector<glm::vec3> b_verts = getFrustumVerts(view_t.get(), c.get());
+		for (glm::vec3 a : a_edges)
+		{
+			for (glm::vec3 b : b_edges)
+			{
+				glm::vec3 c = glm::cross(a, b);
+				if (approximate(glm::length2(c), 0.0f, 0.0001f))
+				{
+					axes.push_back(a);
+					axes.push_back(b);
+				}
+				else
+					axes.push_back(c);
+			}
+		}
 
-		return seperatedAxisTest(a_verts, b_verts, all_axes);
+		return seperatedAxisTest(a_verts, b_verts, axes);
 	}
 }

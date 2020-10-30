@@ -12,22 +12,11 @@ namespace ENG
 	struct Core;
 	struct Renderer
 	{
-		EntityID view_id;
+		EntityID view_id = 0;
 		CS::Transform* view;
 		glm::vec3 ambient;
 		bool draw_colliders = false;
 	};
-
-	//glm::mat4 getView(Core& core)
-	//{
-	//	if (core.renderer.view != nullptr)
-	//		return core.renderer.view->get();
-
-	//	if (core.renderer.view_id != 0)
-	//		return getWorldM(core.entities, core.renderer.view_id);
-
-	//	return glm::mat4(1.0f);
-	//}
 
 	namespace CS
 	{
@@ -47,7 +36,7 @@ namespace ENG
 		*/
 		struct Sprite : ECSComponent<Sprite>
 		{
-			Sprite();
+			Sprite() : frame(1), frames(1) {}
 
 			std::string texture = "notexture.png";
 			bool billboard = true;
@@ -59,12 +48,33 @@ namespace ENG
 			float timer = 0.0f;
 		};
 
+		/**
+		* Light component is used as a point light, which has a radius which it illuminates and a colour.
+		*/
 		struct Light : ECSComponent<Light>
 		{
 			Light() : colour(1.0f) {}
 
 			glm::vec3 colour;
 			float radius = 5.0f;
+		};
+
+		/**
+		* Camera component represents a 3D camera in the world. Draws to a framebuffer from its perspective.
+		*/
+		struct Camera : ECSComponent<Camera>
+		{
+			Camera() {}
+			Camera(const glm::vec2& size, const float fov, const float near, const float far);
+			glm::mat4 get();
+
+			FrameBuffer frame;
+			glm::ivec2 size;
+			float aspect;
+			float fov_y;
+			float fov_x;
+			float near;
+			float far;
 		};
 	}
 
@@ -74,24 +84,21 @@ namespace ENG
 		Mesh quad_3d;
 	}
 
-	void updateRenderer(Core& core);
+	void drawToCameras(Core& core);
+	void drawToScreen(Core& core);
 
-	bool inView(CS::Transform& view, const glm::vec3& pos, const glm::vec3& size);
+	void updateRenderer(Core& core);
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);
-
-	void spriteStart();
+	void spriteStart(Core& core);
 	void updateSprites(Core& core);
 	void drawSprites(Core& core);
 	void drawSprites3D(Core& core);
-
 	void drawColliders(Core& core);
 
 	/**
 	* Uploads lighting information to shader.
 	*/
 	void setLights(Core& core, Shader& shader);
-
-	std::vector<EntityID> getEntitiesInView(ENG::Core& core);
 }

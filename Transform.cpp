@@ -23,13 +23,19 @@ namespace ENG
 		glm::vec3 Transform::forward()
 		{
 			glm::mat4 transform = get();
-			return { transform[2].x, transform[2].y, transform[2].z };
+			return glm::vec3(transform[2]);
+		}
+
+		glm::vec3 Transform::up()
+		{
+			glm::mat4 transform = get();
+			return glm::vec3(transform[1]);
 		}
 
 		glm::vec3 Transform::right()
 		{
 			glm::mat4 transform = get();
-			return { transform[0].x, transform[0].y, transform[0].z };
+			return glm::vec3(transform[0]);
 		}
 
 		Transform2D::Transform2D()

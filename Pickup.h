@@ -9,6 +9,8 @@ namespace Game
 
 	struct Pickup : ECSComponent<Pickup>
 	{
+		bool active = false;
+		EntityID holder;
 	};
 
 	ENG::EntityID createPickup(ENG::Core& core, glm::vec3 pos);

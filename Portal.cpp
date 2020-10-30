@@ -118,7 +118,7 @@ namespace Game
 			CS::Transform other_t = getWorldT(core.entities, other);
 
 			// Don't render to portal if its not in view.
-			if (!inView(*view_d, portal_t.position, glm::vec3(1.0f))) continue;
+			if (!intersectOBBvFrustum(portal_t, glm::vec3(1.0f), *view_d, core.camera).intersects) continue;
 			
 			// Get the view for the camera pointed at the portal.
 			glm::mat4 camera = other_t.get() * glm::inverse(portal_t.get()) * view_d->get();
@@ -141,6 +141,7 @@ namespace Game
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawSkybox(core.resources);
 			drawModels(core);
+			drawColliders(core);
 			drawSprites3D(core);
 
 			portals[portal].frame.unbind();
@@ -170,7 +171,7 @@ namespace Game
 		{
 			CS::Transform portal_t = getWorldT(core.entities, id);
 
-			if (!inView(*core.renderer.view, portal_t.position, glm::vec3(1.0f))) continue;
+			if (!intersectOBBvFrustum(portal_t, glm::vec3(1.0f), *core.renderer.view, core.camera).intersects) continue;
 
 			glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
 			glm::vec3 pl_size = glm::vec3(0.5f) * view_t.scale;

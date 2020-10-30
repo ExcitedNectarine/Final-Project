@@ -7,6 +7,7 @@
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 namespace ENG
 {
@@ -35,6 +36,8 @@ namespace ENG
 			glm::vec3 velocity;
 			bool on_floor = false;
 		};
+
+		struct Camera;
 	}
 
 	struct IntersectData
@@ -65,7 +68,12 @@ namespace ENG
 	/**
 	* Checks if a ray intersects an AABB.
 	*/
-	IntersectData intersectAABBvRay(glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir);
+	IntersectData intersectAABBvRay(const glm::vec3 a_pos, const glm::vec3& a_size, glm::vec3 r_pos, const glm::vec3& r_dir);
+
+	/**
+	* Checks if a ray intersects an OBB
+	*/
+	IntersectData intersectOBBvRay(CS::Transform a_t, glm::vec3 a_size, glm::vec3 r_pos, glm::vec3 r_dir);
 
 	/**
 	* Checks if an AABB intersects a plane.
@@ -73,36 +81,17 @@ namespace ENG
 	IntersectData intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 p_size);
 
 	/**
-	* Checks if a ray intersects a plane.
+	* Checks if an OBB intersects another OBB, using SAT.
 	*/
-	IntersectData intersectPlaneVRay(glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 r_pos, glm::vec3 r_dir);
-
-	IntersectData seperatedAxisTest(const std::vector<glm::vec3>& a_verts, const std::vector<glm::vec3>& b_verts, const std::vector<glm::vec3>& axes);
-	std::vector<glm::vec3> getBoxVerts(glm::vec3 size, glm::mat4 t);
-	std::vector<glm::vec3> getFrustumVerts(glm::mat4 view, glm::mat4 perspective);
-	void findMinMaxAlongAxis(glm::vec3 axis, const std::array<glm::vec3, 8>& verts, float& min, float& max);
 	IntersectData intersectOBBvOBB(CS::Transform a_t, glm::vec3 a_size, CS::Transform b_t, glm::vec3 b_size);
 
-	struct Camera
-	{
-		float aspect;
-		float fov_y;
-		float fov_x;
-		float near;
-		float far;
+	/**
+	* Checks if an OBB intersects a frustum, using SAT.
+	*/
+	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, CS::Camera c);
 
-		Camera(glm::vec2 size, float fov, float near, float far) : near(near), far(far)
-		{
-			aspect = size.x / size.y;
-			fov_y = fov;
-			fov_x = static_cast<float>(glm::degrees(2 * glm::atan(glm::tan(fov_y * 0.5) * aspect)));
-		}
-
-		glm::mat4 get()
-		{
-			return glm::perspective(glm::radians(fov_y), aspect, near, far);
-		}
-	};
-
-	IntersectData intersectOBBvFrustum(CS::Transform a_t, glm::vec3 a_size, CS::Transform view_t, Camera c);
+	std::vector<glm::vec3> getBoxVerts(glm::vec3 size, glm::mat4 t);
+	std::vector<glm::vec3> getFrustumVerts(glm::mat4 view, glm::mat4 perspective);
+	void findMinMaxAlongAxis(glm::vec3 axis, const std::vector<glm::vec3>& verts, float& min, float& max);
+	IntersectData seperatedAxisTest(const std::vector<glm::vec3>& a_verts, const std::vector<glm::vec3>& b_verts, const std::vector<glm::vec3>& axes);
 }

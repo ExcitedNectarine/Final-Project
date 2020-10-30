@@ -5,9 +5,51 @@ namespace ENG
 {
 	namespace CS
 	{
-		Sprite::Sprite()
-			: frame(1),
-			frames(1) {}
+		Camera::Camera(const glm::vec2& size, const float fov, const float near, const float far) : size(size), near(near), far(far)
+		{
+			aspect = size.x / size.y;
+			fov_y = fov;
+			fov_x = static_cast<float>(glm::degrees(2 * glm::atan(glm::tan(fov_y * 0.5) * aspect)));
+		}
+
+		glm::mat4 Camera::get()
+		{
+			return glm::perspective(glm::radians(fov_y), aspect, near, far);
+		}
+	}
+
+	void drawToCameras(Core& core)
+	{
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
+
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
+		{
+			cameras[id].frame.bind();
+
+			glm::mat4 view = glm::inverse(getWorldM(core.entities, id));
+			core.resources.shader("default.shdr").setUniform("view", view);
+			core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			drawSkybox(core.resources);
+			drawModels(core);
+			drawColliders(core);
+			drawSprites3D(core);
+			drawModelsToHUD(core);
+			drawSprites(core);
+
+			cameras[id].frame.unbind();
+		}
+	}
+
+	void drawToScreen(Core& core)
+	{
+		// WRITE NEW SHADER THAT DRAWS SINGLE IMAGE, THE MAIN CAMERAS VIEW. ALSO ALLOWS POST PROCESSING
+		quad_2d.bind();
+		core.resources.shader("postprocess.shdr").bind();
+		core.resources.texture("notexture.png").bind();
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 
 	void updateRenderer(Core& core)
@@ -31,33 +73,6 @@ namespace ENG
 		glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
 	}
 
-	bool inView(CS::Transform& view, const glm::vec3& pos, const glm::vec3& size)
-	{
-		glm::vec3 min = pos - size;
-		glm::vec3 max = pos + size;
-
-		// All 8 vertices in AABB
-		glm::vec3 verts[8] =
-		{
-			min,
-			max,
-			{ max.x, min.y, min.z },
-			{ min.x, max.y, min.z },
-			{ min.x, min.y, max.z },
-			{ min.x, max.y, max.z },
-			{ max.x, min.y, max.z },
-			{ max.x, max.y, min.z }
-		};
-
-		for (int i = 0; i < 8; i++)
-		{
-			if (glm::dot(view.forward(), view.position - verts[i]) > 0)
-				return true;
-		}
-
-		return false;
-	}
-
 	/**
 	* Draws model components.
 	*/
@@ -66,12 +81,11 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
 
-		//OUTPUT(getEntitiesInView(core).size());
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
 		{
 			CS::Model& m = models[id];
 			CS::Transform t = getWorldT(core.entities, id);
-			if (m.hud || !inView(*core.renderer.view, t.position, core.resources.mesh(m.mesh).getSize() * t.scale)) continue;
+			if (m.hud || !intersectOBBvFrustum(t, core.resources.mesh(m.mesh).getSize() * t.scale, *core.renderer.view, core.camera).intersects) continue;
 			drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(id));
 		}
 	}
@@ -103,8 +117,9 @@ namespace ENG
 		glDepthMask(GL_TRUE);
 	}
 
-	void spriteStart()
+	void spriteStart(Core& core)
 	{
+		// Create primitives
 		std::vector<Vertex2D> verts_2d = {
 			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
 			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f }),
@@ -125,6 +140,13 @@ namespace ENG
 
 		quad_2d.setVertices(verts_2d);
 		quad_3d.setVertices(verts_3d);
+
+		// Create the framebuffers that each camera will draw to.
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
+
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
+			cameras[id].frame.create(cameras[id].size);
 	}
 
 	void updateSprites(Core& core)
@@ -132,10 +154,12 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Sprite>& sprites = core.entities.getPool<CS::Sprite>();
 
+		// Make sprites that billboard always face the camera.
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
 			if (sprites[id].billboard)
 				transforms[id].rotation = core.renderer.view->rotation;
 
+		// Work out which frame each sprite is on.
 		for (EntityID id : core.entities.entitiesWith<CS::Sprite>())
 		{
 			CS::Sprite& s = sprites[id];

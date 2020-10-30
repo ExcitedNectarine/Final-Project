@@ -10,19 +10,21 @@ namespace Game
 			ENG::CS::Transform,
 			ENG::CS::BoxCollider,
 			ENG::CS::Controller,
-		//	ENG::CS::Model,
+			ENG::CS::Camera,
 			Game::Traveller
 		>();
 
-		//ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		//ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
-		//t.parent = player;
-		//t.position = { 0.2f, -0.2f, -0.2f };
+		core.entities.getComponent<ENG::CS::Camera>(player).size = core.window.getSize();
 
-		//ENG::CS::Model& model = core.entities.getComponent<ENG::CS::Model>(gun);
-		//model.mesh = "gun.obj";
-		//model.texture = "gun.png";
-		//model.hud = true;
+		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
+		t.parent = player;
+		t.position = { 0.2f, -0.2f, -0.2f };
+
+		ENG::CS::Model& model = core.entities.getComponent<ENG::CS::Model>(gun);
+		model.mesh = "gun.obj";
+		model.texture = "gun.png";
+		model.hud = true;
 
 		ENG::EntityID crosshair = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
 		ENG::CS::Transform2D& t2d = core.entities.getComponent<ENG::CS::Transform2D>(crosshair);
@@ -35,6 +37,8 @@ namespace Game
 		ENG::CS::Script& scr = core.entities.getComponent<ENG::CS::Script>(player);
 		scr.script = std::make_shared<Game::Player>();
 
+		core.renderer.view_id = player;
+
 		return player;
 	}
 
@@ -46,6 +50,10 @@ namespace Game
 
 		box = &core.entities.getComponent<ENG::CS::BoxCollider>(id);
 		box->size = { 0.25f, 0.5f, 0.25f };
+
+		pickup_position = core.entities.addEntity<ENG::CS::Transform>();
+		core.entities.getComponent<ENG::CS::Transform>(pickup_position).position.z = -3.0f;
+		core.entities.getComponent<ENG::CS::Transform>(pickup_position).parent = id;
 	}
 
 	void Player::mouselook(ENG::Core& core)
@@ -91,9 +99,10 @@ namespace Game
 		if (pickup == 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
 		{
 			pickup = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
-
 			if (pickup != 0 && core.entities.hasComponent<Game::Pickup>(pickup))
 			{
+				core.entities.getComponent<Game::Pickup>(pickup).active = true;
+				core.entities.getComponent<Game::Pickup>(pickup).holder = pickup_position;
 				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = true;
 			}
 			else pickup = 0;
@@ -109,6 +118,7 @@ namespace Game
 
 				core.entities.getComponent<ENG::CS::Transform>(pickup).position = new_pos;
 				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = false;
+				core.entities.getComponent<Game::Pickup>(pickup).active = false;
 
 				pickup = 0;
 			}

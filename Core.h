@@ -21,7 +21,7 @@ namespace ENG
 		Settings settings;
 		CubeMap skybox;
 		Renderer renderer;
-
+		CS::Camera camera;
 		glm::mat4 perspective;
 		glm::mat4 orthographic;
 

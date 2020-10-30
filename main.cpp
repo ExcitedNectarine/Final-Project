@@ -12,7 +12,8 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 
 	glm::vec2 window_size(core.settings.getf("width"), core.settings.getf("height"));
 
-	core.perspective = glm::perspective(glm::radians(core.settings.getf("fov")), window_size.x / window_size.y, 0.1f, 250.0f);
+	core.camera = ENG::CS::Camera(window_size, core.settings.getf("fov"), 0.1f, 250.0f);
+	core.perspective = core.camera.get();
 	core.orthographic = glm::ortho(0.0f, window_size.x, window_size.y, 0.0f);
 
 	core.window.create(window_size, core.settings.get("title"));
@@ -35,6 +36,7 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 		ENG::CS::Model,
 		ENG::CS::Sprite,
 		ENG::CS::Light,
+		ENG::CS::Camera,
 		ENG::CS::Script,
 		ENG::CS::BoxCollider,
 		ENG::CS::PlaneCollider,
@@ -46,7 +48,7 @@ void run(ENG::Core& core)
 {
 	ENG::scriptStart(core);
 	Game::startPortals(core.entities, core.window.getSize());
-	ENG::spriteStart();
+	ENG::spriteStart(core);
 
 	double current = 0.0, last = 0.0;
 	while (!core.window.shouldClose())
@@ -75,6 +77,9 @@ void run(ENG::Core& core)
 		ENG::drawModelsToHUD(core);
 		ENG::drawSprites(core);
 
+		//ENG::drawToCameras(core);
+		//ENG::drawToScreen(core);
+
 		core.window.display();
 
 		glfwPollEvents();
@@ -98,6 +103,11 @@ void createTableScene(ENG::Core& core)
 {
 	// Create player
 	ENG::EntityID player = Game::createPlayer(core);
+
+	ENG::EntityID box = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider>();
+	ENG::CS::Transform& box_t = core.entities.getComponent<ENG::CS::Transform>(box);
+	box_t.scale.y = 0.2f;
+	box_t.rotation.x = 63.0f;
 
 	ENG::EntityID table_scene = core.entities.addEntity<ENG::CS::Transform>();
 	ENG::CS::Transform& ts_t = core.entities.getComponent<ENG::CS::Transform>(table_scene);
@@ -226,11 +236,12 @@ struct CBox : ENG::Script
 {
 	glm::vec3 vel;
 	float speed = 5.0f;
+	ENG::EntityID frustum;
 
 	void update(ENG::Core& core)
 	{
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(id);
-		//t.rotation.y += 45.0f * core.delta;
+		t.rotation.y += 45.0f * core.delta;
 
 		vel = glm::vec3(0.0f);
 
@@ -249,14 +260,18 @@ struct CBox : ENG::Script
 
 		t.position += vel * core.delta;
 
-		ENG::Camera cam(glm::vec2(1.0f), 70.0f, 1.0f, 10.0f);
-		ENG::CS::Transform ct;
-		ct.position = { 0.0f, 10.0f, 0.0f };
+		ENG::CS::Camera cam(glm::vec2(1.0f), 70.0f, 1.0f, 10.0f);
+		ENG::CS::Transform& ct = core.entities.getComponent<ENG::CS::Transform>(frustum);
 
 		ENG::IntersectData d = ENG::intersectOBBvFrustum(t, glm::vec3(1.0f), ct, cam);
 		if (d.intersects)
 		{
+			core.entities.getComponent<ENG::CS::Model>(id).texture = "Space3.jpg";
 			t.position -= d.distance * d.normal;
+		}
+		else
+		{
+			core.entities.getComponent<ENG::CS::Model>(id).texture = "notexture.png";
 		}
 	}
 };
@@ -268,37 +283,39 @@ void frustumCollisions(ENG::Core& core)
 	EntityID p = Game::createPlayer(core);
 	createBarrier(core, { 0.0f, -2.0f, 0.0f });
 
-	Camera cam(glm::vec2(1.0f), 70.0f, 1.0f, 10.0f);
-	CS::Transform t;
-	t.position = { 0.0f, 10.0f, 0.0f };
-	t.rotation = { 0.0f, 0.0f, 0.0f };
+	CS::Camera cam(glm::vec2(1.0f), 70.0f, 1.0f, 10.0f);
 
-	// Test box
-	EntityID b = core.entities.addEntity<CS::Transform, CS::Model, CS::BoxCollider, CS::Script>();
-	core.entities.getComponent<CS::Script>(b).script = std::make_shared<CBox>();
+	EntityID frustum = core.entities.addEntity<CS::Transform, CS::Model>();
+	CS::Transform& frustum_t = core.entities.getComponent<CS::Transform>(frustum);
+	frustum_t.position = { 0.0f, 5.0f, 0.0f };
+	frustum_t.rotation = { randomFloat(0.0f, 180.0f), randomFloat(0.0f, 180.0f), randomFloat(0.0f, 180.0f) };
+	frustum_t.scale *= 0.5f;
 
-	// show actual mesh for frustum
-	EntityID fm = core.entities.addEntity<CS::Transform, CS::Model>();
-	CS::Model& fmod = core.entities.getComponent<CS::Model>(fm);
+	CS::Model& fmod = core.entities.getComponent<CS::Model>(frustum);
 	fmod.mesh = "frustumcube.obj";
 
 	ENG::Mesh& m = core.resources.mesh(fmod.mesh);
-	for (int i = 0; i < m.vertexCount(); i++)
+	for (std::size_t i = 0; i < m.vertexCount(); i++)
 	{
-		glm::vec4 new_p = t.get() * glm::inverse(cam.get()) * glm::vec4(m[i].position, 1.0f);
+		glm::vec4 new_p = glm::inverse(cam.get()) * glm::vec4(m[i].position, 1.0f);
 		m[i].position = glm::vec3(new_p) / new_p.w;
 	}
+
+	// Test box
+	EntityID box = core.entities.addEntity<CS::Transform, CS::Model, CS::BoxCollider, CS::Script>();
+	core.entities.getComponent<CS::Script>(box).script = std::make_shared<CBox>();
+	std::dynamic_pointer_cast<CBox>(core.entities.getComponent<CS::Script>(box).script)->frustum = frustum;
 }
 
 int main()
 {
 	try
 	{
-		//int i = 0;
-		//do {
-		//	std::cout << "Press 1 for portal demo 1 (table scene), or press 2 for portal demo 2 (impossible room). ";
-		//	std::cin >> i;
-		//} while (i != 1 && i != 2);
+		int i = 0;
+		do {
+			std::cout << "Press 1 for portal demo 1 (table scene), or press 2 for portal demo 2 (impossible room). ";
+			std::cin >> i;
+		} while (i != 1 && i != 2 && i != 3);
 
 		ENG::Core core;
 		createCore(core, "Resources/settings.set");
@@ -307,12 +324,12 @@ int main()
 		core.window.lockMouse(true);
 		core.renderer.ambient = glm::vec3(0.5f);
 
-		frustumCollisions(core);
-
-		//if (i == 1)
-		//	createTableScene(core);
-		//else if (i == 2)
-		//	createImpossibleRooms(core);
+		if (i == 1)
+			createTableScene(core);
+		else if (i == 2)
+			createImpossibleRooms(core);
+		else if (i == 3)
+			frustumCollisions(core);
 
 		run(core);
 	}
@@ -321,6 +338,8 @@ int main()
 		OUTPUT_ERROR(e.what());
 		PAUSE_CONSOLE;
 	}
+
+	PAUSE_CONSOLE;
 
 	return 0;
 }

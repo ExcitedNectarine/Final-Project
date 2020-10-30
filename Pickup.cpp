@@ -10,6 +10,7 @@ namespace Game
 			ENG::CS::Model,
 			ENG::CS::Light,
 			ENG::CS::BoxCollider,
+			ENG::CS::Controller,
 			Game::Pickup,
 			Game::Traveller
 		>();
@@ -20,12 +21,28 @@ namespace Game
 
 		core.entities.getComponent<ENG::CS::Model>(prop).mesh = "lamp.obj";
 		core.entities.getComponent<ENG::CS::Model>(prop).texture = "lamp.png";
-		core.entities.getComponent<ENG::CS::BoxCollider>(prop).size = glm::vec3(0.4f, 1.2f, 0.4f);
+		core.entities.getComponent<ENG::CS::BoxCollider>(prop).size = core.resources.mesh("lamp.obj").getSize() / 2.0f;
 
 		return prop;
 	}
 
 	void updatePickups(Core& core)
 	{
+		using namespace ENG;
+
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<Game::Pickup>& pickups = core.entities.getPool<Game::Pickup>();
+
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, Game::Pickup>())
+		{
+			if (pickups[id].active)
+			{
+				transforms[id].position = glm::lerp(
+					transforms[id].position,
+					getWorldT(core.entities, pickups[id].holder).position,
+					5.0f * core.delta
+				);
+			}
+		}
 	}
 }

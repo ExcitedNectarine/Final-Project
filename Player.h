@@ -24,6 +24,7 @@ namespace Game
 		float sensitivity = 0.05f;
 		float dist;
 		ENG::EntityID pickup = 0;
+		ENG::EntityID pickup_position = 0;
 
 		void start(ENG::Core& core);
 		void mouselook(ENG::Core& core);
