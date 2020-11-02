@@ -22,8 +22,7 @@ namespace Game
 		glm::dvec2 last_mouse;
 		glm::dvec2 mouse_offset;
 		float sensitivity = 0.05f;
-		float dist;
-		ENG::EntityID pickup = 0;
+		IntersectData ray;
 		ENG::EntityID pickup_position = 0;
 
 		void start(ENG::Core& core);
@@ -31,5 +30,6 @@ namespace Game
 		void movement(ENG::Core& core);
 		void actions(ENG::Core& core);
 		void update(ENG::Core& core);
+		void onTriggerEnter(ENG::Core& core, ENG::EntityID hit_id);
 	};
 }

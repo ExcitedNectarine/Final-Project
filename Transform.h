@@ -10,7 +10,8 @@ namespace ENG
 	namespace CS
 	{
 		/**
-		* Transform component, represents a transform in the world.
+		* Transform component, represents a transform in the world. Has a position,
+		* rotation and scale, all in local space.
 		*/
 		struct Transform : ECSComponent<Transform>
 		{

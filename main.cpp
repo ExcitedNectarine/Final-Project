@@ -39,7 +39,6 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 		ENG::CS::Camera,
 		ENG::CS::Script,
 		ENG::CS::BoxCollider,
-		ENG::CS::PlaneCollider,
 		ENG::CS::Controller
 	>();
 }
@@ -104,11 +103,6 @@ void createTableScene(ENG::Core& core)
 	// Create player
 	ENG::EntityID player = Game::createPlayer(core);
 
-	ENG::EntityID box = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::BoxCollider>();
-	ENG::CS::Transform& box_t = core.entities.getComponent<ENG::CS::Transform>(box);
-	box_t.scale.y = 0.2f;
-	box_t.rotation.x = 63.0f;
-
 	ENG::EntityID table_scene = core.entities.addEntity<ENG::CS::Transform>();
 	ENG::CS::Transform& ts_t = core.entities.getComponent<ENG::CS::Transform>(table_scene);
 	ts_t.position.y = 1.0f;
@@ -135,8 +129,17 @@ void createTableScene(ENG::Core& core)
 	tb.parent = table_scene;
 
 	// Create lamps
+	ENG::EntityID box = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider>();
+	core.entities.getComponent<ENG::CS::BoxCollider>(box).trigger = true;
+	core.entities.getComponent<ENG::CS::Transform>(box).position.x = -7.5f;
+	core.entities.getComponent<ENG::CS::Transform>(box).rotation.y = 45.0f;
+
 	for (int i = 0; i < 5; i++)
-		Game::createPickup(core, { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) });
+	{
+		ENG::EntityID id = Game::createPickup(core, { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) });
+		/*while (ENG::getIntersectingEntities(core.entities, id).size() > 0)
+			core.entities.getComponent<ENG::CS::Transform>(id).position = { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) };*/
+	}
 
 	// Create floors
 	createBarrier(core, { 0.0f, -2.0f, 0.0f });

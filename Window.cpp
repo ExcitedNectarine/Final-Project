@@ -2,6 +2,11 @@
 
 namespace ENG
 {
+	namespace { std::map<int, int> button_presses; }
+	void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) { button_presses[key] = action; }
+	void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) { button_presses[button] = action; }
+
+	// Window funcs
 	Window::Window() {}
 	Window::Window(const glm::ivec2& size, const std::string& title) { create(size, title); }
 
@@ -22,6 +27,8 @@ namespace ENG
 		position -= size / 2;
 
 		glfwSetWindowPos(window, position.x, position.y);
+		glfwSetKeyCallback(window, keyCallback);
+		glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
@@ -36,6 +43,13 @@ namespace ENG
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
+	void Window::display() { glfwSwapBuffers(window); }
+	bool Window::shouldClose() { return static_cast<bool>(glfwWindowShouldClose(window)); }
+	void Window::close() { glfwSetWindowShouldClose(window, true); }
+	glm::ivec2 Window::getSize() { return size; }
+	glm::ivec2 Window::getPosition() { return position; }
+
+	// Input funcs
 	glm::dvec2 Window::getMousePos()
 	{
 		glfwGetCursorPos(window, &mouse_pos.x, &mouse_pos.y);
@@ -48,11 +62,26 @@ namespace ENG
 		else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 
-	void Window::display() { glfwSwapBuffers(window); }
-	bool Window::shouldClose() { return static_cast<bool>(glfwWindowShouldClose(window)); }
-	void Window::close() { glfwSetWindowShouldClose(window, true); }
+
 	bool Window::isKeyPressed(int key) { return glfwGetKey(window, key); }
+	bool Window::isKeyPressedOnce(int key)
+	{
+		if (button_presses[key] == GLFW_PRESS)
+		{
+			button_presses[key] = GLFW_REPEAT;
+			return true;
+		}
+		return false;
+	}
+
 	bool Window::isMouseButtonPressed(int button) { return glfwGetMouseButton(window, button); }
-	glm::ivec2 Window::getSize() { return size; }
-	glm::ivec2 Window::getPosition() { return position; }
+	bool Window::isMouseButtonPressedOnce(int button)
+	{
+		if (button_presses[button] == GLFW_PRESS)
+		{
+			button_presses[button] = GLFW_REPEAT;
+			return true;
+		}
+		return false;
+	}
 }

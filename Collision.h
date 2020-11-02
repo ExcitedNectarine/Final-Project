@@ -23,14 +23,6 @@ namespace ENG
 			bool _collided = false;
 		};
 
-		struct PlaneCollider : ECSComponent<PlaneCollider>
-		{
-			PlaneCollider() : size(1.0f) {}
-
-			glm::vec3 size;
-			bool trigger = false;
-		};
-
 		struct Controller : ECSComponent<Controller>
 		{
 			glm::vec3 velocity;
@@ -47,6 +39,7 @@ namespace ENG
 		bool intersects = false;
 		float distance = 0.0f;
 		glm::vec3 normal;
+		EntityID id = 0;
 	};
 
 	/**
@@ -56,9 +49,14 @@ namespace ENG
 	void moveControllers(Core& core);
 
 	/**
-	* Cast a ray into the world, and return the closest intersecting box ID.
+	* This function returns a vector containing every box collider in the game.
 	*/
-	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore, float& t);
+	std::vector<IntersectData> getIntersectingEntities(Entities& entities, EntityID entity);
+
+	/**
+	* Cast a ray into the world, and return the closest intersecting box ID with the intersecion data.
+	*/
+	IntersectData castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, const std::vector<EntityID>& ignore);
 
 	/**
 	* Checks if two axis-aligned (not rotated) bounding boxes are colliding
@@ -74,11 +72,6 @@ namespace ENG
 	* Checks if a ray intersects an OBB
 	*/
 	IntersectData intersectOBBvRay(CS::Transform a_t, glm::vec3 a_size, glm::vec3 r_pos, glm::vec3 r_dir);
-
-	/**
-	* Checks if an AABB intersects a plane.
-	*/
-	IntersectData intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 p_size);
 
 	/**
 	* Checks if an OBB intersects another OBB, using SAT.

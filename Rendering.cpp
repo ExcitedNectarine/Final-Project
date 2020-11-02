@@ -46,9 +46,22 @@ namespace ENG
 	void drawToScreen(Core& core)
 	{
 		// WRITE NEW SHADER THAT DRAWS SINGLE IMAGE, THE MAIN CAMERAS VIEW. ALSO ALLOWS POST PROCESSING
-		quad_2d.bind();
+		std::vector<Vertex2D> verts_2dd = {
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f }),
+			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 0.0f }),
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
+			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 1.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f })
+		};
+
+		Mesh2D m;
+		m.setVertices(verts_2dd);
+		m.bind();
+
 		core.resources.shader("postprocess.shdr").bind();
 		core.resources.texture("notexture.png").bind();
+
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 
@@ -142,11 +155,11 @@ namespace ENG
 		quad_3d.setVertices(verts_3d);
 
 		// Create the framebuffers that each camera will draw to.
-		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
+		//ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		//ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
 
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
-			cameras[id].frame.create(cameras[id].size);
+		//for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
+		//	cameras[id].frame.create(cameras[id].size);
 	}
 
 	void updateSprites(Core& core)
@@ -300,6 +313,9 @@ namespace ENG
 		Mesh& cube = core.resources.mesh("cube.obj");
 		cube.bind();
 
+		glm::vec3 solid_colour(1.0f, 0.0f, 0.0f);
+		glm::vec3 trigger_colour(0.0f, 0.0f, 1.0f);
+
 		core.resources.shader("colliders.shdr").setUniform("projection", core.perspective);
 		core.resources.shader("colliders.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
 
@@ -309,6 +325,7 @@ namespace ENG
 			t.scale *= boxes[id].size;
 
 			core.resources.shader("colliders.shdr").setUniform("transform", t.get());
+			core.resources.shader("colliders.shdr").setUniform("colour", boxes[id].trigger ? trigger_colour : solid_colour);
 			core.resources.shader("colliders.shdr").bind();
 
 			glDrawArrays(GL_LINE_STRIP, 0, cube.vertexCount());

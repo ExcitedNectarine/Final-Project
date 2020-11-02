@@ -96,31 +96,30 @@ namespace Game
 
 	void Player::actions(ENG::Core& core)
 	{
-		if (pickup == 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
+		if (ray.id == 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
 		{
-			pickup = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
-			if (pickup != 0 && core.entities.hasComponent<Game::Pickup>(pickup))
+			ray = ENG::castRay(core.entities, transform->position, -transform->forward(), { id, ray.id });
+			OUTPUT(glm::to_string(ray.normal));
+			if (ray.id != 0 && core.entities.hasComponent<Game::Pickup>(ray.id))
 			{
-				core.entities.getComponent<Game::Pickup>(pickup).active = true;
-				core.entities.getComponent<Game::Pickup>(pickup).holder = pickup_position;
-				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = true;
+				core.entities.getComponent<Game::Pickup>(ray.id).active = true;
+				core.entities.getComponent<Game::Pickup>(ray.id).holder = pickup_position;
 			}
-			else pickup = 0;
+			else ray.id = 0;
 		}
 
-		if (pickup != 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
+		if (ray.id != 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
 		{
-			ENG::EntityID floor = ENG::castRay(core.entities, transform->position, -transform->forward(), id, dist);
-			if (floor != 0)
+			IntersectData floor_ray = ENG::castRay(core.entities, transform->position, -transform->forward(), { id, ray.id });
+			if (floor_ray.id != 0)
 			{
-				glm::vec3 new_pos = transform->position + dist * -transform->forward();
-				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(pickup).size.y * core.entities.getComponent<ENG::CS::Transform>(pickup).scale.y;
+				glm::vec3 new_pos = transform->position + floor_ray.distance * -transform->forward();
+				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(ray.id).size.y * core.entities.getComponent<ENG::CS::Transform>(ray.id).scale.y;
 
-				core.entities.getComponent<ENG::CS::Transform>(pickup).position = new_pos;
-				core.entities.getComponent<ENG::CS::BoxCollider>(pickup).trigger = false;
-				core.entities.getComponent<Game::Pickup>(pickup).active = false;
+				core.entities.getComponent<ENG::CS::Transform>(ray.id).position = new_pos;
+				core.entities.getComponent<Game::Pickup>(ray.id).active = false;
 
-				pickup = 0;
+				ray.id = 0;
 			}
 		}
 	}
@@ -130,16 +129,21 @@ namespace Game
 		if (core.window.isKeyPressed(GLFW_KEY_ESCAPE))
 			core.window.close();
 
-		if (core.window.isKeyPressed(GLFW_KEY_Q))
+		if (core.window.isKeyPressedOnce(GLFW_KEY_Q))
 			core.renderer.draw_colliders = !core.renderer.draw_colliders;
 
 		if (core.window.isKeyPressed(GLFW_KEY_E))
-			transform->position = glm::vec3(2.0f);
+			transform->position = glm::vec3(0.0f, 10.0f, 0.0f);
 
 		mouselook(core);
 		movement(core);
 		actions(core);
 
 		core.renderer.view = transform;
+	}
+
+	void Player::onTriggerEnter(ENG::Core& core, ENG::EntityID hit_id)
+	{
+		//OUTPUT(core.delta);
 	}
 }

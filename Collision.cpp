@@ -13,18 +13,20 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Controller>& controllers = core.entities.getPool<CS::Controller>();
 		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
-		ComponentMap<CS::PlaneCollider>& planes = core.entities.getPool<CS::PlaneCollider>();
 		ComponentMap<CS::Script>& scripts = core.entities.getPool<CS::Script>();
 
 		for (EntityID a : core.entities.entitiesWith<CS::Transform, CS::Controller, CS::BoxCollider>())
 		{
+			// Should controllers that are triggers be updated?
+			if (boxes[a].trigger) continue;
+
 			transforms[a].position += controllers[a].velocity * core.delta;
 			controllers[a].on_floor = false;
 
 			CS::Transform a_t = getWorldT(core.entities, a);
 			for (EntityID b : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 			{
-				if (a == b || boxes[b].trigger) continue;
+				if (a == b) continue;
 				CS::Transform b_t = getWorldT(core.entities, b);
 
 				IntersectData d;
@@ -35,42 +37,69 @@ namespace ENG
 
 				if (d.intersects)
 				{
-					transforms[a].position -= d.normal * d.distance;
-					if (!controllers[a].on_floor)
-						controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f) || approximate(d.normal.y, -1.0f, 0.1f);
+					if (boxes[b].trigger)
+					{
+						if (core.entities.hasComponent<CS::Script>(a))
+							scripts[a].script->onTriggerEnter(core, b);
+					}
+					else
+					{
+						transforms[a].position -= d.normal * d.distance;
+						if (!controllers[a].on_floor)
+							controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f) || approximate(d.normal.y, -1.0f, 0.1f);
+					}
 				}
 			}
 		}
 	}
 
 	/**
-	* Cast a ray into the world, and return the closest intersecting box ID.
+	* This function returns a vector containing every entities intersecting with entity a.
 	*/
-	EntityID castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, EntityID ignore, float& t)
+	std::vector<IntersectData> getIntersectingEntities(Entities& entities, EntityID a)
 	{
 		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
 		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
 
-		IntersectData d;
-		std::map<float, EntityID> distances;
+		std::vector<IntersectData> intersecting;
+		for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
+		{
+			IntersectData d = intersectOBBvOBB(transforms[a], boxes[a].size, transforms[a], boxes[a].size);
+			if (d.intersects)
+				intersecting.push_back(d);
+		}
+
+		return intersecting;
+	}
+
+	/**
+	* Cast a ray into the world, and return the closest intersecting box ID.
+	*/
+	IntersectData castRay(Entities& entities, const glm::vec3& r_pos, const glm::vec3& r_dir, const std::vector<EntityID>& ignore)
+	{
+		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
+		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
+
+		std::map<float, IntersectData> distances;
 		for (EntityID id : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 		{
-			if (id == ignore || boxes[id].trigger) continue;
+			// Don't collide with ignored entities.
+			if (boxes[id].trigger || std::find(ignore.begin(), ignore.end(), id) != ignore.end()) continue;
 
 			CS::Transform t = getWorldT(entities, id);
 
-			d = intersectOBBvRay(t, boxes[id].size, r_pos, r_dir);
+			IntersectData d = intersectOBBvRay(t, boxes[id].size, r_pos, r_dir);
 			if (d.intersects)
-				distances[d.distance] = id;
+			{
+				d.id = id;
+				distances[d.distance] = d;
+			}
 		}
 
 		if (distances.size() > 0)
-		{
-			t = distances.begin()->first;
 			return distances.begin()->second;
-		}
 
-		return 0;
+		return IntersectData();
 	}
 
 	/**
@@ -174,60 +203,15 @@ namespace ENG
 
 		IntersectData data;
 		data.intersects = planetest(x_axis, dist, r_dir, min.x, max.x, tmin, tmax);
+		if (data.intersects) data.normal = x_axis;
 		data.intersects = planetest(y_axis, dist, r_dir, min.y, max.y, tmin, tmax);
+		if (data.intersects) data.normal = y_axis;
 		data.intersects = planetest(z_axis, dist, r_dir, min.z, max.z, tmin, tmax);
+		if (data.intersects) data.normal = z_axis;
 		data.distance = tmin;
 
 		return data;
 	}
-
-	/**
-	* Checks if an AABB intersects a plane.
-	*/
-	IntersectData intersectAABBvPlane(glm::vec3 b_pos, glm::vec3 b_size, glm::vec3 p_pos, glm::vec3 p_norm, glm::vec3 p_size)
-	{
-		glm::vec3 min = b_pos - b_size;
-		glm::vec3 max = b_pos + b_size;
-
-		// All 8 vertices in AABB
-		glm::vec3 verts[8] =
-		{
-			min,
-			max,
-			{ max.x, min.y, min.z },
-			{ min.x, max.y, min.z },
-			{ min.x, min.y, max.z },
-			{ min.x, max.y, max.z },
-			{ max.x, min.y, max.z },
-			{ max.x, max.y, min.z }
-		};
-
-		IntersectData data;
-		data.normal = glm::dot(p_norm, p_pos - b_pos) > 0 ? p_norm : -p_norm;
-
-		// Check if all vertices are on the same side of the plane. If not, then they intersect
-		float dist = 0.0f, last = std::numeric_limits<float>::max();
-		int sign = 0, prev_sign = static_cast<int>(glm::sign(glm::dot(p_norm, p_pos - verts[0])));
-		for (int i = 0; i < 8; i++)
-		{
-			sign = static_cast<int>(glm::sign(glm::dot(p_norm, p_pos - verts[i])));
-			if (sign != prev_sign)
-			{
-				data.intersects = true;
-
-				// Always use shortest distance to plane
-				dist = glm::abs(glm::dot(p_pos - verts[i], p_norm));
-				data.distance = glm::min(dist, last);
-				last = data.distance;
-			}
-
-			prev_sign = sign;
-		}
-
-		return data;
-	}
-
-	// OBB STUFF --  WORK IN PROGRESS -----------------------------
 
 	/**
 	* Get the world space vertex positions of bounding box.

@@ -31,18 +31,23 @@ namespace Game
 		using namespace ENG;
 
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Controller>& controllers = core.entities.getPool<CS::Controller>();
 		ComponentMap<Game::Pickup>& pickups = core.entities.getPool<Game::Pickup>();
 
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, Game::Pickup>())
 		{
 			if (pickups[id].active)
 			{
-				transforms[id].position = glm::lerp(
-					transforms[id].position,
-					getWorldT(core.entities, pickups[id].holder).position,
-					5.0f * core.delta
-				);
+				// Move pickup using controller component, instead of lerping.
+				// This gives the pickup proper collisions with the world.
+				glm::vec3 target = getWorldT(core.entities, pickups[id].holder).position;
+				glm::vec3 direction = glm::normalize(target - transforms[id].position);
+				float speed = -glm::lerp(10.0f, 0.0f, glm::distance(transforms[id].position, target));
+				controllers[id].velocity = direction * speed;
+
+				// TODO: Stop pickup from jittering when close to destination.
 			}
+			else controllers[id].velocity = glm::vec3(0.0f);
 		}
 	}
 }

@@ -7,7 +7,6 @@ namespace ENG
 {
 	void Mesh::setVertices(const std::vector<Vertex>& new_vertices)
 	{
-		dirty = true;
 		vertices = new_vertices;
 		create();
 		update();
@@ -62,12 +61,6 @@ namespace ENG
 		// Add vertices to buffers.
 		for (const Vertex& vertex : vertices)
 		{
-			//if (vertex.position.x < min.x && vertex.position.y < min.y && vertex.position.z < min.z)
-			//	min = vertex.position;
-
-			//if (vertex.position.x > max.x && vertex.position.y > max.y && vertex.position.z > max.z)
-			//	max = vertex.position;
-
 			min = glm::min(vertex.position, min);
 			max = glm::max(vertex.position, max);
 
@@ -141,10 +134,9 @@ namespace ENG
 
 	void Mesh2D::setVertices(const std::vector<Vertex2D>& new_vertices)
 	{
-		dirty = true;
 		vertices = new_vertices;
-		update();
 		create();
+		update();
 	}
 
 	void Mesh2D::create()
@@ -182,11 +174,8 @@ namespace ENG
 		// Add vertices to buffers.
 		for (const Vertex2D& vertex : vertices)
 		{
-			if (vertex.position.x < min.x && vertex.position.y < min.y)
-				min = vertex.position;
-
-			if (vertex.position.x > max.x && vertex.position.y > max.y)
-				max = vertex.position;
+			min = glm::min(vertex.position, min);
+			max = glm::max(vertex.position, max);
 
 			positions.push_back(vertex.position.x);
 			positions.push_back(vertex.position.y);
