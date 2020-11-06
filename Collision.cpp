@@ -44,7 +44,10 @@ namespace ENG
 					}
 					else
 					{
+						// Move the controller out of the collision
 						transforms[a].position -= d.normal * d.distance;
+
+						// Check if the controller is on the floor, if the normal's y is pointing up enough.
 						if (!controllers[a].on_floor)
 							controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f) || approximate(d.normal.y, -1.0f, 0.1f);
 					}

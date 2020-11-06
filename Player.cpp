@@ -34,6 +34,7 @@ namespace Game
 		ENG::CS::Sprite& s = core.entities.getComponent<ENG::CS::Sprite>(crosshair);
 		s.texture = "crosshair.png";
 
+		//ENG::addScript<Game::Player>(core, player);
 		ENG::CS::Script& scr = core.entities.getComponent<ENG::CS::Script>(player);
 		scr.script = std::make_shared<Game::Player>();
 
@@ -45,11 +46,12 @@ namespace Game
 	void Player::start(ENG::Core& core)
 	{
 		transform = &core.entities.getComponent<ENG::CS::Transform>(id);
-		controller = &core.entities.getComponent<ENG::CS::Controller>(id);
 		transform->position.y = 5.0f;
+		
+		controller = &core.entities.getComponent<ENG::CS::Controller>(id);
 
 		box = &core.entities.getComponent<ENG::CS::BoxCollider>(id);
-		box->size = { 0.25f, 0.5f, 0.25f };
+		box->size = { 0.25f, 0.8f, 0.25f };
 
 		pickup_position = core.entities.addEntity<ENG::CS::Transform>();
 		core.entities.getComponent<ENG::CS::Transform>(pickup_position).position.z = -3.0f;
@@ -68,17 +70,12 @@ namespace Game
 
 	void Player::movement(ENG::Core& core)
 	{
+		// Movement
 		direction = glm::vec3(0.0f);
 		if (core.window.isKeyPressed(GLFW_KEY_W)) direction -= transform->forward();
 		else if (core.window.isKeyPressed(GLFW_KEY_S)) direction += transform->forward();
 		if (core.window.isKeyPressed(GLFW_KEY_A)) direction -= transform->right();
 		else if (core.window.isKeyPressed(GLFW_KEY_D)) direction += transform->right();
-
-		if (controller->on_floor && core.window.isKeyPressed(GLFW_KEY_SPACE))
-		{
-			velocity.y = 7.5f;
-			controller->on_floor = false;
-		}
 
 		if (direction != glm::vec3(0.0f))
 			direction = glm::normalize(direction);
@@ -86,8 +83,11 @@ namespace Game
 		velocity.x = direction.x * speed;
 		velocity.z = direction.z * speed;
 
+		// Apply gravity and jumping
 		if (!controller->on_floor)
 			velocity.y -= 9.8f * core.delta;
+		else if (core.window.isKeyPressed(GLFW_KEY_SPACE))
+			velocity.y = 10.0f;
 		else
 			velocity.y = 0.0f;
 
@@ -99,8 +99,7 @@ namespace Game
 		if (ray.id == 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
 		{
 			ray = ENG::castRay(core.entities, transform->position, -transform->forward(), { id, ray.id });
-			OUTPUT(glm::to_string(ray.normal));
-			if (ray.id != 0 && core.entities.hasComponent<Game::Pickup>(ray.id))
+			if (ray.id != 0 && ray.distance < 5.0f && core.entities.hasComponent<Game::Pickup>(ray.id))
 			{
 				core.entities.getComponent<Game::Pickup>(ray.id).active = true;
 				core.entities.getComponent<Game::Pickup>(ray.id).holder = pickup_position;
@@ -110,17 +109,8 @@ namespace Game
 
 		if (ray.id != 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
 		{
-			IntersectData floor_ray = ENG::castRay(core.entities, transform->position, -transform->forward(), { id, ray.id });
-			if (floor_ray.id != 0)
-			{
-				glm::vec3 new_pos = transform->position + floor_ray.distance * -transform->forward();
-				new_pos.y += core.entities.getComponent<ENG::CS::BoxCollider>(ray.id).size.y * core.entities.getComponent<ENG::CS::Transform>(ray.id).scale.y;
-
-				core.entities.getComponent<ENG::CS::Transform>(ray.id).position = new_pos;
-				core.entities.getComponent<Game::Pickup>(ray.id).active = false;
-
-				ray.id = 0;
-			}
+			core.entities.getComponent<Game::Pickup>(ray.id).active = false;
+			ray.id = 0;
 		}
 	}
 

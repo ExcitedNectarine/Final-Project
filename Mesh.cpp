@@ -204,6 +204,11 @@ namespace ENG
 		glDeleteVertexArrays(1, &id);
 	}
 
+	std::vector<Vertex2D>& Mesh2D::getVertices()
+	{
+		return vertices;
+	}
+
 	Vertex2D& Mesh2D::operator[](const int index)
 	{
 		dirty = true;

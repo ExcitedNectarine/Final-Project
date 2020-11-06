@@ -1,7 +1,7 @@
-title=Non-Euclidean Puzzler
+title=Game Engine
 width=1920
 height=1080
-fov=90
+fov=110
 meshes=Resources/meshes.txt
 textures=Resources/textures.txt
 sounds=Resources/sounds.txt

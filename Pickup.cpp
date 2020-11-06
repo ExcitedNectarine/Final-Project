@@ -41,13 +41,25 @@ namespace Game
 				// Move pickup using controller component, instead of lerping.
 				// This gives the pickup proper collisions with the world.
 				glm::vec3 target = getWorldT(core.entities, pickups[id].holder).position;
-				glm::vec3 direction = glm::normalize(target - transforms[id].position);
-				float speed = -glm::lerp(10.0f, 0.0f, glm::distance(transforms[id].position, target));
+				glm::vec3 distance = target - transforms[id].position;
+				glm::vec3 direction = glm::normalize(distance);
+
+				float speed = 8.0f;
 				controllers[id].velocity = direction * speed;
 
-				// TODO: Stop pickup from jittering when close to destination.
+				// If the velocity oversteps, just set the velocity equal to the distance,
+				// effectively moving the pickup directly to the target.
+				glm::vec3 movement_per_frame = direction * speed * core.delta;
+				if (glm::length(movement_per_frame) > glm::length(distance))
+					controllers[id].velocity = distance;
 			}
-			else controllers[id].velocity = glm::vec3(0.0f);
+			else
+			{
+				controllers[id].velocity.x = 0.0f;
+				controllers[id].velocity.z = 0.0f;
+				if (!controllers[id].on_floor)
+					controllers[id].velocity.y -= 9.8f * core.delta;
+			}
 		}
 	}
 }

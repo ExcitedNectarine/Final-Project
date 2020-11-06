@@ -355,4 +355,71 @@ namespace ENG
 			shader.setUniform("lights[" + std::to_string(i) + "].radius", lights[ents[i]].radius * scale_average);
 		}
 	}
+
+	void renderText(Core& core)
+	{
+		ComponentMap<CS::Transform2D>& transforms = core.entities.getPool<CS::Transform2D>();
+		ComponentMap<CS::Text>& texts = core.entities.getPool<CS::Text>();
+
+		std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		glm::ivec2 frames(12, 3);
+		glm::vec2 frame_size(1.0f / frames.x, 1.0f / frames.y);
+
+		// works
+		std::map<char, glm::vec2> char_frames;
+		int count = 0;
+		for (int y = 1; y <= frames.y; y++)
+			for (int x = 1; x <= frames.x; x++)
+				char_frames[tolower(alphabet[count++])] = { x, y };
+
+		//OUTPUT(char_frames.size());
+		//for (auto p : char_frames) OUTPUT(p.first << " - " << glm::to_string(p.second));
+		//PAUSE_CONSOLE;
+
+		glm::vec2 luv;
+		glm::vec2 huv;
+		for (EntityID id : core.entities.entitiesWith<CS::Transform2D, CS::Text>())
+		{
+			if (texts[id].text.size() == 0) continue;
+
+			std::vector<Vertex2D> vertices;
+			for (std::size_t i = 0; i < texts[id].text.length(); i++)
+			{
+				char c = tolower(texts[id].text[i]);
+
+				if (c == ' ')
+					huv = luv = glm::vec2(0.0f);
+				else
+				{
+					huv = frame_size * char_frames[c];
+					luv = huv - frame_size;
+				}
+
+				// Add quad for character, offsetting for character count.
+				std::vector<Vertex2D> verts_2d = {
+					Vertex2D({ i, 1.0f }, { luv.x, huv.y }),
+					Vertex2D({ 1.0f + i, 0.0f }, { huv.x, luv.y }),
+					Vertex2D({ i, 0.0f }, luv),
+					Vertex2D({ i, 1.0f }, { luv.x, huv.y }),
+					Vertex2D({ 1.0f + i, 1.0f }, huv),
+					Vertex2D({ 1.0f + i, 0.0f }, { huv.x, luv.y })
+				};
+
+				vertices.insert(vertices.end(), verts_2d.begin(), verts_2d.end());
+			}
+
+			Mesh2D mesh;
+			mesh.setVertices(vertices);
+
+			CS::Transform2D t = transforms[id];
+			t.scale *= core.resources.texture("font.png").getSize() / frames;
+
+			core.resources.shader("sprite.shdr").setUniform("transform", t.get());
+			mesh.bind();
+			core.resources.shader("sprite.shdr").bind();
+			core.resources.texture("font.png").bind();
+
+			glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount());
+		}
+	}
 }

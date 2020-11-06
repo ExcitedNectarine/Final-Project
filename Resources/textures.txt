@@ -1,4 +1,5 @@
 Resources/Textures/notexture.png
+Resources/Textures/font.png
 Resources/Textures/Space3.jpg
 Resources/Textures/crosshair.png
 Resources/Textures/skybox.png

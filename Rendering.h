@@ -76,6 +76,11 @@ namespace ENG
 			float near;
 			float far;
 		};
+
+		struct Text : ECSComponent<Text>
+		{
+			std::string text = "no text";
+		};
 	}
 
 	namespace
@@ -96,6 +101,7 @@ namespace ENG
 	void drawSprites(Core& core);
 	void drawSprites3D(Core& core);
 	void drawColliders(Core& core);
+	void renderText(Core& core);
 
 	/**
 	* Uploads lighting information to shader.

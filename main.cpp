@@ -35,6 +35,7 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 		ENG::CS::Transform2D,
 		ENG::CS::Model,
 		ENG::CS::Sprite,
+		ENG::CS::Text,
 		ENG::CS::Light,
 		ENG::CS::Camera,
 		ENG::CS::Script,
@@ -49,6 +50,7 @@ void run(ENG::Core& core)
 	Game::startPortals(core.entities, core.window.getSize());
 	ENG::spriteStart(core);
 
+	glfwSetTime(0.016f);
 	double current = 0.0, last = 0.0;
 	while (!core.window.shouldClose())
 	{
@@ -75,6 +77,7 @@ void run(ENG::Core& core)
 		Game::drawPortals(core);
 		ENG::drawModelsToHUD(core);
 		ENG::drawSprites(core);
+		ENG::renderText(core);
 
 		//ENG::drawToCameras(core);
 		//ENG::drawToScreen(core);
@@ -100,6 +103,9 @@ ENG::EntityID createBarrier(ENG::Core& core, glm::vec3 pos)
 
 void createTableScene(ENG::Core& core)
 {
+	ENG::EntityID words = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Text>();
+	core.entities.getComponent<ENG::CS::Transform2D>(words).position = glm::vec2(50.0f);
+
 	// Create player
 	ENG::EntityID player = Game::createPlayer(core);
 
@@ -135,11 +141,7 @@ void createTableScene(ENG::Core& core)
 	core.entities.getComponent<ENG::CS::Transform>(box).rotation.y = 45.0f;
 
 	for (int i = 0; i < 5; i++)
-	{
 		ENG::EntityID id = Game::createPickup(core, { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) });
-		/*while (ENG::getIntersectingEntities(core.entities, id).size() > 0)
-			core.entities.getComponent<ENG::CS::Transform>(id).position = { ENG::randomFloat(-15.0f, 15.0f), 0.0f, ENG::randomFloat(-15.0f, 15.0f) };*/
-	}
 
 	// Create floors
 	createBarrier(core, { 0.0f, -2.0f, 0.0f });
