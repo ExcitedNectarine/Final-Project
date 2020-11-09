@@ -19,7 +19,7 @@ namespace Game
 		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
 		t.parent = player;
-		t.position = { 0.2f, -0.2f, -0.2f };
+		t.position = { 0.0f, -0.3f, -0.2f };
 
 		ENG::CS::Model& model = core.entities.getComponent<ENG::CS::Model>(gun);
 		model.mesh = "gun.obj";
@@ -56,6 +56,10 @@ namespace Game
 		pickup_position = core.entities.addEntity<ENG::CS::Transform>();
 		core.entities.getComponent<ENG::CS::Transform>(pickup_position).position.z = -3.0f;
 		core.entities.getComponent<ENG::CS::Transform>(pickup_position).parent = id;
+
+		pos_text = core.entities.addEntity<CS::Transform2D, CS::Text>();
+		core.entities.getComponent<CS::Transform2D>(pos_text).position = glm::vec2(50.0f);
+		core.entities.getComponent<CS::Text>(pos_text).setText("Hello this is a much longer sentence just to test the text rendering");
 	}
 
 	void Player::mouselook(ENG::Core& core)
@@ -128,6 +132,8 @@ namespace Game
 		mouselook(core);
 		movement(core);
 		actions(core);
+
+		//core.entities.getComponent<CS::Text>(pos_text).text = std::to_string(int(transform->position.x)) + " " + std::to_string(int(transform->position.y)) + " " + std::to_string(int(transform->position.z));
 
 		core.renderer.view = transform;
 	}

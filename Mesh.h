@@ -20,7 +20,6 @@ namespace ENG
 		void create();
 		void update();
 		void cleanup();
-		//std::vector<Vertex>& getVertices();
 		Vertex& operator[](const int index);
 		std::size_t vertexCount();
 		void bind();
@@ -41,7 +40,6 @@ namespace ENG
 		void create();
 		void update();
 		void cleanup();
-		std::vector<Vertex2D>& getVertices();
 		Vertex2D& operator[](const int index);
 		std::size_t vertexCount();
 		void bind();

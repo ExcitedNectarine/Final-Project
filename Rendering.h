@@ -27,6 +27,7 @@ namespace ENG
 		{
 			std::string mesh = "cube.obj";
 			std::string texture = "notexture.png";
+			std::string shader = "default.shdr";
 			bool hud = false;
 		};
 
@@ -79,7 +80,10 @@ namespace ENG
 
 		struct Text : ECSComponent<Text>
 		{
-			std::string text = "no text";
+			void setText(const std::string& new_text);
+
+			std::string text = "This is a sentence";
+			Mesh2D mesh;
 		};
 	}
 

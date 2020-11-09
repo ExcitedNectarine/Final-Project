@@ -24,6 +24,7 @@ namespace Game
 		float sensitivity = 0.05f;
 		IntersectData ray;
 		ENG::EntityID pickup_position = 0;
+		ENG::EntityID pos_text;
 
 		void start(ENG::Core& core);
 		void mouselook(ENG::Core& core);

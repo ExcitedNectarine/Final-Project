@@ -34,7 +34,7 @@ namespace ENG
 
 	void Resources::loadTextures(const std::vector<std::string>& files)
 	{
-		stbi_set_flip_vertically_on_load(0);
+		stbi_set_flip_vertically_on_load(1);
 		std::map<std::string, std::future<Image>> futures;
 
 		// Same as the loop for loading meshes. Asynchronously loads textures.

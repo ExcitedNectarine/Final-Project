@@ -70,17 +70,17 @@ void run(ENG::Core& core)
 
 		core.window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
 
-		ENG::drawSkybox(core.resources);
-		ENG::drawModels(core);
-		ENG::drawColliders(core);
-		ENG::drawSprites3D(core);
-		Game::drawPortals(core);
-		ENG::drawModelsToHUD(core);
-		ENG::drawSprites(core);
-		ENG::renderText(core);
+		//ENG::drawSkybox(core.resources);
+		//ENG::drawModels(core);
+		//ENG::drawColliders(core);
+		//ENG::drawSprites3D(core);
+		//Game::drawPortals(core);
+		//ENG::drawModelsToHUD(core);
+		//ENG::drawSprites(core);
+		//ENG::renderText(core);
 
-		//ENG::drawToCameras(core);
-		//ENG::drawToScreen(core);
+		ENG::drawToCameras(core);
+		ENG::drawToScreen(core);
 
 		core.window.display();
 
@@ -103,8 +103,13 @@ ENG::EntityID createBarrier(ENG::Core& core, glm::vec3 pos)
 
 void createTableScene(ENG::Core& core)
 {
-	ENG::EntityID words = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Text>();
-	core.entities.getComponent<ENG::CS::Transform2D>(words).position = glm::vec2(50.0f);
+	//ENG::EntityID words = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Text>();
+	//core.entities.getComponent<ENG::CS::Transform2D>(words).position = glm::vec2(50.0f);
+
+	//ENG::EntityID x = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
+	//core.entities.getComponent<ENG::CS::Transform2D>(x).position = glm::vec2(150.0f);
+	//core.entities.getComponent<ENG::CS::Transform2D>(x).scale *= 0.1f;
+	//core.entities.getComponent<ENG::CS::Sprite>(x).texture = "Space3.jpg";
 
 	// Create player
 	ENG::EntityID player = Game::createPlayer(core);

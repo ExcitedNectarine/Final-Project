@@ -16,6 +16,53 @@ namespace ENG
 		{
 			return glm::perspective(glm::radians(fov_y), aspect, near, far);
 		}
+
+		void Text::setText(const std::string& new_text)
+		{
+			// SETTING UP FOR MESH GENERATION
+			std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+			glm::ivec2 frames(12, 3);
+			glm::vec2 frame_size(1.0f / frames.x, 1.0f / frames.y);
+			glm::vec2 luv;
+			glm::vec2 huv;
+
+			std::map<char, glm::vec2> char_frames;
+			int count = 0;
+			for (int y = frames.y; y > 0; y--)
+				for (int x = 1; x <= frames.x; x++)
+					char_frames[tolower(alphabet[count++])] = { x, y };
+
+			// Mesh generation
+			std::vector<Vertex2D> vertices;
+			for (std::size_t i = 0; i < new_text.length(); i++)
+			{
+				// for each character, make it lwoercase
+				char c = tolower(new_text[i]);
+
+				if (c == ' ')
+					huv = luv = glm::vec2(0.0f); // no texture for space
+				else
+				{
+					huv = frame_size * char_frames[c]; // higher and lower uvs
+					luv = huv - frame_size;
+				}
+
+				// quad for current character
+				std::vector<Vertex2D> verts_2d = {
+					Vertex2D({ i, 1.0f }, luv),
+					Vertex2D({ 1.0f + i, 0.0f }, huv),
+					Vertex2D({ i, 0.0f }, { luv.x, huv.y }),
+					Vertex2D({ i, 1.0f }, luv),
+					Vertex2D({ 1.0f + i, 1.0f }, { huv.x, luv.y }),
+					Vertex2D({ 1.0f + i, 0.0f }, huv)
+				};
+
+				// Add quad to vertex array.
+				vertices.insert(vertices.end(), verts_2d.begin(), verts_2d.end());
+			}
+
+			mesh.setVertices(vertices);
+		}
 	}
 
 	void drawToCameras(Core& core)
@@ -31,6 +78,7 @@ namespace ENG
 			core.resources.shader("default.shdr").setUniform("view", view);
 			core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
 
+			// DRAW PORTALS WITH PORTAL SHADER IN HERE SOMETHING
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawSkybox(core.resources);
 			drawModels(core);
@@ -38,6 +86,7 @@ namespace ENG
 			drawSprites3D(core);
 			drawModelsToHUD(core);
 			drawSprites(core);
+			renderText(core);
 
 			cameras[id].frame.unbind();
 		}
@@ -46,21 +95,14 @@ namespace ENG
 	void drawToScreen(Core& core)
 	{
 		// WRITE NEW SHADER THAT DRAWS SINGLE IMAGE, THE MAIN CAMERAS VIEW. ALSO ALLOWS POST PROCESSING
-		std::vector<Vertex2D> verts_2dd = {
-			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
-			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f }),
-			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 0.0f }),
-			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
-			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 1.0f }),
-			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f })
-		};
-
-		Mesh2D m;
-		m.setVertices(verts_2dd);
-		m.bind();
-
+		CS::Transform2D t;
+		t.scale *= core.window.getSize();
+		
+		core.resources.shader("postprocess.shdr").setUniform("transform", t.get());
+		core.resources.shader("postprocess.shdr").setUniform("projection", core.orthographic);
+		quad_2d.bind();
 		core.resources.shader("postprocess.shdr").bind();
-		core.resources.texture("notexture.png").bind();
+		core.entities.getComponent<CS::Camera>(core.renderer.view_id).frame.getTexture().bind();
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
@@ -132,14 +174,13 @@ namespace ENG
 
 	void spriteStart(Core& core)
 	{
-		// Create primitives
 		std::vector<Vertex2D> verts_2d = {
-			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
-			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f }),
-			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 0.0f }),
-			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 1.0f }),
-			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 1.0f }),
-			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 0.0f })
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 0.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 1.0f }),
+			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 1.0f }),
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 0.0f }),
+			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 0.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 1.0f })
 		};
 
 		std::vector<Vertex> verts_3d = {
@@ -155,11 +196,14 @@ namespace ENG
 		quad_3d.setVertices(verts_3d);
 
 		// Create the framebuffers that each camera will draw to.
-		//ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		//ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
 
-		//for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
-		//	cameras[id].frame.create(cameras[id].size);
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
+		{
+			OUTPUT("Creating camera framebuffer: " << id);
+			cameras[id].frame.create(cameras[id].size);
+		}
 	}
 
 	void updateSprites(Core& core)
@@ -361,65 +405,17 @@ namespace ENG
 		ComponentMap<CS::Transform2D>& transforms = core.entities.getPool<CS::Transform2D>();
 		ComponentMap<CS::Text>& texts = core.entities.getPool<CS::Text>();
 
-		std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-		glm::ivec2 frames(12, 3);
-		glm::vec2 frame_size(1.0f / frames.x, 1.0f / frames.y);
-
-		// works
-		std::map<char, glm::vec2> char_frames;
-		int count = 0;
-		for (int y = 1; y <= frames.y; y++)
-			for (int x = 1; x <= frames.x; x++)
-				char_frames[tolower(alphabet[count++])] = { x, y };
-
-		//OUTPUT(char_frames.size());
-		//for (auto p : char_frames) OUTPUT(p.first << " - " << glm::to_string(p.second));
-		//PAUSE_CONSOLE;
-
-		glm::vec2 luv;
-		glm::vec2 huv;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform2D, CS::Text>())
 		{
-			if (texts[id].text.size() == 0) continue;
-
-			std::vector<Vertex2D> vertices;
-			for (std::size_t i = 0; i < texts[id].text.length(); i++)
-			{
-				char c = tolower(texts[id].text[i]);
-
-				if (c == ' ')
-					huv = luv = glm::vec2(0.0f);
-				else
-				{
-					huv = frame_size * char_frames[c];
-					luv = huv - frame_size;
-				}
-
-				// Add quad for character, offsetting for character count.
-				std::vector<Vertex2D> verts_2d = {
-					Vertex2D({ i, 1.0f }, { luv.x, huv.y }),
-					Vertex2D({ 1.0f + i, 0.0f }, { huv.x, luv.y }),
-					Vertex2D({ i, 0.0f }, luv),
-					Vertex2D({ i, 1.0f }, { luv.x, huv.y }),
-					Vertex2D({ 1.0f + i, 1.0f }, huv),
-					Vertex2D({ 1.0f + i, 0.0f }, { huv.x, luv.y })
-				};
-
-				vertices.insert(vertices.end(), verts_2d.begin(), verts_2d.end());
-			}
-
-			Mesh2D mesh;
-			mesh.setVertices(vertices);
-
 			CS::Transform2D t = transforms[id];
-			t.scale *= core.resources.texture("font.png").getSize() / frames;
+			t.scale *= core.resources.texture("font.png").getSize() / glm::ivec2(12, 3);
 
 			core.resources.shader("sprite.shdr").setUniform("transform", t.get());
-			mesh.bind();
+			texts[id].mesh.bind();
 			core.resources.shader("sprite.shdr").bind();
 			core.resources.texture("font.png").bind();
 
-			glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount());
+			glDrawArrays(GL_TRIANGLES, 0, texts[id].mesh.vertexCount());
 		}
 	}
 }
