@@ -47,13 +47,6 @@ namespace ENG
 		};
 	}
 
-	//template <typename ScriptType> void addScript(Entities& entities, EntityID id)
-	//{
-	//	CS::Script& script = core.entities.getComponent<CS::Script>(id);
-	//	script.script = std::make_shared<ScriptType>();
-	//	if (!core.window.shouldClose()) script.script->start(core);
-	//}
-
 	void scriptStart(Core& core);
 	void scriptUpdate(Core& core);
 	void scriptEnd(Core& core);

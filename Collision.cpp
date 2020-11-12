@@ -188,7 +188,7 @@ namespace ENG
 	}
 
 	/**
-	* Checks if a ray intersects an OBB
+	* Checks if a ray intersects an OBB.
 	*/
 	IntersectData intersectOBBvRay(CS::Transform a_t, glm::vec3 a_size, glm::vec3 r_pos, glm::vec3 r_dir)
 	{
@@ -206,11 +206,8 @@ namespace ENG
 
 		IntersectData data;
 		data.intersects = planetest(x_axis, dist, r_dir, min.x, max.x, tmin, tmax);
-		if (data.intersects) data.normal = x_axis;
 		data.intersects = planetest(y_axis, dist, r_dir, min.y, max.y, tmin, tmax);
-		if (data.intersects) data.normal = y_axis;
 		data.intersects = planetest(z_axis, dist, r_dir, min.z, max.z, tmin, tmax);
-		if (data.intersects) data.normal = z_axis;
 		data.distance = tmin;
 
 		return data;

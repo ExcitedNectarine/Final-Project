@@ -11,6 +11,7 @@ namespace Game
 			ENG::CS::BoxCollider,
 			ENG::CS::Controller,
 			ENG::CS::Camera,
+			ENG::CS::Light,
 			Game::Traveller
 		>();
 
@@ -59,7 +60,7 @@ namespace Game
 
 		pos_text = core.entities.addEntity<CS::Transform2D, CS::Text>();
 		core.entities.getComponent<CS::Transform2D>(pos_text).position = glm::vec2(50.0f);
-		core.entities.getComponent<CS::Text>(pos_text).setText("Hello this is a much longer sentence just to test the text rendering");
+		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)));
 	}
 
 	void Player::mouselook(ENG::Core& core)
@@ -133,13 +134,7 @@ namespace Game
 		movement(core);
 		actions(core);
 
-		//core.entities.getComponent<CS::Text>(pos_text).text = std::to_string(int(transform->position.x)) + " " + std::to_string(int(transform->position.y)) + " " + std::to_string(int(transform->position.z));
-
+		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)));
 		core.renderer.view = transform;
-	}
-
-	void Player::onTriggerEnter(ENG::Core& core, ENG::EntityID hit_id)
-	{
-		//OUTPUT(core.delta);
 	}
 }

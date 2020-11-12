@@ -23,9 +23,6 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 	core.resources.loadSounds(ENG::splitText(ENG::readTextFile(core.settings.get("sounds")), '\n'));
 	core.resources.loadShaders(ENG::splitText(ENG::readTextFile(core.settings.get("shaders")), '\n'));
 
-	core.skybox.create(ENG::splitText(ENG::readTextFile(core.settings.get("skybox")), '\n'));
-	core.skybox.bind();
-
 	core.resources.shader("default.shdr").setUniform("projection", core.perspective);
 	core.resources.shader("skybox.shdr").setUniform("projection", core.perspective);
 	core.resources.shader("sprite.shdr").setUniform("projection", core.orthographic);
@@ -47,10 +44,11 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 void run(ENG::Core& core)
 {
 	ENG::scriptStart(core);
-	Game::startPortals(core.entities, core.window.getSize());
-	ENG::spriteStart(core);
+	ENG::startRenderer(core);
 
-	glfwSetTime(0.016f);
+	Game::startPortals(core.entities, core.window.getSize());
+
+	glfwSetTime(0.0f);
 	double current = 0.0, last = 0.0;
 	while (!core.window.shouldClose())
 	{
@@ -106,10 +104,10 @@ void createTableScene(ENG::Core& core)
 	//ENG::EntityID words = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Text>();
 	//core.entities.getComponent<ENG::CS::Transform2D>(words).position = glm::vec2(50.0f);
 
-	//ENG::EntityID x = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Sprite>();
-	//core.entities.getComponent<ENG::CS::Transform2D>(x).position = glm::vec2(150.0f);
-	//core.entities.getComponent<ENG::CS::Transform2D>(x).scale *= 0.1f;
-	//core.entities.getComponent<ENG::CS::Sprite>(x).texture = "Space3.jpg";
+	ENG::EntityID x = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Sprite>();
+	core.entities.getComponent<ENG::CS::Transform>(x).position.y = 5.0f;
+	core.entities.getComponent<ENG::CS::Transform>(x).scale *= 0.2f;
+	core.entities.getComponent<ENG::CS::Sprite>(x).texture = "Space3.jpg";
 
 	// Create player
 	ENG::EntityID player = Game::createPlayer(core);
@@ -332,7 +330,7 @@ int main()
 
 		core.entities.addComponentPools<Game::Portal, Game::Traveller, Game::Pickup>();
 		core.window.lockMouse(true);
-		core.renderer.ambient = glm::vec3(0.5f);
+		core.renderer.ambient = glm::vec3(0.1f);
 
 		if (i == 1)
 			createTableScene(core);

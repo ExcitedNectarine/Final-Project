@@ -1,15 +1,24 @@
 #include "Mesh.h"
 #include "Output.h"
 
-#include <glm/gtx/string_cast.hpp>
-
 namespace ENG
 {
 	void Mesh::setVertices(const std::vector<Vertex>& new_vertices)
 	{
 		vertices = new_vertices;
-		create();
-		update();
+		dirty = true;
+
+		// Calculate size
+		glm::vec3 min(0.0f);
+		glm::vec3 max(0.0f);
+
+		for (const Vertex& vertex : vertices)
+		{
+			min = glm::min(vertex.position, min);
+			max = glm::max(vertex.position, max);
+		}
+
+		size = max - min;
 	}
 
 	void Mesh::create()
@@ -18,7 +27,6 @@ namespace ENG
 		glGenBuffers(1, &position_id);
 		glGenBuffers(1, &uv_id);
 		glGenBuffers(1, &normal_id);
-		glGenBuffers(1, &colour_id);
 
 		// Create vertex array.
 		glGenVertexArrays(1, &id);
@@ -39,11 +47,6 @@ namespace ENG
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
 		glEnableVertexAttribArray(2);
 
-		// Bind colour buffer to vertex array.
-		glBindBuffer(GL_ARRAY_BUFFER, colour_id);
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-		glEnableVertexAttribArray(3);
-
 		glBindBuffer(GL_ARRAY_BUFFER, NULL);
 		glBindVertexArray(NULL);
 	}
@@ -53,17 +56,10 @@ namespace ENG
 		std::vector<GLfloat> positions;
 		std::vector<GLfloat> uvs;
 		std::vector<GLfloat> normals;
-		std::vector<GLfloat> colours;
-
-		glm::vec3 min(0.0f);
-		glm::vec3 max(0.0f);
 
 		// Add vertices to buffers.
 		for (const Vertex& vertex : vertices)
 		{
-			min = glm::min(vertex.position, min);
-			max = glm::max(vertex.position, max);
-
 			positions.push_back(vertex.position.x);
 			positions.push_back(vertex.position.y);
 			positions.push_back(vertex.position.z);
@@ -74,13 +70,7 @@ namespace ENG
 			normals.push_back(vertex.normal.x);
 			normals.push_back(vertex.normal.y);
 			normals.push_back(vertex.normal.z);
-
-			colours.push_back(vertex.colour.x);
-			colours.push_back(vertex.colour.y);
-			colours.push_back(vertex.colour.z);
 		}
-
-		size = max - min;
 
 		// Upload positions
 		glBindBuffer(GL_ARRAY_BUFFER, position_id);
@@ -94,10 +84,6 @@ namespace ENG
 		glBindBuffer(GL_ARRAY_BUFFER, normal_id);
 		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(GLfloat), &normals.at(0), GL_STATIC_DRAW);
 
-		// Upload colours
-		glBindBuffer(GL_ARRAY_BUFFER, colour_id);
-		glBufferData(GL_ARRAY_BUFFER, colours.size() * sizeof(GLfloat), &colours.at(0), GL_STATIC_DRAW);
-
 		glBindBuffer(GL_ARRAY_BUFFER, NULL);
 	}
 
@@ -106,7 +92,6 @@ namespace ENG
 		glDeleteBuffers(1, &position_id);
 		glDeleteBuffers(1, &uv_id);
 		glDeleteBuffers(1, &normal_id);
-		glDeleteBuffers(1, &colour_id);
 		glDeleteVertexArrays(1, &id);
 	}
 
@@ -122,6 +107,7 @@ namespace ENG
 	{
 		if (dirty)
 		{
+			if (id == 0) create();
 			update();
 			dirty = false;
 		}
@@ -135,8 +121,19 @@ namespace ENG
 	void Mesh2D::setVertices(const std::vector<Vertex2D>& new_vertices)
 	{
 		vertices = new_vertices;
-		create();
-		update();
+		dirty = true;
+
+		// Calculate size
+		glm::vec2 min(0.0f);
+		glm::vec2 max(0.0f);
+
+		for (const Vertex2D& vertex : vertices)
+		{
+			min = glm::min(vertex.position, min);
+			max = glm::max(vertex.position, max);
+		}
+
+		size = max - min;
 	}
 
 	void Mesh2D::create()
@@ -168,23 +165,15 @@ namespace ENG
 		std::vector<GLfloat> positions;
 		std::vector<GLfloat> uvs;
 
-		glm::vec2 min(0.0f);
-		glm::vec2 max(0.0f);
-
 		// Add vertices to buffers.
 		for (const Vertex2D& vertex : vertices)
 		{
-			min = glm::min(vertex.position, min);
-			max = glm::max(vertex.position, max);
-
 			positions.push_back(vertex.position.x);
 			positions.push_back(vertex.position.y);
 
 			uvs.push_back(vertex.uv.x);
 			uvs.push_back(vertex.uv.y);
 		}
-
-		size = max - min;
 
 		// Upload positions
 		glBindBuffer(GL_ARRAY_BUFFER, position_id);
@@ -216,6 +205,7 @@ namespace ENG
 	{
 		if (dirty)
 		{
+			if (id == 0) create();
 			update();
 			dirty = false;
 		}

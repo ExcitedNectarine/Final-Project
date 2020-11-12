@@ -96,16 +96,18 @@ namespace ENG
 	void drawToCameras(Core& core);
 	void drawToScreen(Core& core);
 
+	void startRenderer(Core& core);
 	void updateRenderer(Core& core);
+
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);
-	void spriteStart(Core& core);
 	void updateSprites(Core& core);
 	void drawSprites(Core& core);
 	void drawSprites3D(Core& core);
 	void drawColliders(Core& core);
 	void renderText(Core& core);
+	void renderText3D(Core& core);
 
 	/**
 	* Uploads lighting information to shader.

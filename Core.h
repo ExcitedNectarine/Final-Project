@@ -4,7 +4,6 @@
 #include "Entities.h"
 #include "Resources.h"
 #include "Settings.h"
-#include "CubeMap.h"
 #include "Transform.h"
 #include "Rendering.h"
 
@@ -19,7 +18,6 @@ namespace ENG
 		Entities entities;
 		Resources resources;
 		Settings settings;
-		CubeMap skybox;
 		Renderer renderer;
 		CS::Camera camera;
 		glm::mat4 perspective;

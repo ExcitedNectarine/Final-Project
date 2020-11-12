@@ -126,7 +126,6 @@
   <ItemGroup>
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Collision.cpp" />
-    <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="Entities.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Image.cpp" />
@@ -150,7 +149,6 @@
     <ClInclude Include="Audio.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Components.h" />
-    <ClInclude Include="CubeMap.h" />
     <ClInclude Include="Entities.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="Image.h" />

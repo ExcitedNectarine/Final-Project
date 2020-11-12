@@ -1,10 +1,7 @@
 #pragma once
 
-#include <iostream>
 #include <string>
-#include <sstream>
 #include <vector>
-#include <fstream>
 #include <GL/glew.h>
 #include "Vertex.h"
 
@@ -27,7 +24,7 @@ namespace ENG
 		glm::vec3 getSize();
 
 	private:
-		GLuint id, position_id, uv_id, normal_id, colour_id;
+		GLuint id = 0, position_id, uv_id, normal_id;
 		bool dirty = false;
 		std::vector<Vertex> vertices;
 		glm::vec3 size;
@@ -47,7 +44,7 @@ namespace ENG
 		glm::vec2 getSize();
 
 	private:
-		GLuint id, position_id, uv_id;
+		GLuint id = 0, position_id, uv_id;
 		bool dirty = false;
 		std::vector<Vertex2D> vertices;
 		glm::vec2 size;

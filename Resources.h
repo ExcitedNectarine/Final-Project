@@ -8,7 +8,6 @@
 #include "Tools.h"
 #include "Shader.h"
 #include "Output.h"
-#include "CubeMap.h"
 
 namespace ENG
 {

@@ -19,9 +19,12 @@ namespace ENG
 
 		void Text::setText(const std::string& new_text)
 		{
+			if (text == new_text) return;
+			text = new_text;
+
 			// SETTING UP FOR MESH GENERATION
-			std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-			glm::ivec2 frames(12, 3);
+			std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+.?!%:()',";
+			glm::ivec2 frames(12, 4);
 			glm::vec2 frame_size(1.0f / frames.x, 1.0f / frames.y);
 			glm::vec2 luv;
 			glm::vec2 huv;
@@ -34,10 +37,10 @@ namespace ENG
 
 			// Mesh generation
 			std::vector<Vertex2D> vertices;
-			for (std::size_t i = 0; i < new_text.length(); i++)
+			for (std::size_t i = 0; i < text.length(); i++)
 			{
 				// for each character, make it lwoercase
-				char c = tolower(new_text[i]);
+				char c = tolower(text[i]);
 
 				if (c == ' ')
 					huv = luv = glm::vec2(0.0f); // no texture for space
@@ -84,6 +87,7 @@ namespace ENG
 			drawModels(core);
 			drawColliders(core);
 			drawSprites3D(core);
+			renderText3D(core);
 			drawModelsToHUD(core);
 			drawSprites(core);
 			renderText(core);
@@ -105,6 +109,40 @@ namespace ENG
 		core.entities.getComponent<CS::Camera>(core.renderer.view_id).frame.getTexture().bind();
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+	}
+
+	void startRenderer(Core& core)
+	{
+		std::vector<Vertex2D> verts_2d = {
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 0.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 1.0f }),
+			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 1.0f }),
+			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 0.0f }),
+			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 0.0f }),
+			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 1.0f })
+		};
+
+		std::vector<Vertex> verts_3d = {
+			Vertex({ -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }),
+			Vertex({ 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }),
+			Vertex({ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }),
+			Vertex({ -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }),
+			Vertex({ 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }),
+			Vertex({ 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f })
+		};
+
+		quad_2d.setVertices(verts_2d);
+		quad_3d.setVertices(verts_3d);
+
+		// Create the framebuffers that each camera will draw to.
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
+
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
+		{
+			OUTPUT("Creating camera framebuffer: " << id);
+			cameras[id].frame.create(cameras[id].size);
+		}
 	}
 
 	void updateRenderer(Core& core)
@@ -170,40 +208,6 @@ namespace ENG
 		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube_inverted.obj").vertexCount());
 
 		glDepthMask(GL_TRUE);
-	}
-
-	void spriteStart(Core& core)
-	{
-		std::vector<Vertex2D> verts_2d = {
-			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 0.0f }),
-			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 1.0f }),
-			Vertex2D({ 0.0f, 0.0f }, { 0.0f, 1.0f }),
-			Vertex2D({ 0.0f, 1.0f }, { 0.0f, 0.0f }),
-			Vertex2D({ 1.0f, 1.0f }, { 1.0f, 0.0f }),
-			Vertex2D({ 1.0f, 0.0f }, { 1.0f, 1.0f })
-		};
-
-		std::vector<Vertex> verts_3d = {
-			Vertex({ -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f }),
-			Vertex({ 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }),
-			Vertex({ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }),
-			Vertex({ -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f }),
-			Vertex({ 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, -1.0f }),
-			Vertex({ 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f })
-		};
-
-		quad_2d.setVertices(verts_2d);
-		quad_3d.setVertices(verts_3d);
-
-		// Create the framebuffers that each camera will draw to.
-		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
-
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
-		{
-			OUTPUT("Creating camera framebuffer: " << id);
-			cameras[id].frame.create(cameras[id].size);
-		}
 	}
 
 	void updateSprites(Core& core)
@@ -416,6 +420,16 @@ namespace ENG
 			core.resources.texture("font.png").bind();
 
 			glDrawArrays(GL_TRIANGLES, 0, texts[id].mesh.vertexCount());
+		}
+	}
+
+	void renderText3D(Core& core)
+	{
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::Text>& texts = core.entities.getPool<CS::Text>();
+
+		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Text>())
+		{
 		}
 	}
 }

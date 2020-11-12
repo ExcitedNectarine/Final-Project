@@ -5,5 +5,4 @@ fov=110
 meshes=Resources/meshes.txt
 textures=Resources/textures.txt
 sounds=Resources/sounds.txt
-skybox=Resources/skybox.txt
 shaders=Resources/shaders.txt

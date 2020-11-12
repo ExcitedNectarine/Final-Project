@@ -31,6 +31,5 @@ namespace Game
 		void movement(ENG::Core& core);
 		void actions(ENG::Core& core);
 		void update(ENG::Core& core);
-		void onTriggerEnter(ENG::Core& core, ENG::EntityID hit_id);
 	};
 }
