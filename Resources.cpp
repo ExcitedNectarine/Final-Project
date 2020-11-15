@@ -10,6 +10,8 @@ namespace ENG
 			p.second.cleanup();
 		for (auto& p : textures)
 			p.second.cleanup();
+		for (auto& p : shaders)
+			p.second.cleanUp();
 	}
 
 	void Resources::loadMeshes(const std::vector<std::string>& files)

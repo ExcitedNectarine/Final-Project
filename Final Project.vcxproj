@@ -125,6 +125,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="Clock.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="Entities.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
@@ -145,6 +146,7 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Clock.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="Audio.h" />
     <ClInclude Include="Collision.h" />

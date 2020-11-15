@@ -20,7 +20,7 @@ namespace ENG
 			// Should controllers that are triggers be updated?
 			if (boxes[a].trigger) continue;
 
-			transforms[a].position += controllers[a].velocity * core.delta;
+			transforms[a].position += controllers[a].velocity * core.clock.deltaTime();
 			controllers[a].on_floor = false;
 
 			CS::Transform a_t = getWorldT(core.entities, a);
@@ -54,25 +54,6 @@ namespace ENG
 				}
 			}
 		}
-	}
-
-	/**
-	* This function returns a vector containing every entities intersecting with entity a.
-	*/
-	std::vector<IntersectData> getIntersectingEntities(Entities& entities, EntityID a)
-	{
-		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
-
-		std::vector<IntersectData> intersecting;
-		for (EntityID b : entities.entitiesWith<CS::Transform, CS::BoxCollider>())
-		{
-			IntersectData d = intersectOBBvOBB(transforms[a], boxes[a].size, transforms[a], boxes[a].size);
-			if (d.intersects)
-				intersecting.push_back(d);
-		}
-
-		return intersecting;
 	}
 
 	/**
@@ -206,9 +187,14 @@ namespace ENG
 
 		IntersectData data;
 		data.intersects = planetest(x_axis, dist, r_dir, min.x, max.x, tmin, tmax);
+		if (data.intersects) data.normal = x_axis;
 		data.intersects = planetest(y_axis, dist, r_dir, min.y, max.y, tmin, tmax);
+		if (data.intersects) data.normal = y_axis;
 		data.intersects = planetest(z_axis, dist, r_dir, min.z, max.z, tmin, tmax);
+		if (data.intersects) data.normal = z_axis;
 		data.distance = tmin;
+
+		/////// MODIFY TO RETURN NORMAL OF FACE RAY INTERSECTS WITH
 
 		return data;
 	}
@@ -298,27 +284,32 @@ namespace ENG
 		data.intersects = true;
 		data.distance = std::numeric_limits<float>::max();
 
+		// For each relevant axis
 		for (std::size_t i = 0; i < axes.size(); i++)
 		{
 			if (approximate(glm::length2(axes[i]), 0.0f, 0.0001f)) continue;
 			glm::vec3 axis = glm::normalize(axes[i]);
 
+			// Get the mimimum and maximum projections of each object along the axis.
 			float min_a, max_a, min_b, max_b;
 			findMinMaxAlongAxis(axis, a_verts, min_a, max_a);
 			findMinMaxAlongAxis(axis, b_verts, min_b, max_b);
 
+			// Are the projections seperated? Do they not overlap.
 			if (min_b > max_a || min_a > max_b)
 			{
+				// The objects aren't overlapping. All axes need to test positive for this.
 				data.intersects = false;
 				break;
 			}
 			else
 			{
+				// If they are overlapping, how far do they overlap?
 				float dist = glm::abs(glm::min(max_a, max_b) - glm::max(min_a, min_b));
 				if (dist < data.distance)
 				{
 					data.distance = dist;
-					data.normal = axis * (min_a < min_b ? 1.0f : -1.0f);
+					data.normal = axis * (min_a < min_b ? 1.0f : -1.0f); // Which direction does it overlap?
 				}
 			}
 		}

@@ -56,7 +56,7 @@ namespace ENG
 	}
 
 	/**
-	* Returns an entities world transformation.
+	* Returns an entity's world transformation.
 	*/
 	glm::mat4 getWorldM(Entities& entities, EntityID id)
 	{
@@ -71,6 +71,9 @@ namespace ENG
 		return getWorldM(entities, pool[id].parent) * pool[id].get();
 	}
 
+	/**
+	* Returns an entity's decomposed world transformation.
+	*/
 	CS::Transform getWorldT(Entities& entities, EntityID id)
 	{
 		return decompose(getWorldM(entities, id));

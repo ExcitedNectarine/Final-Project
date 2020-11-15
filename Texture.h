@@ -13,8 +13,9 @@ namespace ENG
 	class Texture
 	{
 	public:
-		void create(const glm::ivec2& size);
+		void createEmpty(const glm::ivec2& size);
 		void createFromImage(const Image& image);
+		void resize(const glm::ivec2& size);
 		void bind();
 		void unbind();
 		void cleanup();

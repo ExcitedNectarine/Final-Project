@@ -5,19 +5,20 @@ namespace ENG
 {
 	namespace CS
 	{
-		Camera::Camera(const glm::vec2& size, const float fov, const float near, const float far) : size(size), near(near), far(far)
+		Camera::Camera(const glm::vec2& size, const float fov, const float near, const float far) { create(size, fov, near, far); }
+		void Camera::create(const glm::vec2& size, const float fov, const float near, const float far)
 		{
 			aspect = size.x / size.y;
 			fov_y = fov;
 			fov_x = static_cast<float>(glm::degrees(2 * glm::atan(glm::tan(fov_y * 0.5) * aspect)));
+			this->near = near;
+			this->far = far;
+			this->size = size;
 		}
 
-		glm::mat4 Camera::get()
-		{
-			return glm::perspective(glm::radians(fov_y), aspect, near, far);
-		}
+		glm::mat4 Camera::get() { return glm::perspective(glm::radians(fov_y), aspect, near, far); }
 
-		void Text::setText(const std::string& new_text)
+		void Text::setText(const std::string& new_text, Core& core)
 		{
 			if (text == new_text) return;
 			text = new_text;
@@ -65,6 +66,41 @@ namespace ENG
 			}
 
 			mesh.setVertices(vertices);
+
+
+
+			// DRAW TO FRAMEBUFFER TO CREATE TEXTURE
+			//CS::Transform2D t;
+			//frame.resize({ text.length() * 10, 10 });
+			//frame.bind();
+			//for (std::size_t i = 0; i < text.length(); i++)
+			//{
+			//	// for each character, make it lwoercase
+			//	char c = tolower(text[i]);
+
+			//	if (c == ' ')
+			//		huv = luv = glm::vec2(0.0f); // no texture for space
+			//	else
+			//	{
+			//		huv = frame_size * char_frames[c]; // higher and lower uvs
+			//		luv = huv - frame_size;
+			//	}
+
+			//	quad_2d[0].uv = luv;
+			//	quad_2d[1].uv = huv;
+			//	quad_2d[2].uv = { luv.x, huv.y };
+			//	quad_2d[3].uv = luv;
+			//	quad_2d[4].uv = { huv.x, luv.y };
+			//	quad_2d[5].uv = huv;
+
+			//	t.position.x = i * 10;
+			//	core.resources.shader("sprite.shdr").setUniform("transform", t.get());
+
+			//	quad_2d.bind();
+			//	core.resources.shader("sprite.shdr").bind();
+			//	core.resources.texture("font.png").bind();
+			//	glDrawArrays(GL_TRIANGLES, 0, 6);
+			//}
 		}
 	}
 
@@ -77,9 +113,7 @@ namespace ENG
 		{
 			cameras[id].frame.bind();
 
-			glm::mat4 view = glm::inverse(getWorldM(core.entities, id));
-			core.resources.shader("default.shdr").setUniform("view", view);
-			core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
+			updateRenderer(core, glm::inverse(getWorldM(core.entities, id)), cameras[id].get());
 
 			// DRAW PORTALS WITH PORTAL SHADER IN HERE SOMETHING
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -98,12 +132,10 @@ namespace ENG
 
 	void drawToScreen(Core& core)
 	{
-		// WRITE NEW SHADER THAT DRAWS SINGLE IMAGE, THE MAIN CAMERAS VIEW. ALSO ALLOWS POST PROCESSING
 		CS::Transform2D t;
 		t.scale *= core.window.getSize();
 		
 		core.resources.shader("postprocess.shdr").setUniform("transform", t.get());
-		core.resources.shader("postprocess.shdr").setUniform("projection", core.orthographic);
 		quad_2d.bind();
 		core.resources.shader("postprocess.shdr").bind();
 		core.entities.getComponent<CS::Camera>(core.renderer.view_id).frame.getTexture().bind();
@@ -134,24 +166,34 @@ namespace ENG
 		quad_2d.setVertices(verts_2d);
 		quad_3d.setVertices(verts_3d);
 
+		glm::vec2 window_size(core.window.getSize());
+		core.resources.shader("postprocess.shdr").setUniform("projection", glm::ortho(0.0f, window_size.x, window_size.y, 0.0f));
+		core.resources.shader("sprite.shdr").setUniform("projection", glm::ortho(0.0f, window_size.x, window_size.y, 0.0f));
+
 		// Create the framebuffers that each camera will draw to.
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
 
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
 		{
-			OUTPUT("Creating camera framebuffer: " << id);
+			if (cameras[id].size == glm::ivec2(0))
+				cameras[id].create(core.window.getSize(), core.settings.getf("fov"), 0.1f, 250.0f);
 			cameras[id].frame.create(cameras[id].size);
 		}
 	}
 
-	void updateRenderer(Core& core)
+	void updateRenderer(Core& core, glm::mat4 view, glm::mat4 projection)
 	{
-		glm::mat4 view = glm::inverse(core.renderer.view->get());
-
 		setLights(core, core.resources.shader("default.shdr"));
-		core.resources.shader("default.shdr").setUniform("view", view);
+
 		core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
+
+		core.resources.shader("default.shdr").setUniform("view", view);
+		core.resources.shader("colliders.shdr").setUniform("view", view);
+
+		core.resources.shader("default.shdr").setUniform("projection", projection);
+		core.resources.shader("skybox.shdr").setUniform("projection", projection);
+		core.resources.shader("colliders.shdr").setUniform("projection", projection);
 	}
 
 	void drawModel(Core& core, CS::Model& m, glm::mat4 t, bool emitter)
@@ -174,11 +216,13 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
 
+		CS::Camera c = core.entities.getComponent<CS::Camera>(core.renderer.view_id);
+
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
 		{
 			CS::Model& m = models[id];
 			CS::Transform t = getWorldT(core.entities, id);
-			if (m.hud || !intersectOBBvFrustum(t, core.resources.mesh(m.mesh).getSize() * t.scale, *core.renderer.view, core.camera).intersects) continue;
+			if (m.hud || !intersectOBBvFrustum(t, core.resources.mesh(m.mesh).getSize() * t.scale, getWorldT(core.entities, core.renderer.view_id), c).intersects) continue;
 			drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(id));
 		}
 	}
@@ -218,7 +262,7 @@ namespace ENG
 		// Make sprites that billboard always face the camera.
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
 			if (sprites[id].billboard)
-				transforms[id].rotation = core.renderer.view->rotation;
+				transforms[id].rotation = getWorldT(core.entities, core.renderer.view_id).rotation;
 
 		// Work out which frame each sprite is on.
 		for (EntityID id : core.entities.entitiesWith<CS::Sprite>())
@@ -226,7 +270,7 @@ namespace ENG
 			CS::Sprite& s = sprites[id];
 			if (s.animated)
 			{
-				s.timer += core.delta;
+				s.timer += core.clock.deltaTime();
 				if (s.timer >= s.frame_time)
 				{
 					s.timer = 0.0f;
@@ -270,12 +314,12 @@ namespace ENG
 				huv = frame_size * glm::vec2(s.frame);
 				luv = huv - frame_size;
 
-				quad_2d[0].uv = { luv.x, huv.y };
-				quad_2d[1].uv = { huv.x, luv.y };
-				quad_2d[2].uv = luv;
-				quad_2d[3].uv = { luv.x, huv.y };
-				quad_2d[4].uv = huv;
-				quad_2d[5].uv = { huv.x, luv.y };
+				quad_2d[0].uv = luv;
+				quad_2d[1].uv = huv;
+				quad_2d[2].uv = { luv.x, huv.y };
+				quad_2d[3].uv = luv;
+				quad_2d[4].uv = { huv.x, luv.y };
+				quad_2d[5].uv = huv;
 			}
 
 			t = transforms[id];
@@ -300,7 +344,7 @@ namespace ENG
 
 		std::vector<std::pair<float, EntityID>> distances;
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
-			distances.emplace_back(glm::distance(core.renderer.view->position, getWorldT(core.entities, id).position), id);
+			distances.emplace_back(glm::distance(getWorldT(core.entities, core.renderer.view_id).position, getWorldT(core.entities, id).position), id);
 		std::sort(distances.begin(), distances.end());
 
 		glm::vec2 frame_size;
@@ -363,9 +407,6 @@ namespace ENG
 
 		glm::vec3 solid_colour(1.0f, 0.0f, 0.0f);
 		glm::vec3 trigger_colour(0.0f, 0.0f, 1.0f);
-
-		core.resources.shader("colliders.shdr").setUniform("projection", core.perspective);
-		core.resources.shader("colliders.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
 
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::BoxCollider>())
 		{

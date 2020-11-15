@@ -19,8 +19,8 @@ namespace Game
 	};
 
 	EntityID createPortal(Core& core);
-	void startPortals(Entities& entities, const glm::ivec2& size);
-	void updatePortals(Entities& entities);
+	void startPortals(Core& core);
+	void updatePortals(Core& core);
 	void drawToPortals(Core& core);
 	void drawPortals(Core& core);
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include "Collision.h"
 #include "Resources.h"
 #include "FrameBuffer.h"
@@ -13,7 +14,6 @@ namespace ENG
 	struct Renderer
 	{
 		EntityID view_id = 0;
-		CS::Transform* view;
 		glm::vec3 ambient;
 		bool draw_colliders = false;
 	};
@@ -65,8 +65,9 @@ namespace ENG
 		*/
 		struct Camera : ECSComponent<Camera>
 		{
-			Camera() {}
+			Camera() : size(0) {}
 			Camera(const glm::vec2& size, const float fov, const float near, const float far);
+			void create(const glm::vec2& size, const float fov, const float near, const float far);
 			glm::mat4 get();
 
 			FrameBuffer frame;
@@ -80,10 +81,12 @@ namespace ENG
 
 		struct Text : ECSComponent<Text>
 		{
-			void setText(const std::string& new_text);
+			void setText(const std::string& new_text, Core& core);
 
 			std::string text = "This is a sentence";
 			Mesh2D mesh;
+
+			//FrameBuffer frame;
 		};
 	}
 
@@ -97,7 +100,7 @@ namespace ENG
 	void drawToScreen(Core& core);
 
 	void startRenderer(Core& core);
-	void updateRenderer(Core& core);
+	void updateRenderer(Core& core, glm::mat4 view, glm::mat4 projection);
 
 	void drawModels(Core& core);
 	void drawModelsToHUD(Core& core);

@@ -49,7 +49,7 @@ namespace Game
 
 				// If the velocity oversteps, just set the velocity equal to the distance,
 				// effectively moving the pickup directly to the target.
-				glm::vec3 movement_per_frame = direction * speed * core.delta;
+				glm::vec3 movement_per_frame = direction * speed * core.clock.deltaTime();
 				if (glm::length(movement_per_frame) > glm::length(distance))
 					controllers[id].velocity = distance;
 			}
@@ -58,7 +58,7 @@ namespace Game
 				controllers[id].velocity.x = 0.0f;
 				controllers[id].velocity.z = 0.0f;
 				if (!controllers[id].on_floor)
-					controllers[id].velocity.y -= 9.8f * core.delta;
+					controllers[id].velocity.y -= 9.8f * core.clock.deltaTime();
 			}
 		}
 	}

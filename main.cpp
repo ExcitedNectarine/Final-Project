@@ -7,25 +7,15 @@
 void createCore(ENG::Core& core, const std::string& setting_file)
 {
 	ENG::audioInit();
-
 	core.settings.load(setting_file);
 
 	glm::vec2 window_size(core.settings.getf("width"), core.settings.getf("height"));
-
-	core.camera = ENG::CS::Camera(window_size, core.settings.getf("fov"), 0.1f, 250.0f);
-	core.perspective = core.camera.get();
-	core.orthographic = glm::ortho(0.0f, window_size.x, window_size.y, 0.0f);
-
 	core.window.create(window_size, core.settings.get("title"));
 
 	core.resources.loadMeshes(ENG::splitText(ENG::readTextFile(core.settings.get("meshes")), '\n'));
 	core.resources.loadTextures(ENG::splitText(ENG::readTextFile(core.settings.get("textures")), '\n'));
 	core.resources.loadSounds(ENG::splitText(ENG::readTextFile(core.settings.get("sounds")), '\n'));
 	core.resources.loadShaders(ENG::splitText(ENG::readTextFile(core.settings.get("shaders")), '\n'));
-
-	core.resources.shader("default.shdr").setUniform("projection", core.perspective);
-	core.resources.shader("skybox.shdr").setUniform("projection", core.perspective);
-	core.resources.shader("sprite.shdr").setUniform("projection", core.orthographic);
 
 	core.entities.addComponentPools<
 		ENG::CS::Transform,
@@ -46,36 +36,23 @@ void run(ENG::Core& core)
 	ENG::scriptStart(core);
 	ENG::startRenderer(core);
 
-	Game::startPortals(core.entities, core.window.getSize());
+	Game::startPortals(core);
 
-	glfwSetTime(0.0f);
-	double current = 0.0, last = 0.0;
+	core.clock.reset();
 	while (!core.window.shouldClose())
 	{
-		current = glfwGetTime();
-		core.delta = static_cast<float>(current - last);
-		last = current;
+		core.clock.update();
 
 		ENG::scriptUpdate(core);
 		ENG::moveControllers(core);
 
-		Game::updatePortals(core.entities);
+		Game::updatePortals(core);
 		Game::drawToPortals(core);
 
 		ENG::updateSprites(core);
-		ENG::updateRenderer(core);
 		Game::updatePickups(core);
 
 		core.window.clear({ 0.0f, 0.0f, 0.0f, 0.0f });
-
-		//ENG::drawSkybox(core.resources);
-		//ENG::drawModels(core);
-		//ENG::drawColliders(core);
-		//ENG::drawSprites3D(core);
-		//Game::drawPortals(core);
-		//ENG::drawModelsToHUD(core);
-		//ENG::drawSprites(core);
-		//ENG::renderText(core);
 
 		ENG::drawToCameras(core);
 		ENG::drawToScreen(core);
@@ -103,6 +80,8 @@ void createTableScene(ENG::Core& core)
 {
 	//ENG::EntityID words = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Text>();
 	//core.entities.getComponent<ENG::CS::Transform2D>(words).position = glm::vec2(50.0f);
+
+	core.entities.addEntity<ENG::CS::Transform, ENG::CS::Camera>();
 
 	ENG::EntityID x = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Sprite>();
 	core.entities.getComponent<ENG::CS::Transform>(x).position.y = 5.0f;
@@ -249,7 +228,7 @@ struct CBox : ENG::Script
 	void update(ENG::Core& core)
 	{
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(id);
-		t.rotation.y += 45.0f * core.delta;
+		t.rotation.y += 45.0f * core.clock.deltaTime();
 
 		vel = glm::vec3(0.0f);
 
@@ -266,7 +245,7 @@ struct CBox : ENG::Script
 		if (core.window.isKeyPressed(GLFW_KEY_J))
 			vel.y = -speed;
 
-		t.position += vel * core.delta;
+		t.position += vel * core.clock.deltaTime();
 
 		ENG::CS::Camera cam(glm::vec2(1.0f), 70.0f, 1.0f, 10.0f);
 		ENG::CS::Transform& ct = core.entities.getComponent<ENG::CS::Transform>(frustum);
@@ -330,7 +309,7 @@ int main()
 
 		core.entities.addComponentPools<Game::Portal, Game::Traveller, Game::Pickup>();
 		core.window.lockMouse(true);
-		core.renderer.ambient = glm::vec3(0.1f);
+		core.renderer.ambient = glm::vec3(0.4f);
 
 		if (i == 1)
 			createTableScene(core);

@@ -15,13 +15,14 @@ namespace ENG
 		FrameBuffer();
 		FrameBuffer(const glm::ivec2& size);
 		void create(const glm::ivec2& size);
+		void resize(const glm::ivec2& size);
 		void bind();
 		void unbind();
-		void cleanup(); 
+		void cleanup();
 		Texture& getTexture();
 
 	private:
-		GLuint id;
+		GLuint id = 0;
 		GLuint depth_id;
 		Texture texture;
 	};

@@ -15,8 +15,6 @@ namespace Game
 			Game::Traveller
 		>();
 
-		core.entities.getComponent<ENG::CS::Camera>(player).size = core.window.getSize();
-
 		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
 		t.parent = player;
@@ -35,7 +33,6 @@ namespace Game
 		ENG::CS::Sprite& s = core.entities.getComponent<ENG::CS::Sprite>(crosshair);
 		s.texture = "crosshair.png";
 
-		//ENG::addScript<Game::Player>(core, player);
 		ENG::CS::Script& scr = core.entities.getComponent<ENG::CS::Script>(player);
 		scr.script = std::make_shared<Game::Player>();
 
@@ -60,7 +57,7 @@ namespace Game
 
 		pos_text = core.entities.addEntity<CS::Transform2D, CS::Text>();
 		core.entities.getComponent<CS::Transform2D>(pos_text).position = glm::vec2(50.0f);
-		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)));
+		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)), core);
 	}
 
 	void Player::mouselook(ENG::Core& core)
@@ -90,7 +87,7 @@ namespace Game
 
 		// Apply gravity and jumping
 		if (!controller->on_floor)
-			velocity.y -= 9.8f * core.delta;
+			velocity.y -= 9.8f * core.clock.deltaTime();
 		else if (core.window.isKeyPressed(GLFW_KEY_SPACE))
 			velocity.y = 10.0f;
 		else
@@ -101,7 +98,19 @@ namespace Game
 
 	void Player::actions(ENG::Core& core)
 	{
-		if (ray.id == 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
+		if (core.window.isMouseButtonPressedOnce(GLFW_MOUSE_BUTTON_LEFT))
+		{
+			IntersectData place = ENG::castRay(core.entities, transform->position, -transform->forward(), { id });
+
+			EntityID thing = core.entities.addEntity<CS::Transform, CS::Model>();
+			core.entities.getComponent<CS::Model>(thing).texture = "Space3.jpg";
+			core.entities.getComponent<CS::Model>(thing).mesh = "lamp.obj";
+			core.entities.getComponent<CS::Transform>(thing).scale *= 0.2f;
+			core.entities.getComponent<CS::Transform>(thing).position = transform->position + place.distance * -transform->forward();
+			core.entities.getComponent<CS::Transform>(thing).rotation = place.normal;
+		}
+
+		if (ray.id == 0 && core.window.isKeyPressedOnce(GLFW_KEY_E))
 		{
 			ray = ENG::castRay(core.entities, transform->position, -transform->forward(), { id, ray.id });
 			if (ray.id != 0 && ray.distance < 5.0f && core.entities.hasComponent<Game::Pickup>(ray.id))
@@ -111,8 +120,7 @@ namespace Game
 			}
 			else ray.id = 0;
 		}
-
-		if (ray.id != 0 && core.window.isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
+		else if (ray.id != 0 && core.window.isKeyPressedOnce(GLFW_KEY_E))
 		{
 			core.entities.getComponent<Game::Pickup>(ray.id).active = false;
 			ray.id = 0;
@@ -121,20 +129,19 @@ namespace Game
 
 	void Player::update(ENG::Core& core)
 	{
-		if (core.window.isKeyPressed(GLFW_KEY_ESCAPE))
+		if (core.window.isKeyPressedOnce(GLFW_KEY_ESCAPE))
 			core.window.close();
 
 		if (core.window.isKeyPressedOnce(GLFW_KEY_Q))
 			core.renderer.draw_colliders = !core.renderer.draw_colliders;
 
-		if (core.window.isKeyPressed(GLFW_KEY_E))
+		if (core.window.isKeyPressedOnce(GLFW_KEY_F))
 			transform->position = glm::vec3(0.0f, 10.0f, 0.0f);
 
 		mouselook(core);
 		movement(core);
 		actions(core);
 
-		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)));
-		core.renderer.view = transform;
+		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)), core);
 	}
 }

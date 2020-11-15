@@ -7,7 +7,7 @@ namespace ENG
 
 	void FrameBuffer::create(const glm::ivec2& size)
 	{
-		texture.create(size);
+		texture.createEmpty(size);
 
 		glGenFramebuffers(1, &id);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id);
@@ -21,6 +21,17 @@ namespace ENG
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 			throw std::exception("ENG::FrameBuffer failed.");
+	}
+
+	void FrameBuffer::resize(const glm::ivec2& size)
+	{
+		if (id == 0) create(size);
+		else
+		{
+			texture.resize(size);
+			bind();
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x, size.y);
+		}
 	}
 
 	void FrameBuffer::bind() { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id); }

@@ -13,6 +13,10 @@ namespace ENG
 {
 	namespace CS
 	{
+		/**
+		* Represents an oriented bounding box (OBB). The size is the half-size (radius)
+		* of the box.
+		*/
 		struct BoxCollider : ECSComponent<BoxCollider>
 		{
 			BoxCollider() : size(1.0f) {}
@@ -23,6 +27,9 @@ namespace ENG
 			bool _collided = false;
 		};
 
+		/**
+		* The controller is used to move entities through the world with proper collisions.
+		*/
 		struct Controller : ECSComponent<Controller>
 		{
 			glm::vec3 velocity;
@@ -32,6 +39,9 @@ namespace ENG
 		struct Camera;
 	}
 
+	/**
+	* Contains all data relevant to an intersection.
+	*/
 	struct IntersectData
 	{
 		IntersectData() : normal(0.0f) {}
@@ -47,11 +57,6 @@ namespace ENG
 	* collider.
 	*/
 	void moveControllers(Core& core);
-
-	/**
-	* This function returns a vector containing every box collider in the game.
-	*/
-	std::vector<IntersectData> getIntersectingEntities(Entities& entities, EntityID entity);
 
 	/**
 	* Cast a ray into the world, and return the closest intersecting box ID with the intersecion data.

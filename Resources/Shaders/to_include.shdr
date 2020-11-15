@@ -1,0 +1,25 @@
+[VERTEX] // Include at top all vertex shader code.
+#version 330 core
+layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec2 in_uv;
+layout (location = 2) in vec3 in_normal;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 transform;
+
+[FRAGMENT] // Include at top of fragment shader code.
+#version 330 core
+#define MAX_LIGHTS 128
+
+struct Light
+{
+	vec3 position;
+	vec3 colour;
+	float radius;
+};
+
+uniform sampler2D texture;
+uniform vec3 ambient;
+uniform Light lights[MAX_LIGHTS];
+uniform int emitter;

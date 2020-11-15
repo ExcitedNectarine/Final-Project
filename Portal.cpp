@@ -38,39 +38,39 @@ namespace Game
 		return portal;
 	}
 
-	void startPortals(Entities& entities, const glm::ivec2& size)
+	void startPortals(Core& core)
 	{
-		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<Portal>& portals = entities.getPool<Portal>();
-		ComponentMap<Traveller>& travellers = entities.getPool<Traveller>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<Portal>& portals = core.entities.getPool<Portal>();
+		ComponentMap<Traveller>& travellers = core.entities.getPool<Traveller>();
 
 		// Create the textures for the portal's cameras to draw to.
-		for (EntityID portal : entities.entitiesWith<CS::Transform, Portal>())
-			portals[portal].frame.create(size);
+		for (EntityID portal : core.entities.entitiesWith<CS::Transform, Portal>())
+			portals[portal].frame.create(core.window.getSize());
 
 		// Set the traveller's positions at the start to avoid unwanted teleportations.
-		for (EntityID traveller : entities.entitiesWith<CS::Transform, Traveller>())
-			travellers[traveller].position_last_frame = getWorldT(entities, traveller).position;
+		for (EntityID traveller : core.entities.entitiesWith<CS::Transform, Traveller>())
+			travellers[traveller].position_last_frame = getWorldT(core.entities, traveller).position;
 	}
 
-	void updatePortals(Entities& entities)
+	void updatePortals(Core& core)
 	{
-		ComponentMap<CS::Transform>& transforms = entities.getPool<CS::Transform>();
-		ComponentMap<CS::BoxCollider>& boxes = entities.getPool<CS::BoxCollider>();
-		ComponentMap<Portal>& portals = entities.getPool<Portal>();
-		ComponentMap<Traveller>& travellers = entities.getPool<Traveller>();
+		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
+		ComponentMap<Portal>& portals = core.entities.getPool<Portal>();
+		ComponentMap<Traveller>& travellers = core.entities.getPool<Traveller>();
 
-		for (EntityID traveller : entities.entitiesWith<CS::Transform, CS::BoxCollider, Traveller>())
+		for (EntityID traveller : core.entities.entitiesWith<CS::Transform, CS::BoxCollider, Traveller>())
 		{
-			CS::Transform traveller_t = getWorldT(entities, traveller);
+			CS::Transform traveller_t = getWorldT(core.entities, traveller);
 
 			bool teleported = false;
-			for (EntityID portal : entities.entitiesWith<CS::Transform, Portal>())
+			for (EntityID portal : core.entities.entitiesWith<CS::Transform, Portal>())
 			{
 				EntityID other = portals[portal].other;
 
-				CS::Transform portal_t = getWorldT(entities, portal);
-				CS::Transform other_t = getWorldT(entities, other);
+				CS::Transform portal_t = getWorldT(core.entities, portal);
+				CS::Transform other_t = getWorldT(core.entities, other);
 
 				glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
 				glm::vec3 t_size = boxes[traveller].size * traveller_t.scale;
@@ -91,7 +91,7 @@ namespace Game
 						// Never rotate on Z, only X and Y.
 						transforms[traveller].rotation.z = 0.0f;
 
-						travellers[traveller].position_last_frame = getWorldT(entities, traveller).position;
+						travellers[traveller].position_last_frame = getWorldT(core.entities, traveller).position;
 						teleported = true;
 					}
 				}
@@ -108,7 +108,9 @@ namespace Game
 		ComponentMap<Portal>& portals = core.entities.getPool<Portal>();
 
 		CS::Transform view_t;
-		CS::Transform* view_d = core.renderer.view;
+		ENG::EntityID view_id = core.renderer.view_id;
+
+		CS::Camera c = core.entities.getComponent<CS::Camera>(view_id);
 
 		for (EntityID portal : core.entities.entitiesWith<CS::Transform, Portal>())
 		{
@@ -116,26 +118,24 @@ namespace Game
 
 			CS::Transform portal_t = getWorldT(core.entities, portal);
 			CS::Transform other_t = getWorldT(core.entities, other);
+			CS::Transform main_view_t = getWorldT(core.entities, view_id);
 
 			// Don't render to portal if its not in view.
-			if (!intersectOBBvFrustum(portal_t, glm::vec3(1.0f), *view_d, core.camera).intersects) continue;
+			if (!intersectOBBvFrustum(portal_t, glm::vec3(1.0f), main_view_t, c).intersects) continue;
 			
 			// Get the view for the camera pointed at the portal.
-			glm::mat4 camera = other_t.get() * glm::inverse(portal_t.get()) * view_d->get();
+			glm::mat4 camera = other_t.get() * glm::inverse(portal_t.get()) * main_view_t.get();
 			glm::mat4 view = glm::inverse(camera);
 			view_t = decompose(camera);
 
 			// Set the core's view to the camera view
-			core.renderer.view = &view_t;
+			//core.renderer.view = &view_t;
 
 			// Update with new view
-			updateRenderer(core);
+			updateRenderer(core, view, c.get());
 			updateSprites(core);
 
 			portals[portal].frame.bind();
-
-			core.resources.shader("default.shdr").setUniform("view", view);
-			core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
 
 			// Draw the scene to the framebuffer.
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -147,7 +147,7 @@ namespace Game
 			portals[portal].frame.unbind();
 		}
 
-		core.renderer.view = view_d;
+		core.renderer.view_id = view_id;
 	}
 
 	void drawPortals(Core& core)
@@ -156,41 +156,41 @@ namespace Game
 		ComponentMap<Portal>& portals = core.entities.getPool<Portal>();
 		ComponentMap<CS::BoxCollider>& boxes = core.entities.getPool<CS::BoxCollider>();
 
-		core.resources.shader("portals.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
-		core.resources.shader("portals.shdr").setUniform("projection", core.perspective);
+		//core.resources.shader("portals.shdr").setUniform("view", glm::inverse(core.renderer.view->get()));
+		//core.resources.shader("portals.shdr").setUniform("projection", core.perspective);
 
-		// Disable backface culling for drawing portals, so that portals become 2-way.
-		glDisable(GL_CULL_FACE);
-		
-		Mesh& cube = core.resources.mesh("cube.obj");
-		cube.bind();
+		//// Disable backface culling for drawing portals, so that portals become 2-way.
+		//glDisable(GL_CULL_FACE);
+		//
+		//Mesh& cube = core.resources.mesh("cube.obj");
+		//cube.bind();
 
-		CS::Transform view_t = *core.renderer.view;
+		//CS::Transform view_t = *core.renderer.view;
 
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, Portal>())
-		{
-			CS::Transform portal_t = getWorldT(core.entities, id);
+		//for (EntityID id : core.entities.entitiesWith<CS::Transform, Portal>())
+		//{
+		//	CS::Transform portal_t = getWorldT(core.entities, id);
 
-			if (!intersectOBBvFrustum(portal_t, glm::vec3(1.0f), *core.renderer.view, core.camera).intersects) continue;
+		//	if (!intersectOBBvFrustum(portal_t, glm::vec3(1.0f), *core.renderer.view, core.camera).intersects) continue;
 
-			glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
-			glm::vec3 pl_size = glm::vec3(0.5f) * view_t.scale;
+		//	glm::vec3 p_size = glm::vec3(1.0f) * portal_t.scale;
+		//	glm::vec3 pl_size = glm::vec3(0.5f) * view_t.scale;
 
-			// Only try to prevent the near plane clipping if the player is actually able to pass through the portal.
-			// This allows the portal to be a flat plane otherwise.
-			if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), view_t, pl_size).intersects)
-				portal_t = preventNearClipping(core.settings, portal_t, view_t);
-			else
-				portal_t.scale.z = 0.0f;
+		//	// Only try to prevent the near plane clipping if the player is actually able to pass through the portal.
+		//	// This allows the portal to be a flat plane otherwise.
+		//	if (intersectOBBvOBB(portal_t, glm::vec3(1.0f), view_t, pl_size).intersects)
+		//		portal_t = preventNearClipping(core.settings, portal_t, view_t);
+		//	else
+		//		portal_t.scale.z = 0.0f;
 
-			core.resources.shader("portals.shdr").setUniform("transform", portal_t.get());
-			core.resources.shader("portals.shdr").bind();
-			portals[id].frame.getTexture().bind();
+		//	core.resources.shader("portals.shdr").setUniform("transform", portal_t.get());
+		//	core.resources.shader("portals.shdr").bind();
+		//	portals[id].frame.getTexture().bind();
 
-			glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
-		}
-		
-		glEnable(GL_CULL_FACE);
+		//	glDrawArrays(GL_TRIANGLES, 0, cube.vertexCount());
+		//}
+		//
+		//glEnable(GL_CULL_FACE);
 	}
 
 	/**

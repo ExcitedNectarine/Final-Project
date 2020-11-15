@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include "Clock.h"
 #include "Entities.h"
 #include "Resources.h"
 #include "Settings.h"
@@ -15,14 +16,10 @@ namespace ENG
 	struct Core
 	{
 		Window window;
+		Clock clock;
 		Entities entities;
 		Resources resources;
 		Settings settings;
 		Renderer renderer;
-		CS::Camera camera;
-		glm::mat4 perspective;
-		glm::mat4 orthographic;
-
-		float delta;
 	};
 }
