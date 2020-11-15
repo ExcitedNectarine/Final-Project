@@ -135,9 +135,9 @@ namespace ENG
 		CS::Transform2D t;
 		t.scale *= core.window.getSize();
 		
-		core.resources.shader("postprocess.shdr").setUniform("transform", t.get());
+		core.resources.shader2D("postprocess.shdr").setUniform("transform", t.get());
 		quad_2d.bind();
-		core.resources.shader("postprocess.shdr").bind();
+		core.resources.shader2D("postprocess.shdr").bind();
 		core.entities.getComponent<CS::Camera>(core.renderer.view_id).frame.getTexture().bind();
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -167,8 +167,8 @@ namespace ENG
 		quad_3d.setVertices(verts_3d);
 
 		glm::vec2 window_size(core.window.getSize());
-		core.resources.shader("postprocess.shdr").setUniform("projection", glm::ortho(0.0f, window_size.x, window_size.y, 0.0f));
-		core.resources.shader("sprite.shdr").setUniform("projection", glm::ortho(0.0f, window_size.x, window_size.y, 0.0f));
+		core.resources.shader2D("postprocess.shdr").setUniform("projection", glm::ortho(0.0f, window_size.x, window_size.y, 0.0f));
+		core.resources.shader2D("sprite.shdr").setUniform("projection", glm::ortho(0.0f, window_size.x, window_size.y, 0.0f));
 
 		// Create the framebuffers that each camera will draw to.
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
@@ -184,23 +184,22 @@ namespace ENG
 
 	void updateRenderer(Core& core, glm::mat4 view, glm::mat4 projection)
 	{
-		setLights(core, core.resources.shader("default.shdr"));
+		setLights(core, core.resources.shader3D("default.shdr"));
 
-		core.resources.shader("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
+		core.resources.shader3D("default.shdr").setUniform("view", view);
+		core.resources.shader3D("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
+		core.resources.shader3D("colliders.shdr").setUniform("view", view);
 
-		core.resources.shader("default.shdr").setUniform("view", view);
-		core.resources.shader("colliders.shdr").setUniform("view", view);
-
-		core.resources.shader("default.shdr").setUniform("projection", projection);
-		core.resources.shader("skybox.shdr").setUniform("projection", projection);
-		core.resources.shader("colliders.shdr").setUniform("projection", projection);
+		core.resources.shader3D("default.shdr").setUniform("projection", projection);
+		core.resources.shader3D("skybox.shdr").setUniform("projection", projection);
+		core.resources.shader3D("colliders.shdr").setUniform("projection", projection);
 	}
 
 	void drawModel(Core& core, CS::Model& m, glm::mat4 t, bool emitter)
 	{
-		core.resources.shader("default.shdr").setUniform("transform", t);
-		core.resources.shader("default.shdr").setUniform("emitter", emitter);
-		core.resources.shader("default.shdr").bind();
+		core.resources.shader3D("default.shdr").setUniform("transform", t);
+		core.resources.shader3D("default.shdr").setUniform("emitter", emitter);
+		core.resources.shader3D("default.shdr").bind();
 
 		core.resources.mesh(m.mesh).bind();
 		core.resources.texture(m.texture).bind();
@@ -246,7 +245,7 @@ namespace ENG
 	{
 		glDepthMask(GL_FALSE);
 		
-		resources.shader("skybox.shdr").bind();
+		resources.shader3D("skybox.shdr").bind();
 		resources.mesh("cube_inverted.obj").bind();
 		resources.texture("skybox.png").bind();
 		glDrawArrays(GL_TRIANGLES, 0, resources.mesh("cube_inverted.obj").vertexCount());
@@ -324,10 +323,10 @@ namespace ENG
 
 			t = transforms[id];
 			t.scale *= size;
-			core.resources.shader("sprite.shdr").setUniform("transform", t.get());
+			core.resources.shader2D("sprite.shdr").setUniform("transform", t.get());
 
 			quad_2d.bind();
-			core.resources.shader("sprite.shdr").bind();
+			core.resources.shader2D("sprite.shdr").bind();
 			core.resources.texture(s.texture).bind();
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -381,9 +380,9 @@ namespace ENG
 			t = getWorldT(core.entities, it->second);
 			t.scale *= glm::vec3(size, 1.0f);
 
-			core.resources.shader("default.shdr").setUniform("transform", t.get());
-			core.resources.shader("default.shdr").setUniform("emitter", core.entities.hasComponent<ENG::CS::Light>(it->second));
-			core.resources.shader("default.shdr").bind();
+			core.resources.shader3D("default.shdr").setUniform("transform", t.get());
+			core.resources.shader3D("default.shdr").setUniform("emitter", core.entities.hasComponent<ENG::CS::Light>(it->second));
+			core.resources.shader3D("default.shdr").bind();
 
 			quad_3d.bind();
 			core.resources.texture(s.texture).bind();
@@ -413,9 +412,9 @@ namespace ENG
 			CS::Transform t = getWorldT(core.entities, id);
 			t.scale *= boxes[id].size;
 
-			core.resources.shader("colliders.shdr").setUniform("transform", t.get());
-			core.resources.shader("colliders.shdr").setUniform("colour", boxes[id].trigger ? trigger_colour : solid_colour);
-			core.resources.shader("colliders.shdr").bind();
+			core.resources.shader3D("colliders.shdr").setUniform("transform", t.get());
+			core.resources.shader3D("colliders.shdr").setUniform("colour", boxes[id].trigger ? trigger_colour : solid_colour);
+			core.resources.shader3D("colliders.shdr").bind();
 
 			glDrawArrays(GL_LINE_STRIP, 0, cube.vertexCount());
 		}
@@ -455,9 +454,9 @@ namespace ENG
 			CS::Transform2D t = transforms[id];
 			t.scale *= core.resources.texture("font.png").getSize() / glm::ivec2(12, 3);
 
-			core.resources.shader("sprite.shdr").setUniform("transform", t.get());
+			core.resources.shader2D("sprite.shdr").setUniform("transform", t.get());
 			texts[id].mesh.bind();
-			core.resources.shader("sprite.shdr").bind();
+			core.resources.shader2D("sprite.shdr").bind();
 			core.resources.texture("font.png").bind();
 
 			glDrawArrays(GL_TRIANGLES, 0, texts[id].mesh.vertexCount());

@@ -10,7 +10,9 @@ namespace ENG
 			p.second.cleanup();
 		for (auto& p : textures)
 			p.second.cleanup();
-		for (auto& p : shaders)
+		for (auto& p : shaders_3d)
+			p.second.cleanUp();
+		for (auto& p : shaders_2d)
 			p.second.cleanUp();
 	}
 
@@ -80,7 +82,17 @@ namespace ENG
 		}
 	}
 
-	void Resources::loadShaders(const std::vector<std::string>& files)
+	void Resources::loadShaders3D(const std::vector<std::string>& files) { loadShaders(shaders_3d, files); }
+	void Resources::loadShaders2D(const std::vector<std::string>& files) { loadShaders(shaders_2d, files); }
+
+	Mesh& Resources::mesh(const std::string& file) { return meshes.at(file); }
+	Texture& Resources::texture(const std::string& file) { return textures.at(file); }
+	SoundBuffer& Resources::sound(const std::string& file) { return sounds.at(file); }
+	Shader& Resources::shader3D(const std::string& file) { return shaders_3d.at(file); }
+	Shader& Resources::shader2D(const std::string& file) { return shaders_2d.at(file); }
+
+	// Private shader function, loads shaders for either 2D or 3D use.
+	void Resources::loadShaders(std::map<std::string, Shader>& shaders, const std::vector<std::string>& files)
 	{
 		for (const std::string& shader : files)
 		{
@@ -113,9 +125,4 @@ namespace ENG
 			shaders.insert({ file, Shader(vertex, fragment) });
 		}
 	}
-
-	Mesh& Resources::mesh(const std::string& file) { return meshes.at(file); }
-	Texture& Resources::texture(const std::string& file) { return textures.at(file); }
-	SoundBuffer& Resources::sound(const std::string& file) { return sounds.at(file); }
-	Shader& Resources::shader(const std::string& file) { return shaders.at(file); }
 }

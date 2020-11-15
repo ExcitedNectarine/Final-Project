@@ -15,7 +15,8 @@ void createCore(ENG::Core& core, const std::string& setting_file)
 	core.resources.loadMeshes(ENG::splitText(ENG::readTextFile(core.settings.get("meshes")), '\n'));
 	core.resources.loadTextures(ENG::splitText(ENG::readTextFile(core.settings.get("textures")), '\n'));
 	core.resources.loadSounds(ENG::splitText(ENG::readTextFile(core.settings.get("sounds")), '\n'));
-	core.resources.loadShaders(ENG::splitText(ENG::readTextFile(core.settings.get("shaders")), '\n'));
+	core.resources.loadShaders3D(ENG::splitText(ENG::readTextFile(core.settings.get("shaders3D")), '\n'));
+	core.resources.loadShaders2D(ENG::splitText(ENG::readTextFile(core.settings.get("shaders2D")), '\n'));
 
 	core.entities.addComponentPools<
 		ENG::CS::Transform,

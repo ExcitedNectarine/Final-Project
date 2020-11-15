@@ -5,4 +5,5 @@ fov=110
 meshes=Resources/meshes.txt
 textures=Resources/textures.txt
 sounds=Resources/sounds.txt
-shaders=Resources/shaders.txt
+shaders3D=Resources/shaders3D.txt
+shaders2D=Resources/shaders2D.txt
