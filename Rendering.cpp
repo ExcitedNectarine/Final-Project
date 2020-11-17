@@ -66,41 +66,6 @@ namespace ENG
 			}
 
 			mesh.setVertices(vertices);
-
-
-
-			// DRAW TO FRAMEBUFFER TO CREATE TEXTURE
-			//CS::Transform2D t;
-			//frame.resize({ text.length() * 10, 10 });
-			//frame.bind();
-			//for (std::size_t i = 0; i < text.length(); i++)
-			//{
-			//	// for each character, make it lwoercase
-			//	char c = tolower(text[i]);
-
-			//	if (c == ' ')
-			//		huv = luv = glm::vec2(0.0f); // no texture for space
-			//	else
-			//	{
-			//		huv = frame_size * char_frames[c]; // higher and lower uvs
-			//		luv = huv - frame_size;
-			//	}
-
-			//	quad_2d[0].uv = luv;
-			//	quad_2d[1].uv = huv;
-			//	quad_2d[2].uv = { luv.x, huv.y };
-			//	quad_2d[3].uv = luv;
-			//	quad_2d[4].uv = { huv.x, luv.y };
-			//	quad_2d[5].uv = huv;
-
-			//	t.position.x = i * 10;
-			//	core.resources.shader("sprite.shdr").setUniform("transform", t.get());
-
-			//	quad_2d.bind();
-			//	core.resources.shader("sprite.shdr").bind();
-			//	core.resources.texture("font.png").bind();
-			//	glDrawArrays(GL_TRIANGLES, 0, 6);
-			//}
 		}
 	}
 
@@ -109,25 +74,30 @@ namespace ENG
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
 
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Camera>())
+		std::vector<EntityID> draw_order = core.entities.entitiesWith<CS::Transform, CS::Camera>();
+		std::sort(draw_order.begin(), draw_order.end(), [cameras](EntityID a, EntityID b) { return cameras.at(a).order <= cameras.at(b).order; });
+
+		EntityID main = core.renderer.view_id;
+		for (EntityID id : draw_order)
 		{
+			// Camera is on no layers, render nothing.
+			if (cameras[id].layers.none()) continue;
+
 			cameras[id].frame.bind();
 
+			core.renderer.view_id = id;
 			updateRenderer(core, glm::inverse(getWorldM(core.entities, id)), cameras[id].get());
 
-			// DRAW PORTALS WITH PORTAL SHADER IN HERE SOMETHING
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawSkybox(core.resources);
-			drawModels(core);
+			drawModels(core, cameras[id].layers);
 			drawColliders(core);
 			drawSprites3D(core);
 			renderText3D(core);
-			drawModelsToHUD(core);
-			drawSprites(core);
-			renderText(core);
 
 			cameras[id].frame.unbind();
 		}
+		core.renderer.view_id = main;
 	}
 
 	void drawToScreen(Core& core)
@@ -184,45 +154,68 @@ namespace ENG
 
 	void updateRenderer(Core& core, glm::mat4 view, glm::mat4 projection)
 	{
-		setLights(core, core.resources.shader3D("default.shdr"));
+		for (auto& shader : core.resources.allShaders3D())
+		{
+			setLights(core, shader.second);
+			shader.second.setUniform("projection", projection);
 
-		core.resources.shader3D("default.shdr").setUniform("view", view);
-		core.resources.shader3D("skybox.shdr").setUniform("view", glm::mat4(glm::mat3(view)));
-		core.resources.shader3D("colliders.shdr").setUniform("view", view);
-
-		core.resources.shader3D("default.shdr").setUniform("projection", projection);
-		core.resources.shader3D("skybox.shdr").setUniform("projection", projection);
-		core.resources.shader3D("colliders.shdr").setUniform("projection", projection);
+			if (shader.first == "skybox.shdr")
+				shader.second.setUniform("view", glm::mat4(glm::mat3(view)));
+			else
+				shader.second.setUniform("view", view);
+		}
 	}
 
-	void drawModel(Core& core, CS::Model& m, glm::mat4 t, bool emitter)
+	void drawModel(Mesh& mesh, Texture& texture, Shader& shader, glm::mat4 t, bool emitter)
 	{
-		core.resources.shader3D("default.shdr").setUniform("transform", t);
-		core.resources.shader3D("default.shdr").setUniform("emitter", emitter);
-		core.resources.shader3D("default.shdr").bind();
+		shader.setUniform("transform", t);
+		shader.setUniform("emitter", emitter);
+		shader.bind();
 
-		core.resources.mesh(m.mesh).bind();
-		core.resources.texture(m.texture).bind();
+		mesh.bind();
+		texture.bind();
 
-		glDrawArrays(GL_TRIANGLES, 0, core.resources.mesh(m.mesh).vertexCount());
+		glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount());
 	}
 
 	/**
 	* Draws model components.
 	*/
-	void drawModels(Core& core)
+	void drawModels(Core& core, std::bitset<MAX_LAYERS> layers)
 	{
 		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Model>& models = core.entities.getPool<CS::Model>();
-
-		CS::Camera c = core.entities.getComponent<CS::Camera>(core.renderer.view_id);
+		ComponentMap<CS::Camera>& cameras = core.entities.getPool<CS::Camera>();
 
 		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Model>())
 		{
 			CS::Model& m = models[id];
+
+			// model is on no layers, draw nothing
+			if (m.layers.none()) continue;
+
+			// if one of m.layers bits is 1 and the same bit is 1 in layers, draw
+			bool draw = false;
+			for (std::size_t i = 0; i < MAX_LAYERS; i++)
+			{
+				if (m.layers[i] && layers[i])
+				{
+					draw = true;
+					break;
+				}
+			}
+			if (!draw) continue;
+
 			CS::Transform t = getWorldT(core.entities, id);
-			if (m.hud || !intersectOBBvFrustum(t, core.resources.mesh(m.mesh).getSize() * t.scale, getWorldT(core.entities, core.renderer.view_id), c).intersects) continue;
-			drawModel(core, m, t.get(), core.entities.hasComponent<ENG::CS::Light>(id));
+			if (m.hud || !intersectOBBvFrustum(t, core.resources.mesh(m.mesh).getSize() * t.scale, getWorldT(core.entities, core.renderer.view_id), cameras[core.renderer.view_id]).intersects) continue;
+
+			drawModel(
+				core.resources.mesh(m.mesh),
+				m.camera_output == 0 ? core.resources.texture(m.texture) : cameras[m.camera_output].frame.getTexture(),
+				core.resources.shader3D(m.shader),
+				getWorldM(core.entities, id),
+				core.entities.hasComponent<ENG::CS::Light>(id)
+			);
 		}
 	}
 
@@ -237,7 +230,14 @@ namespace ENG
 		{
 			CS::Model& m = models[id];
 			if (!m.hud) continue;
-			drawModel(core, m, getWorldM(core.entities, id), core.entities.hasComponent<ENG::CS::Light>(id));
+
+			drawModel(
+				core.resources.mesh(m.mesh),
+				core.resources.texture(m.texture),
+				core.resources.shader3D(m.shader),
+				getWorldM(core.entities, id),
+				core.entities.hasComponent<ENG::CS::Light>(id)
+			);
 		}
 	}
 
@@ -255,13 +255,7 @@ namespace ENG
 
 	void updateSprites(Core& core)
 	{
-		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
 		ComponentMap<CS::Sprite>& sprites = core.entities.getPool<CS::Sprite>();
-
-		// Make sprites that billboard always face the camera.
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, CS::Sprite>())
-			if (sprites[id].billboard)
-				transforms[id].rotation = getWorldT(core.entities, core.renderer.view_id).rotation;
 
 		// Work out which frame each sprite is on.
 		for (EntityID id : core.entities.entitiesWith<CS::Sprite>())
@@ -379,6 +373,7 @@ namespace ENG
 
 			t = getWorldT(core.entities, it->second);
 			t.scale *= glm::vec3(size, 1.0f);
+			if (s.billboard) t.rotation = getWorldT(core.entities, core.renderer.view_id).rotation;
 
 			core.resources.shader3D("default.shdr").setUniform("transform", t.get());
 			core.resources.shader3D("default.shdr").setUniform("emitter", core.entities.hasComponent<ENG::CS::Light>(it->second));

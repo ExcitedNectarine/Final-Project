@@ -11,9 +11,12 @@ namespace Game
 			ENG::CS::BoxCollider,
 			ENG::CS::Controller,
 			ENG::CS::Camera,
-			ENG::CS::Light,
-			Game::Traveller
+			ENG::CS::Light
+			//Game::Traveller
 		>();
+
+		// player camera sees both layers
+		core.entities.getComponent<ENG::CS::Camera>(player).layers[1] = true;
 
 		ENG::EntityID gun = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(gun);
@@ -36,6 +39,7 @@ namespace Game
 		ENG::CS::Script& scr = core.entities.getComponent<ENG::CS::Script>(player);
 		scr.script = std::make_shared<Game::Player>();
 
+		core.entities.getComponent<ENG::CS::Camera>(player).order = 1;
 		core.renderer.view_id = player;
 
 		return player;

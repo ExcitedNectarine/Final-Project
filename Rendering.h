@@ -10,6 +10,8 @@
 
 namespace ENG
 {
+	constexpr auto MAX_LAYERS = 8;
+
 	struct Core;
 	struct Renderer
 	{
@@ -25,10 +27,15 @@ namespace ENG
 		*/
 		struct Model : ECSComponent<Model>
 		{
+			Model() { layers[0] = true; }
+
 			std::string mesh = "cube.obj";
 			std::string texture = "notexture.png";
 			std::string shader = "default.shdr";
+
+			EntityID camera_output = 0;
 			bool hud = false;
+			std::bitset<MAX_LAYERS> layers;
 		};
 
 		/**
@@ -65,7 +72,7 @@ namespace ENG
 		*/
 		struct Camera : ECSComponent<Camera>
 		{
-			Camera() : size(0) {}
+			Camera() : size(0) { layers[0] = true; }
 			Camera(const glm::vec2& size, const float fov, const float near, const float far);
 			void create(const glm::vec2& size, const float fov, const float near, const float far);
 			glm::mat4 get();
@@ -77,6 +84,9 @@ namespace ENG
 			float fov_x;
 			float near;
 			float far;
+
+			int order = 0;
+			std::bitset<MAX_LAYERS> layers;
 		};
 
 		struct Text : ECSComponent<Text>
@@ -85,8 +95,6 @@ namespace ENG
 
 			std::string text = "This is a sentence";
 			Mesh2D mesh;
-
-			//FrameBuffer frame;
 		};
 	}
 
@@ -102,7 +110,7 @@ namespace ENG
 	void startRenderer(Core& core);
 	void updateRenderer(Core& core, glm::mat4 view, glm::mat4 projection);
 
-	void drawModels(Core& core);
+	void drawModels(Core& core, std::bitset<MAX_LAYERS> layers);
 	void drawModelsToHUD(Core& core);
 	void drawSkybox(Resources& resources);
 	void updateSprites(Core& core);

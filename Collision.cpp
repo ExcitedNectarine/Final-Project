@@ -39,8 +39,8 @@ namespace ENG
 				{
 					if (boxes[b].trigger)
 					{
-						if (core.entities.hasComponent<CS::Script>(a))
-							scripts[a].script->onTriggerEnter(core, b);
+						if (core.entities.hasComponent<CS::Script>(b))
+							scripts[b].script->onTriggerEnter(core, a);
 					}
 					else
 					{

@@ -22,6 +22,11 @@ namespace ENG
 		virtual void update(Core& core) {}
 
 		/**
+		* Calling just before rendering. Any code for movement should be done in update.
+		*/
+		virtual void lateUpdate(Core& core) {}
+
+		/**
 		* Called after the game loop has ended.
 		*/
 		virtual void end(Core& core) {}
@@ -49,5 +54,6 @@ namespace ENG
 
 	void scriptStart(Core& core);
 	void scriptUpdate(Core& core);
+	void scriptLateUpdate(Core& core);
 	void scriptEnd(Core& core);
 }

@@ -34,6 +34,9 @@ namespace ENG
 		Shader& shader3D(const std::string& file);
 		Shader& shader2D(const std::string& file);
 
+		std::map<std::string, Shader>& allShaders3D() { return shaders_3d; }
+		std::map<std::string, Shader>& allShaders2D() { return shaders_2d; }
+
 	private:
 		void loadShaders(std::map<std::string, Shader>& shaders, const std::vector<std::string>& files);
 

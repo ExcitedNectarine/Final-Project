@@ -11,8 +11,8 @@ namespace Game
 			ENG::CS::Light,
 			ENG::CS::BoxCollider,
 			ENG::CS::Controller,
-			Game::Pickup,
-			Game::Traveller
+			Game::Pickup
+			//Game::Traveller
 		>();
 
 		core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
@@ -49,7 +49,7 @@ namespace Game
 
 				// If the velocity oversteps, just set the velocity equal to the distance,
 				// effectively moving the pickup directly to the target.
-				glm::vec3 movement_per_frame = direction * speed * core.clock.deltaTime();
+				glm::vec3 movement_per_frame = direction * transforms[id].scale * speed * core.clock.deltaTime();
 				if (glm::length(movement_per_frame) > glm::length(distance))
 					controllers[id].velocity = distance;
 			}

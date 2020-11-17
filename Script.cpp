@@ -22,6 +22,14 @@ namespace ENG
 			scripts[id].script->update(core);
 	}
 
+	void scriptLateUpdate(Core& core)
+	{
+		ComponentMap<CS::Script>& scripts = core.entities.getPool<CS::Script>();
+
+		for (ENG::EntityID id : core.entities.entitiesWith<CS::Script>())
+			scripts[id].script->lateUpdate(core);
+	}
+
 	void scriptEnd(Core& core)
 	{
 		ComponentMap<CS::Script>& scripts = core.entities.getPool<CS::Script>();
