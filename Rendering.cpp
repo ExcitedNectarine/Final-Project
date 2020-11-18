@@ -209,6 +209,8 @@ namespace ENG
 			CS::Transform t = getWorldT(core.entities, id);
 			if (m.hud || !intersectOBBvFrustum(t, core.resources.mesh(m.mesh).getSize() * t.scale, getWorldT(core.entities, core.renderer.view_id), cameras[core.renderer.view_id]).intersects) continue;
 
+			if (!m.backface_culling) glDisable(GL_CULL_FACE);
+
 			drawModel(
 				core.resources.mesh(m.mesh),
 				m.camera_output == 0 ? core.resources.texture(m.texture) : cameras[m.camera_output].frame.getTexture(),
@@ -216,6 +218,8 @@ namespace ENG
 				getWorldM(core.entities, id),
 				core.entities.hasComponent<ENG::CS::Light>(id)
 			);
+
+			glEnable(GL_CULL_FACE);
 		}
 	}
 

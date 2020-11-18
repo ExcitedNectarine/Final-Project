@@ -35,6 +35,7 @@ namespace ENG
 
 			EntityID camera_output = 0;
 			bool hud = false;
+			bool backface_culling = true;
 			std::bitset<MAX_LAYERS> layers;
 		};
 

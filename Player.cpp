@@ -10,9 +10,7 @@ namespace Game
 			ENG::CS::Transform,
 			ENG::CS::BoxCollider,
 			ENG::CS::Controller,
-			ENG::CS::Camera,
-			ENG::CS::Light
-			//Game::Traveller
+			ENG::CS::Camera
 		>();
 
 		// player camera sees both layers

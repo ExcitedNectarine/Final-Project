@@ -73,8 +73,9 @@ void createScene(ENG::Core& core)
 {
 	ENG::EntityID player = Game::createPlayer(core);
 	auto portals = Game::createPortalPair(core, player);
-	createBarrier(core, { 0.0f, -5.0f, 0.0f });
+	core.entities.getComponent<ENG::CS::Transform>(portals.first).rotation.y = 45.0f;
 
+	createBarrier(core, { 0.0f, -5.0f, 0.0f });
 	core.entities.getComponent<ENG::CS::Transform>(core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>()).position.x = -10.0f;
 }
 

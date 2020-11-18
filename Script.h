@@ -34,7 +34,12 @@ namespace ENG
 		/**
 		* Called if entity enters trigger.
 		*/
-		virtual void onTriggerEnter(Core& core, EntityID hit_id) {}
+		virtual void onTriggerEnter(Core& core, EntityID entered_id) {}
+
+		/**
+		* Called if entity exits trigger.
+		*/
+		virtual void onTriggerExit(Core& core, EntityID exited_id) {}
 
 		EntityID id;
 	};

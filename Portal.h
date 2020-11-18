@@ -17,9 +17,16 @@ namespace Game
 
 	struct Portal : ENG::Script
 	{
-		ENG::CS::Transform* t;
+		ENG::EntityID other;
+		ENG::EntityID screen;
+		std::map<ENG::EntityID, int> travellers;
 
-		void start(ENG::Core& core);
+		Portal(ENG::EntityID other, ENG::EntityID screen) : other(other), screen(screen) {}
+		void update(ENG::Core& core);
+		void onTriggerEnter(ENG::Core& core, ENG::EntityID entered_id);
+		void onTriggerExit(ENG::Core& core, ENG::EntityID exited_id);
+
+		ENG::CS::Transform preventNearClipping(const ENG::CS::Camera& camera, ENG::CS::Transform screen, const glm::vec3& view_pos);
 	};
 
 	std::pair<ENG::EntityID, ENG::EntityID> createPortalPair(ENG::Core& core, ENG::EntityID player);
@@ -42,10 +49,4 @@ namespace Game
 	//void updatePortals(Core& core);
 	//void drawToPortals(Core& core);
 	//void drawPortals(Core& core);
-
-	/**
-	* Move screen position back and scale wall, so that far side is the same as when camera clips
-	* near side.
-	*/
-	ENG::CS::Transform preventNearClipping(ENG::Settings& settings, ENG::CS::Transform screen, ENG::CS::Transform player);
 }

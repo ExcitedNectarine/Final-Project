@@ -39,8 +39,12 @@ namespace ENG
 				{
 					if (boxes[b].trigger)
 					{
-						if (core.entities.hasComponent<CS::Script>(b))
-							scripts[b].script->onTriggerEnter(core, a);
+						if (!boxes[b]._collided)
+						{
+							boxes[b]._collided = true;
+							if (core.entities.hasComponent<CS::Script>(b))
+								scripts[b].script->onTriggerEnter(core, a);
+						}
 					}
 					else
 					{
@@ -51,6 +55,12 @@ namespace ENG
 						if (!controllers[a].on_floor)
 							controllers[a].on_floor = approximate(d.normal.y, 1.0f, 0.1f) || approximate(d.normal.y, -1.0f, 0.1f);
 					}
+				}
+				else if (boxes[b].trigger && boxes[b]._collided)
+				{
+					boxes[b]._collided = false;
+					if (core.entities.hasComponent<CS::Script>(b))
+						scripts[b].script->onTriggerExit(core, a);
 				}
 			}
 		}

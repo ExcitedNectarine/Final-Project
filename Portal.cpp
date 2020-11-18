@@ -13,51 +13,97 @@ namespace Game
 		core.entities.getComponent<ENG::CS::Transform>(id) = ENG::decompose(new_view);
 	}
 
-	void Portal::start(ENG::Core& core)
+	void Portal::update(ENG::Core& core)
 	{
-		t = &core.entities.getComponent<ENG::CS::Transform>(id);
+		ENG::CS::Transform portal_t = ENG::getWorldT(core.entities, id);
+		ENG::CS::Transform other_t = ENG::getWorldT(core.entities, other);
+		ENG::CS::Transform traveller_t;
+
+		for (auto& p : travellers)
+		{
+			traveller_t = ENG::getWorldT(core.entities, p.first);
+
+			int side_last_frame = p.second;
+			int side_this_frame = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - traveller_t.position)));
+
+			if (side_last_frame != side_this_frame)
+			{
+				glm::mat4 m = other_t.get() * glm::inverse(portal_t.get()) * traveller_t.get();
+				core.entities.getComponent<ENG::CS::Transform>(p.first) = ENG::decompose(m);
+			}
+
+			p.second = side_this_frame;
+		}
 	}
 
-	std::pair<ENG::EntityID, ENG::EntityID> createPortalPair(ENG::Core& core, ENG::EntityID player)
+	void Portal::onTriggerEnter(ENG::Core& core, ENG::EntityID entered_id)
 	{
-		// Portal parents, just stores where whole portal object is.
-		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform>();
-		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform>();
-		core.entities.getComponent<ENG::CS::Transform>(portal_a).position = { 0.0f, -3.0f, 10.0f };
-		core.entities.getComponent<ENG::CS::Transform>(portal_b).position = { 0.0f, -3.0f, -10.0f };
+		ENG::CS::Transform portal_t = ENG::getWorldT(core.entities, id);
+		ENG::CS::Transform traveller_t = ENG::getWorldT(core.entities, entered_id);
 
-		ENG::EntityID portal_teleporter_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Script>();
-		ENG::EntityID portal_teleporter_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model, ENG::CS::Script>();
+		travellers[entered_id] = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - traveller_t.position)));;
 
-		ENG::EntityID portal_a_cam = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Camera, ENG::CS::Script, ENG::CS::BoxCollider>();
-		ENG::EntityID portal_b_cam = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Camera, ENG::CS::Script, ENG::CS::BoxCollider>();
-		core.entities.getComponent<ENG::CS::Script>(portal_a_cam).script = std::make_shared<PortalCamera>(portal_teleporter_a, portal_teleporter_b, player);
-		core.entities.getComponent<ENG::CS::Script>(portal_b_cam).script = std::make_shared<PortalCamera>(portal_teleporter_b, portal_teleporter_a, player);
+		if (core.entities.hasComponent<ENG::CS::Camera>(entered_id))
+		{
+			ENG::CS::Transform& transform = core.entities.getComponent<ENG::CS::Transform>(screen);
+			ENG::CS::Camera& camera = core.entities.getComponent<ENG::CS::Camera>(entered_id);
+			glm::vec3 pos = ENG::getWorldT(core.entities, entered_id).position;
 
-		core.entities.getComponent<ENG::CS::Script>(portal_teleporter_a).script = std::make_shared<Portal>();
-		core.entities.getComponent<ENG::CS::Script>(portal_teleporter_b).script = std::make_shared<Portal>();
+			transform = preventNearClipping(camera, transform, pos);
+		}
+	}
 
-		// set layers, only player cam can see these
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_a).layers[0] = false;
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_b).layers[0] = false;
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_a).layers[1] = true;
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_b).layers[1] = true;
+	void Portal::onTriggerExit(ENG::Core& core, ENG::EntityID exited_id)
+	{
+		travellers.erase(exited_id);
 
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_a).camera_output = portal_a_cam;
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_b).camera_output = portal_b_cam;
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_a).shader = "portals.shdr";
-		core.entities.getComponent<ENG::CS::Model>(portal_teleporter_b).shader = "portals.shdr";
+		//if (core.entities.hasComponent<ENG::CS::Camera>(exited_id))
+		//{
+		//	ENG::CS::Transform& transform = core.entities.getComponent<ENG::CS::Transform>(screen);
+		//	//transform.scale.z = 0.0f;
+		//}
+	}
 
-		core.entities.getComponent<ENG::CS::Transform>(portal_teleporter_a).parent = portal_a;
-		core.entities.getComponent<ENG::CS::Transform>(portal_teleporter_b).parent = portal_b;
-		core.entities.getComponent<ENG::CS::Transform>(portal_teleporter_a).scale.z = 0.1f;
-		core.entities.getComponent<ENG::CS::Transform>(portal_teleporter_b).scale.z = 0.1f;
+	ENG::CS::Transform Portal::preventNearClipping(const ENG::CS::Camera& camera, ENG::CS::Transform screen, const glm::vec3& view_pos)
+	{
+		float half_height = camera.near * glm::tan(camera.fov_y);
+		float half_width = half_height * camera.aspect;
+		float corner_dist = glm::length(glm::vec3(half_width, half_height, camera.near));
 
-		// portal borders
-		ENG::EntityID portal_border_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		core.entities.getComponent<ENG::CS::Model>(portal_border_a).mesh = "portal_border.obj";
-		core.entities.getComponent<ENG::CS::Model>(portal_border_a).texture = "portal_border.png";
-		core.entities.getComponent<ENG::CS::Transform>(portal_border_a).parent = portal_a;
+		bool facing = glm::dot(screen.forward(), screen.position - view_pos) > 0;
+		screen.scale.z *= corner_dist;
+		screen.position += (screen.forward() * (facing ? 1.0f : -1.0f));
+
+		return screen;
+	}
+
+	ENG::EntityID createScreen(ENG::Core& core, ENG::EntityID parent, ENG::EntityID camera)
+	{
+		ENG::EntityID screen = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+
+		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(screen);
+		m.shader = "portals.shdr";
+		m.camera_output = camera;
+		m.layers[0] = false;
+		m.layers[1] = true;
+		m.backface_culling = false;
+		m.camera_output = camera;
+
+		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(screen);
+		t.parent = parent;
+		t.scale.z = 0.1f;
+
+		return screen;
+	}
+
+	ENG::EntityID createBorder(ENG::Core& core, ENG::EntityID parent)
+	{
+		ENG::EntityID border = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+		core.entities.getComponent<ENG::CS::Transform>(border).parent = parent;
+
+		ENG::CS::Model& m = core.entities.getComponent<ENG::CS::Model>(border);
+		m.mesh = "portal_border.obj";
+		m.texture = "portal_border.png";
 
 		ENG::EntityID b1 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider>();
 		ENG::EntityID b2 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider>();
@@ -73,41 +119,41 @@ namespace Game
 
 		ENG::CS::Transform& t1 = core.entities.getComponent<ENG::CS::Transform>(b1);
 		t1.position.x = -dist;
-		t1.parent = portal_border_a;
+		t1.parent = border;
 
 		ENG::CS::Transform& t2 = core.entities.getComponent<ENG::CS::Transform>(b2);
 		t2.position.x = dist;
-		t2.parent = portal_border_a;
+		t2.parent = border;
 
 		ENG::CS::Transform& t3 = core.entities.getComponent<ENG::CS::Transform>(b3);
 		t3.position.y = dist;
-		t3.parent = portal_border_a;
+		t3.parent = border;
 
-		// portal borders 2
-		ENG::EntityID portal_border_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
-		core.entities.getComponent<ENG::CS::Model>(portal_border_b).mesh = "portal_border.obj";
-		core.entities.getComponent<ENG::CS::Model>(portal_border_b).texture = "portal_border.png";
-		core.entities.getComponent<ENG::CS::Transform>(portal_border_b).parent = portal_b;
+		return border;
+	}
 
-		ENG::EntityID b4 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider>();
-		ENG::EntityID b5 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider>();
-		ENG::EntityID b6 = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider>();
+	std::pair<ENG::EntityID, ENG::EntityID> createPortalPair(ENG::Core& core, ENG::EntityID player)
+	{
+		// Portal parents, just stores where whole portal object is.
+		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Script>();
+		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Script>();
+		core.entities.getComponent<ENG::CS::Transform>(portal_a).position = { 0.0f, -3.0f, 10.0f };
+		core.entities.getComponent<ENG::CS::Transform>(portal_b).position = { 0.0f, -3.0f, -10.0f };
+		core.entities.getComponent<ENG::CS::BoxCollider>(portal_a).trigger = true;
+		core.entities.getComponent<ENG::CS::BoxCollider>(portal_b).trigger = true;
 
-		core.entities.getComponent<ENG::CS::BoxCollider>(b4).size = size;
-		core.entities.getComponent<ENG::CS::BoxCollider>(b5).size = size;
-		core.entities.getComponent<ENG::CS::BoxCollider>(b6).size = { 1.5f, 0.3f, 0.3f };
+		ENG::EntityID camera_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Camera, ENG::CS::Script>();
+		ENG::EntityID camera_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Camera, ENG::CS::Script>();
+		ENG::EntityID screen_a = createScreen(core, portal_a, camera_a);
+		ENG::EntityID screen_b = createScreen(core, portal_b, camera_b);
 
-		ENG::CS::Transform& t4 = core.entities.getComponent<ENG::CS::Transform>(b4);
-		t4.position.x = -dist;
-		t4.parent = portal_border_b;
+		core.entities.getComponent<ENG::CS::Script>(portal_a).script = std::make_shared<Portal>(portal_b, screen_a);
+		core.entities.getComponent<ENG::CS::Script>(portal_b).script = std::make_shared<Portal>(portal_a, screen_b);
+		core.entities.getComponent<ENG::CS::Script>(camera_a).script = std::make_shared<PortalCamera>(portal_a, portal_b, player);
+		core.entities.getComponent<ENG::CS::Script>(camera_b).script = std::make_shared<PortalCamera>(portal_b, portal_a, player);
 
-		ENG::CS::Transform& t5 = core.entities.getComponent<ENG::CS::Transform>(b5);
-		t5.position.x = dist;
-		t5.parent = portal_border_b;
-
-		ENG::CS::Transform& t6 = core.entities.getComponent<ENG::CS::Transform>(b6);
-		t6.position.y = dist;
-		t6.parent = portal_border_b;
+		createBorder(core, portal_a);
+		createBorder(core, portal_b);
 
 		return std::make_pair(portal_a, portal_b);
 	}
@@ -294,26 +340,4 @@ namespace Game
 	//	
 	//	glEnable(GL_CULL_FACE);
 	//}
-
-	/**
-	* Move screen position back and scale wall along Z.
-	*/
-	ENG::CS::Transform preventNearClipping(ENG::Settings& settings, ENG::CS::Transform screen, ENG::CS::Transform player)
-	{
-		// Calculate distance from camera to corner of near plane.
-		float fov = settings.getf("fov");
-		float aspect = settings.getf("width") / settings.getf("height");
-		float near_dist = 0.1f;
-
-		float half_height = near_dist * glm::tan(fov);
-		float half_width = half_height * aspect;
-		float corner_dist = glm::length(glm::vec3(half_width, half_height, near_dist));
-
-		// Set scale of screen, and move back from whichever way player is facing.
-		bool facing = glm::dot(screen.forward(), screen.position - player.position) > 0;
-		screen.scale.z *= corner_dist;
-		screen.position += (screen.forward() * (facing ? 1.0f : -1.0f));
-
-		return screen;
-	}
 }
