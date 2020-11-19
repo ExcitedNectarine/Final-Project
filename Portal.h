@@ -22,11 +22,12 @@ namespace Game
 		std::map<ENG::EntityID, int> travellers;
 
 		Portal(ENG::EntityID other, ENG::EntityID screen) : other(other), screen(screen) {}
+		void start(ENG::Core& core);
 		void update(ENG::Core& core);
 		void onTriggerEnter(ENG::Core& core, ENG::EntityID entered_id);
 		void onTriggerExit(ENG::Core& core, ENG::EntityID exited_id);
 
-		ENG::CS::Transform preventNearClipping(const ENG::CS::Camera& camera, ENG::CS::Transform screen, const glm::vec3& view_pos);
+		float cornerDistance(const ENG::CS::Camera& camera);
 	};
 
 	std::pair<ENG::EntityID, ENG::EntityID> createPortalPair(ENG::Core& core, ENG::EntityID player);

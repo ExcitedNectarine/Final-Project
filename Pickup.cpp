@@ -7,12 +7,11 @@ namespace Game
 	{
 		ENG::EntityID prop = core.entities.addEntity<
 			ENG::CS::Transform,
+			ENG::CS::Script,
 			ENG::CS::Model,
 			ENG::CS::Light,
 			ENG::CS::BoxCollider,
-			ENG::CS::Controller,
-			Game::Pickup
-			//Game::Traveller
+			ENG::CS::Controller
 		>();
 
 		core.entities.getComponent<ENG::CS::Transform>(prop).position = pos;
@@ -23,43 +22,59 @@ namespace Game
 		core.entities.getComponent<ENG::CS::Model>(prop).texture = "lamp.png";
 		core.entities.getComponent<ENG::CS::BoxCollider>(prop).size = core.resources.mesh("lamp.obj").getSize() / 2.0f;
 
+		core.entities.getComponent<ENG::CS::Script>(prop).script = std::make_shared<Pickup>();
+
 		return prop;
 	}
 
-	void updatePickups(Core& core)
+	void Pickup::start(ENG::Core& core)
 	{
-		using namespace ENG;
-
-		ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
-		ComponentMap<CS::Controller>& controllers = core.entities.getPool<CS::Controller>();
-		ComponentMap<Game::Pickup>& pickups = core.entities.getPool<Game::Pickup>();
-
-		for (EntityID id : core.entities.entitiesWith<CS::Transform, Game::Pickup>())
-		{
-			if (pickups[id].active)
-			{
-				// Move pickup using controller component, instead of lerping.
-				// This gives the pickup proper collisions with the world.
-				glm::vec3 target = getWorldT(core.entities, pickups[id].holder).position;
-				glm::vec3 distance = target - transforms[id].position;
-				glm::vec3 direction = glm::normalize(distance);
-
-				float speed = 8.0f;
-				controllers[id].velocity = direction * speed;
-
-				// If the velocity oversteps, just set the velocity equal to the distance,
-				// effectively moving the pickup directly to the target.
-				glm::vec3 movement_per_frame = direction * transforms[id].scale * speed * core.clock.deltaTime();
-				if (glm::length(movement_per_frame) > glm::length(distance))
-					controllers[id].velocity = distance;
-			}
-			else
-			{
-				controllers[id].velocity.x = 0.0f;
-				controllers[id].velocity.z = 0.0f;
-				if (!controllers[id].on_floor)
-					controllers[id].velocity.y -= 9.8f * core.clock.deltaTime();
-			}
-		}
+		controller = &core.entities.getComponent<ENG::CS::Controller>(id);
 	}
+	void Pickup::update(ENG::Core& core)
+	{
+		glm::vec3 target_pos = ENG::getWorldT(core.entities, target).position;
+		glm::vec3 current_pos = ENG::getWorldT(core.entities, id).position;
+		glm::vec3 distance = target_pos - current_pos;
+		glm::vec3 direction = glm::normalize(distance);
+
+		controller->velocity = direction * SPEED;
+	}
+
+	//void updatePickups(Core& core)
+	//{
+	//	using namespace ENG;
+
+	//	ComponentMap<CS::Transform>& transforms = core.entities.getPool<CS::Transform>();
+	//	ComponentMap<CS::Controller>& controllers = core.entities.getPool<CS::Controller>();
+	//	ComponentMap<Game::Pickup>& pickups = core.entities.getPool<Game::Pickup>();
+
+	//	for (EntityID id : core.entities.entitiesWith<CS::Transform, Game::Pickup>())
+	//	{
+	//		if (pickups[id].active)
+	//		{
+	//			// Move pickup using controller component, instead of lerping.
+	//			// This gives the pickup proper collisions with the world.
+	//			glm::vec3 target = getWorldT(core.entities, pickups[id].holder).position;
+	//			glm::vec3 distance = target - transforms[id].position;
+	//			glm::vec3 direction = glm::normalize(distance);
+
+	//			float speed = 8.0f;
+	//			controllers[id].velocity = direction * speed;
+
+	//			// If the velocity oversteps, just set the velocity equal to the distance,
+	//			// effectively moving the pickup directly to the target.
+	//			glm::vec3 movement_per_frame = direction * transforms[id].scale * speed * core.clock.deltaTime();
+	//			if (glm::length(movement_per_frame) > glm::length(distance))
+	//				controllers[id].velocity = distance;
+	//		}
+	//		else
+	//		{
+	//			controllers[id].velocity.x = 0.0f;
+	//			controllers[id].velocity.z = 0.0f;
+	//			if (!controllers[id].on_floor)
+	//				controllers[id].velocity.y -= 9.8f * core.clock.deltaTime();
+	//		}
+	//	}
+	//}
 }

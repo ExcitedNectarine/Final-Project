@@ -22,7 +22,7 @@ namespace Game
 		glm::dvec2 last_mouse;
 		glm::dvec2 mouse_offset;
 		float sensitivity = 0.05f;
-		IntersectData ray;
+		ENG::IntersectData ray;
 		ENG::EntityID pickup_position = 0;
 		ENG::EntityID pos_text;
 

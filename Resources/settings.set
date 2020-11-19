@@ -1,7 +1,7 @@
 title=Game Engine
 width=1920
 height=1080
-fov=110
+fov=120
 meshes=Resources/meshes.txt
 textures=Resources/textures.txt
 sounds=Resources/sounds.txt

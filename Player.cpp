@@ -6,8 +6,8 @@ namespace Game
 	ENG::EntityID createPlayer(ENG::Core& core)
 	{
 		ENG::EntityID player = core.entities.addEntity<
-			ENG::CS::Script,
 			ENG::CS::Transform,
+			ENG::CS::Script,
 			ENG::CS::BoxCollider,
 			ENG::CS::Controller,
 			ENG::CS::Camera
@@ -57,9 +57,9 @@ namespace Game
 		core.entities.getComponent<ENG::CS::Transform>(pickup_position).position.z = -3.0f;
 		core.entities.getComponent<ENG::CS::Transform>(pickup_position).parent = id;
 
-		pos_text = core.entities.addEntity<CS::Transform2D, CS::Text>();
-		core.entities.getComponent<CS::Transform2D>(pos_text).position = glm::vec2(50.0f);
-		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)), core);
+		pos_text = core.entities.addEntity<ENG::CS::Transform2D, ENG::CS::Text>();
+		core.entities.getComponent<ENG::CS::Transform2D>(pos_text).position = glm::vec2(50.0f);
+		core.entities.getComponent<ENG::CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)), core);
 	}
 
 	void Player::mouselook(ENG::Core& core)
@@ -102,29 +102,29 @@ namespace Game
 	{
 		if (core.window.isMouseButtonPressedOnce(GLFW_MOUSE_BUTTON_LEFT))
 		{
-			IntersectData place = ENG::castRay(core.entities, transform->position, -transform->forward(), { id });
+			ENG::IntersectData place = ENG::castRay(core.entities, transform->position, -transform->forward(), { id });
 
-			EntityID thing = core.entities.addEntity<CS::Transform, CS::Model>();
-			core.entities.getComponent<CS::Model>(thing).texture = "Space3.jpg";
-			core.entities.getComponent<CS::Model>(thing).mesh = "lamp.obj";
-			core.entities.getComponent<CS::Transform>(thing).scale *= 0.2f;
-			core.entities.getComponent<CS::Transform>(thing).position = transform->position + place.distance * -transform->forward();
-			core.entities.getComponent<CS::Transform>(thing).rotation = place.normal;
+			ENG::EntityID thing = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
+			core.entities.getComponent<ENG::CS::Model>(thing).texture = "Space3.jpg";
+			core.entities.getComponent<ENG::CS::Model>(thing).mesh = "lamp.obj";
+			core.entities.getComponent<ENG::CS::Transform>(thing).scale *= 0.2f;
+			core.entities.getComponent<ENG::CS::Transform>(thing).position = transform->position + place.distance * -transform->forward();
+			core.entities.getComponent<ENG::CS::Transform>(thing).rotation = place.normal;
 		}
 
 		if (ray.id == 0 && core.window.isKeyPressedOnce(GLFW_KEY_E))
 		{
 			ray = ENG::castRay(core.entities, transform->position, -transform->forward(), { id, ray.id });
-			if (ray.id != 0 && ray.distance < 5.0f && core.entities.hasComponent<Game::Pickup>(ray.id))
+			if (ray.id != 0 && ray.distance < 5.0f)
 			{
-				core.entities.getComponent<Game::Pickup>(ray.id).active = true;
-				core.entities.getComponent<Game::Pickup>(ray.id).holder = pickup_position;
+				//core.entities.getComponent<Game::Pickup>(ray.id).active = true;
+				//core.entities.getComponent<Game::Pickup>(ray.id).holder = pickup_position;
 			}
 			else ray.id = 0;
 		}
 		else if (ray.id != 0 && core.window.isKeyPressedOnce(GLFW_KEY_E))
 		{
-			core.entities.getComponent<Game::Pickup>(ray.id).active = false;
+			//core.entities.getComponent<Game::Pickup>(ray.id).active = false;
 			ray.id = 0;
 		}
 	}
@@ -144,6 +144,6 @@ namespace Game
 		movement(core);
 		actions(core);
 
-		core.entities.getComponent<CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)), core);
+		core.entities.getComponent<ENG::CS::Text>(pos_text).setText(glm::to_string(glm::ivec3(transform->position)), core);
 	}
 }

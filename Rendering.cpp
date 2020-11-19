@@ -111,6 +111,10 @@ namespace ENG
 		core.entities.getComponent<CS::Camera>(core.renderer.view_id).frame.getTexture().bind();
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		drawSprites(core);
+		renderText(core);
+		drawModelsToHUD(core);
 	}
 
 	void startRenderer(Core& core)

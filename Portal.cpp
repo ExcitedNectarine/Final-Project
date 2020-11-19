@@ -3,80 +3,6 @@
 
 namespace Game
 {
-	void PortalCamera::lateUpdate(ENG::Core& core)
-	{
-		glm::mat4 other_t = getWorldM(core.entities, other);
-		glm::mat4 portal_t = getWorldM(core.entities, portal);
-		glm::mat4 player_t = getWorldM(core.entities, player);
-		glm::mat4 new_view = other_t * glm::inverse(portal_t) * player_t;
-
-		core.entities.getComponent<ENG::CS::Transform>(id) = ENG::decompose(new_view);
-	}
-
-	void Portal::update(ENG::Core& core)
-	{
-		ENG::CS::Transform portal_t = ENG::getWorldT(core.entities, id);
-		ENG::CS::Transform other_t = ENG::getWorldT(core.entities, other);
-		ENG::CS::Transform traveller_t;
-
-		for (auto& p : travellers)
-		{
-			traveller_t = ENG::getWorldT(core.entities, p.first);
-
-			int side_last_frame = p.second;
-			int side_this_frame = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - traveller_t.position)));
-
-			if (side_last_frame != side_this_frame)
-			{
-				glm::mat4 m = other_t.get() * glm::inverse(portal_t.get()) * traveller_t.get();
-				core.entities.getComponent<ENG::CS::Transform>(p.first) = ENG::decompose(m);
-			}
-
-			p.second = side_this_frame;
-		}
-	}
-
-	void Portal::onTriggerEnter(ENG::Core& core, ENG::EntityID entered_id)
-	{
-		ENG::CS::Transform portal_t = ENG::getWorldT(core.entities, id);
-		ENG::CS::Transform traveller_t = ENG::getWorldT(core.entities, entered_id);
-
-		travellers[entered_id] = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - traveller_t.position)));;
-
-		if (core.entities.hasComponent<ENG::CS::Camera>(entered_id))
-		{
-			ENG::CS::Transform& transform = core.entities.getComponent<ENG::CS::Transform>(screen);
-			ENG::CS::Camera& camera = core.entities.getComponent<ENG::CS::Camera>(entered_id);
-			glm::vec3 pos = ENG::getWorldT(core.entities, entered_id).position;
-
-			transform = preventNearClipping(camera, transform, pos);
-		}
-	}
-
-	void Portal::onTriggerExit(ENG::Core& core, ENG::EntityID exited_id)
-	{
-		travellers.erase(exited_id);
-
-		//if (core.entities.hasComponent<ENG::CS::Camera>(exited_id))
-		//{
-		//	ENG::CS::Transform& transform = core.entities.getComponent<ENG::CS::Transform>(screen);
-		//	//transform.scale.z = 0.0f;
-		//}
-	}
-
-	ENG::CS::Transform Portal::preventNearClipping(const ENG::CS::Camera& camera, ENG::CS::Transform screen, const glm::vec3& view_pos)
-	{
-		float half_height = camera.near * glm::tan(camera.fov_y);
-		float half_width = half_height * camera.aspect;
-		float corner_dist = glm::length(glm::vec3(half_width, half_height, camera.near));
-
-		bool facing = glm::dot(screen.forward(), screen.position - view_pos) > 0;
-		screen.scale.z *= corner_dist;
-		screen.position += (screen.forward() * (facing ? 1.0f : -1.0f));
-
-		return screen;
-	}
-
 	ENG::EntityID createScreen(ENG::Core& core, ENG::EntityID parent, ENG::EntityID camera)
 	{
 		ENG::EntityID screen = core.entities.addEntity<ENG::CS::Transform, ENG::CS::Model>();
@@ -91,7 +17,7 @@ namespace Game
 
 		ENG::CS::Transform& t = core.entities.getComponent<ENG::CS::Transform>(screen);
 		t.parent = parent;
-		t.scale.z = 0.1f;
+		t.scale.z = 0.0f;
 
 		return screen;
 	}
@@ -137,8 +63,8 @@ namespace Game
 		// Portal parents, just stores where whole portal object is.
 		ENG::EntityID portal_a = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Script>();
 		ENG::EntityID portal_b = core.entities.addEntity<ENG::CS::Transform, ENG::CS::BoxCollider, ENG::CS::Script>();
-		core.entities.getComponent<ENG::CS::Transform>(portal_a).position = { 0.0f, -3.0f, 10.0f };
-		core.entities.getComponent<ENG::CS::Transform>(portal_b).position = { 0.0f, -3.0f, -10.0f };
+		core.entities.getComponent<ENG::CS::Transform>(portal_a).position = { 0.0f, -2.99f, 10.0f };
+		core.entities.getComponent<ENG::CS::Transform>(portal_b).position = { 0.0f, -2.99f, -10.0f };
 		core.entities.getComponent<ENG::CS::BoxCollider>(portal_a).trigger = true;
 		core.entities.getComponent<ENG::CS::BoxCollider>(portal_b).trigger = true;
 
@@ -157,6 +83,101 @@ namespace Game
 
 		return std::make_pair(portal_a, portal_b);
 	}
+
+	void PortalCamera::lateUpdate(ENG::Core& core)
+	{
+		glm::mat4 other_t = getWorldM(core.entities, other);
+		glm::mat4 portal_t = getWorldM(core.entities, portal);
+		glm::mat4 player_t = getWorldM(core.entities, player);
+		glm::mat4 new_view = other_t * glm::inverse(portal_t) * player_t;
+
+		core.entities.getComponent<ENG::CS::Transform>(id) = ENG::decompose(new_view);
+	}
+
+	void Portal::start(ENG::Core& core)
+	{
+	}
+
+	void Portal::update(ENG::Core& core)
+	{
+		ENG::CS::Transform portal_t = ENG::getWorldT(core.entities, id);
+		ENG::CS::Transform other_t = ENG::getWorldT(core.entities, other);
+		ENG::CS::Transform traveller_t;
+
+		for (auto& p : travellers)
+		{
+			traveller_t = ENG::getWorldT(core.entities, p.first);
+
+			int side_last_frame = p.second;
+			int side_this_frame = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - traveller_t.position)));
+
+			if (side_last_frame != side_this_frame)
+			{
+				glm::mat4 m = other_t.get() * glm::inverse(portal_t.get()) * traveller_t.get();
+				core.entities.getComponent<ENG::CS::Transform>(p.first) = ENG::decompose(m);
+			}
+
+			p.second = side_this_frame;
+		}
+	}
+
+	void Portal::onTriggerEnter(ENG::Core& core, ENG::EntityID entered_id)
+	{
+		ENG::CS::Transform portal_t = ENG::getWorldT(core.entities, id);
+		ENG::CS::Transform traveller_t = ENG::getWorldT(core.entities, entered_id);
+
+		travellers[entered_id] = static_cast<int>(glm::sign(glm::dot(portal_t.forward(), portal_t.position - traveller_t.position)));;
+
+		if (core.entities.hasComponent<ENG::CS::Camera>(entered_id))
+		{
+			ENG::CS::Transform& transform = core.entities.getComponent<ENG::CS::Transform>(screen);
+			ENG::CS::Camera& camera = core.entities.getComponent<ENG::CS::Camera>(entered_id);
+			glm::vec3 view_pos = ENG::getWorldT(core.entities, entered_id).position;
+
+			transform.scale.z = cornerDistance(camera);
+
+			ENG::CS::Transform screen_t = ENG::getWorldT(core.entities, screen);
+			bool facing = glm::dot(screen_t.forward(), screen_t.position - view_pos) > 0;
+			transform.position += (transform.forward() * (facing ? 1.0f : -1.0f));
+		}
+	}
+
+	void Portal::onTriggerExit(ENG::Core& core, ENG::EntityID exited_id)
+	{
+		travellers.erase(exited_id);
+
+		if (core.entities.hasComponent<ENG::CS::Camera>(exited_id))
+		{
+			ENG::CS::Transform& transform = core.entities.getComponent<ENG::CS::Transform>(screen);
+			transform.scale.z = 0.0f;
+			transform.position = glm::vec3(0.0f);
+		}
+	}
+
+	float Portal::cornerDistance(const ENG::CS::Camera& camera)
+	{
+		float half_height = camera.near * glm::tan(glm::radians(camera.fov_y / 2.0f));
+		float half_width = half_height * camera.aspect;
+		float corner_dist = glm::length(glm::vec3(half_width, half_height, camera.near));
+
+		return corner_dist;
+	}
+
+	//ENG::CS::Transform Portal::preventNearClipping(const ENG::CS::Camera& camera, ENG::CS::Transform screen, const glm::vec3& view_pos)
+	//{
+	//	if (ENG::approximate(screen.scale.z, 0.0f, 0.1f))
+	//		screen.scale.z = 1.0f;
+
+	//	float half_height = camera.near * glm::tan(camera.fov_y);
+	//	float half_width = half_height * camera.aspect;
+	//	float corner_dist = glm::length(glm::vec3(half_width, half_height, camera.near));
+
+	//	bool facing = glm::dot(screen.forward(), screen.position - view_pos) > 0;
+	//	screen.position += (screen.forward() * (facing ? 1.0f : -1.0f));
+
+	//	OUTPUT("preventing " << corner_dist);
+	//	return screen;
+	//}
 
 	//EntityID createPortal(Core& core)
 	//{
